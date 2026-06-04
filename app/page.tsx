@@ -5,23 +5,54 @@ import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  // 0 = fully dark theme, 1 = fully light theme
+  const [themeProgress, setThemeProgress] = useState(0);
   const pricingSectionRef = useRef<HTMLDivElement>(null);
   const programSectionRef = useRef<HTMLDivElement>(null);
 
-  // Only used to flip the nav between dark/light styles
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsDarkTheme(!entry.isIntersecting),
-      { threshold: 0.05 }
-    );
-    if (pricingSectionRef.current) observer.observe(pricingSectionRef.current);
-    return () => observer.disconnect();
+    const handleScroll = () => {
+      if (!pricingSectionRef.current) return;
+      const rect = pricingSectionRef.current.getBoundingClientRect();
+      const wh = window.innerHeight;
+      // Transition window: pricing top travels from 90vh → 30vh of the viewport
+      const progress = Math.max(0, Math.min(1, (wh * 0.9 - rect.top) / (wh * 0.6)));
+      setThemeProgress(progress);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const isDark = themeProgress < 0.5;
+
+  // Linearly interpolate a single channel
+  const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+
+  // Nav background: rgba(13,13,13,0.85) → rgba(251,246,242,0.92)
+  const navR = lerp(13, 251, themeProgress);
+  const navG = lerp(13, 246, themeProgress);
+  const navB = lerp(13, 242, themeProgress);
+  const navBgStyle = { backgroundColor: `rgba(${navR},${navG},${navB},0.88)` };
+
+  // Nav border: rgba(255,255,255,0.1) → rgba(26,15,10,0.1)
+  const borderR = lerp(255, 26, themeProgress);
+  const borderG = lerp(255, 15, themeProgress);
+  const borderBV = lerp(255, 10, themeProgress);
+  const navBorderStyle = { borderColor: `rgba(${borderR},${borderG},${borderBV},0.12)` };
+
+  // Nav text: rgba(255,255,255,0.6) → rgba(26,15,10,0.6)
+  const textR = lerp(255, 26, themeProgress);
+  const textG = lerp(255, 15, themeProgress);
+  const textBV = lerp(255, 10, themeProgress);
+  const navTextStyle = { color: `rgba(${textR},${textG},${textBV},0.6)` };
 
   return (
     <div className="relative min-h-screen bg-[#FBF6F2]">
-      <header className={`sticky top-0 z-50 flex h-[98px] w-full items-center justify-center backdrop-blur-[10px] transition-all duration-500 ${isDarkTheme ? 'bg-black/40 border-white/10' : 'bg-white/30 border-black/10'} border-b`}>
+      <header
+        className="sticky top-0 z-50 flex h-[98px] w-full items-center justify-center backdrop-blur-[10px] border-b"
+        style={{ ...navBgStyle, ...navBorderStyle }}
+      >
         <div className="flex w-full max-w-[1440px] items-center justify-between gap-[147px] px-[50px] pt-[20px] pb-[20px]">
           <div className="flex h-[58px] w-[50px] items-center justify-center">
             <Image
@@ -29,19 +60,22 @@ export default function Home() {
               alt="TDT Logo"
               width={50}
               height={58}
-              className={`rounded-full object-contain transition-colors duration-500 ${isDarkTheme ? 'bg-white/5' : 'bg-black/5'}`}
+              className="rounded-full object-contain"
             />
           </div>
 
-          <nav className={`flex h-[17px] w-[751px] items-center justify-center gap-[30px] text-[14px] font-medium tracking-[-0.02em] transition-colors duration-500 ${isDarkTheme ? 'text-[rgba(255,255,255,0.6)]' : 'text-[rgba(0,0,0,0.6)]'}`}>
-            <a href="#coach" className={`transition ${isDarkTheme ? 'hover:text-white' : 'hover:text-black'}`}>The Coach</a>
-            <a href="#program" className={`transition ${isDarkTheme ? 'hover:text-white' : 'hover:text-black'}`}>Program</a>
-            <a href="#pricing" className={`transition ${isDarkTheme ? 'hover:text-white' : 'hover:text-black'}`}>Pricing</a>
-            <a href="#faq" className={`transition ${isDarkTheme ? 'hover:text-white' : 'hover:text-black'}`}>Faq</a>
+          <nav
+            className="flex h-[17px] w-[751px] items-center justify-center gap-[30px] text-[14px] font-medium tracking-[-0.02em]"
+            style={navTextStyle}
+          >
+            <a href="#coach" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>The Coach</a>
+            <a href="#program" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Program</a>
+            <a href="#pricing" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Pricing</a>
+            <a href="#faq" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Faq</a>
           </nav>
 
-          <div className={`flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em] transition-colors duration-500 ${isDarkTheme ? 'text-[rgba(255,255,255,0.6)]' : 'text-[rgba(0,0,0,0.6)]'}`}>
-            <a href="#login" className={`transition ${isDarkTheme ? 'hover:text-white' : 'hover:text-black'}`}>Log In</a>
+          <div className="flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
+            <a href="#login" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Log In</a>
             <a
               href="#book-demo"
               className="inline-flex h-[37px] items-center justify-center rounded-[103px] bg-[#B34929] px-[20px] text-[14px] font-medium text-[rgba(255,255,255,0.6)] transition hover:bg-[#C25433]"
