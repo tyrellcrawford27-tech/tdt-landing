@@ -5,18 +5,26 @@ import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
-  // 0 = dark, 1 = light — driven by how far you've scrolled through the transition zone
+  // 0 = dark, 1 = light — driven by scroll through the transition zone
   const [tp, setTp] = useState(0);
+  // How many card-heights we've scrolled past the start of the card stack
+  const [programProgress, setProgramProgress] = useState(0);
+
   const transitionZoneRef = useRef<HTMLDivElement>(null);
-  const programSectionRef = useRef<HTMLDivElement>(null);
+  const cardsStartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => {
-      if (!transitionZoneRef.current) return;
-      const rect = transitionZoneRef.current.getBoundingClientRect();
-      // progress = 0 when zone top hits viewport top, 1 when zone bottom hits viewport top
-      const progress = Math.max(0, Math.min(1, -rect.top / rect.height));
-      setTp(progress);
+      // Dark → light transition progress
+      if (transitionZoneRef.current) {
+        const r = transitionZoneRef.current.getBoundingClientRect();
+        setTp(Math.max(0, Math.min(1, -r.top / r.height)));
+      }
+      // Program card stack progress (unit = 1 card = 1 viewport height)
+      if (cardsStartRef.current) {
+        const r = cardsStartRef.current.getBoundingClientRect();
+        setProgramProgress(Math.max(0, -r.top) / window.innerHeight);
+      }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -161,64 +169,92 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="program" className="relative flex w-full flex-col items-center gap-[20px] px-[100px] py-[150px] bg-[#0D0D0D]">
-          <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
-            <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
-            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">The Program</span>
+        <section id="program" className="relative w-full bg-[#0D0D0D]">
+          {/* Section header — normal scroll flow */}
+          <div className="flex flex-col items-center gap-[20px] px-[100px] pt-[150px] pb-[80px]">
+            <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
+              <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
+              <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">The Program</span>
+            </div>
           </div>
 
-          <div className="flex w-full max-w-[1156px] flex-col gap-[40px]">
-            {[
-              {
-                label: '01 · Diagnosis',
-                title: 'Before anything unlocks, Jaiden needs to see you.',
-                body: 'Eight drills. One take. No retakes. Film yourself cold and submit. Jaiden reviews everything before your program begins. This is where your journey starts.',
-                image: 'diagnosis.png',
-                reversed: true,
-              },
-              {
-                label: '02 · Drill Library',
-                title: 'Your prescription. Built from your weaknesses.',
-                body: 'After Jaiden evaluates your game, your drill library is built around exactly what he finds. No generic workouts. Every rep targets something specific he identified in you.',
-                image: 'drill-library.png',
-                reversed: true,
-              },
-              {
-                label: '03 · Film Submission',
-                title: 'Film it cold. Upload it raw.',
-                body: 'No preparation needed. Film your drill in one take and upload it directly to Jaiden. Tell him what to focus on; he watches everything and tells you exactly what he sees.',
-                image: 'film-submission.png',
-                reversed: true,
-              },
-              {
-                label: '04 · Film Study',
-                title: 'Jaiden watches every second.',
-                body: 'Frame by frame, he marks exactly what needs to change and records his voice at the specific moments that matter to your game.',
-                image: 'film-study.png',
-                reversed: true,
-              },
-              {
-                label: '05 · Atlas',
-                title: 'Your growth, documented and undeniable.',
-                body: 'Every annotation, every drill, every session tracked in one place. Jaiden updates your ratings as you improve. By graduation you have documented proof of exactly what changed and how far you’ve come.',
-                image: 'atlas.png',
-                reversed: true,
-              },
-            ].map((item) => (
-              <div key={item.label} className="flex h-[500px] w-full items-center gap-0 rounded-[12px] border border-white/10 bg-[#3D2218] p-0 overflow-hidden">
-                <div className={`flex ${item.reversed ? 'order-2' : 'order-1'} h-full w-[460px] flex-col justify-center gap-[20px] px-[50px] py-[40px] bg-[#3D2218]`}>
-                  <span className="text-[14px] font-medium leading-[17px] tracking-[0.02em] text-[rgba(255,255,255,0.8)]">{item.label}</span>
-                  <div className="flex flex-col gap-[10px]">
-                    <h3 className="text-[20px] font-medium leading-[24px] tracking-[0.02em] text-white">{item.title}</h3>
-                    <p className="text-[16px] font-normal leading-[22px] tracking-[0.02em] text-[rgba(255,255,255,0.7)]">{item.body}</p>
+          {/* Scroll anchor — programProgress counts from here */}
+          <div ref={cardsStartRef} />
+
+          {/* ── Sticky card stack ── */}
+          {[
+            {
+              label: ‘01 · Diagnosis’,
+              title: ‘Before anything unlocks, Jaiden needs to see you.’,
+              body: ‘Eight drills. One take. No retakes. Film yourself cold and submit. Jaiden reviews everything before your program begins. This is where your journey starts.’,
+              image: ‘diagnosis.png’,
+            },
+            {
+              label: ‘02 · Drill Library’,
+              title: ‘Your prescription. Built from your weaknesses.’,
+              body: ‘After Jaiden evaluates your game, your drill library is built around exactly what he finds. No generic workouts. Every rep targets something specific he identified in you.’,
+              image: ‘drill-library.png’,
+            },
+            {
+              label: ‘03 · Film Submission’,
+              title: ‘Film it cold. Upload it raw.’,
+              body: ‘No preparation needed. Film your drill in one take and upload it directly to Jaiden. Tell him what to focus on; he watches everything and tells you exactly what he sees.’,
+              image: ‘film-submission.png’,
+            },
+            {
+              label: ‘04 · Film Study’,
+              title: ‘Jaiden watches every second.’,
+              body: ‘Frame by frame, he marks exactly what needs to change and records his voice at the specific moments that matter to your game.’,
+              image: ‘film-study.png’,
+            },
+            {
+              label: ‘05 · Atlas’,
+              title: ‘Your growth, documented and undeniable.’,
+              body: "Every annotation, every drill, every session tracked in one place. Jaiden updates your ratings as you improve. By graduation you have documented proof of exactly what changed and how far you’ve come.",
+              image: ‘atlas.png’,
+            },
+          ].map((card, i) => {
+            // How many card-heights of scroll have passed this card’s entry point
+            const depth = Math.max(0, programProgress - i);
+            // Scale down 5% per level of stack depth, floor at 0.78
+            const scale = Math.max(0.78, 1 - depth * 0.05);
+
+            return (
+              <div
+                key={card.label}
+                className="sticky top-0 h-screen flex items-center justify-center px-[100px]"
+                style={{ zIndex: i + 1 }}
+              >
+                <div
+                  className="flex h-[500px] w-full max-w-[1156px] items-center overflow-hidden rounded-[12px] border border-white/10"
+                  style={{
+                    transform: `scale(${scale})`,
+                    transformOrigin: ‘center’,
+                    willChange: ‘transform’,
+                  }}
+                >
+                  {/* Text column */}
+                  <div className="flex h-full w-[460px] flex-shrink-0 flex-col justify-center gap-[20px] px-[50px] py-[40px] bg-[#3D2218]">
+                    <span className="text-[14px] font-medium leading-[17px] tracking-[0.02em] text-[rgba(255,255,255,0.8)]">{card.label}</span>
+                    <div className="flex flex-col gap-[10px]">
+                      <h3 className="text-[20px] font-medium leading-[24px] tracking-[0.02em] text-white">{card.title}</h3>
+                      <p className="text-[16px] font-normal leading-[22px] tracking-[0.02em] text-[rgba(255,255,255,0.7)]">{card.body}</p>
+                    </div>
+                  </div>
+                  {/* Image column */}
+                  <div className="flex h-full flex-1 items-center justify-center bg-[#1E0F09] p-[20px] shadow-[inset_-2px_0px_10px_#000000]">
+                    <div
+                      className="h-full w-full rounded-[8px] bg-[rgba(255,255,255,0.04)] bg-cover bg-center"
+                      style={{ backgroundImage: `url(/${card.image})` }}
+                    />
                   </div>
                 </div>
-                <div className={`flex ${item.reversed ? 'order-1' : 'order-2'} h-full w-[696px] items-center justify-center bg-[#1E0F09] shadow-[inset_-2px_0px_10px_#000000] p-[20px]`}>
-                  <div className="h-[467px] w-[656px] rounded-[8px] bg-[rgba(255,255,255,0.04)] bg-cover bg-center" style={{ backgroundImage: `url(/${item.image})` }} />
-                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
+
+          {/* Buffer so the last card stays readable before the next section */}
+          <div className="h-[60vh]" />
         </section>
 
         <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-[100px] py-[150px] bg-[#0D0D0D]">
