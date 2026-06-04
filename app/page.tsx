@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { TDTLogo } from "@/components/TDTLogo";
+import { FooterText } from "@/components/FooterText";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
@@ -541,22 +542,11 @@ export default function Home() {
 
         {/* Footer */}
         <section className="w-full flex justify-center bg-[#FBF6F2] text-black">
-          <div className="w-[1356px] h-[311px] flex flex-col justify-center items-center px-[100px] py-[40px]">
+          <div className="w-[1356px] h-[311px] flex flex-col justify-center items-center px-[100px] py-[40px] overflow-visible">
             {/* Frame 155 */}
-            <div className="w-[1156px] h-[194px] flex flex-col justify-center items-center gap-[10px] p-[20px]">
-              {/* THINK DIFFERENT */}
-              <div
-                className="w-[1116px] h-[154px] flex items-center justify-end text-[128px] font-bold leading-[154px] tracking-[-0.02em]"
-                style={{
-                  background: "linear-gradient(360deg, rgba(0, 0, 0, 0.4) 0%, #FBF6F2 82.21%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  filter: "blur(10px)",
-                }}
-              >
-                THINK DIFFERENT
-              </div>
+            <div className="w-[1156px] h-[194px] flex flex-col justify-center items-center gap-[10px] p-[20px] overflow-visible">
+              {/* THINK DIFFERENT — animated on hover */}
+              <FooterText />
             </div>
 
             {/* Frame 154 */}
