@@ -408,8 +408,8 @@ export default function Home() {
 
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[20px] px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
-            <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
-            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">Pricing</span>
+            <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
+            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>Pricing</span>
           </div>
 
           <div className="flex w-full max-w-[532px] flex-col items-center gap-[20px]">
@@ -447,8 +447,8 @@ export default function Home() {
 
         <section id="faq" className="relative flex w-full flex-col items-center gap-[20px] px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
-            <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
-            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">FAQ</span>
+            <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
+            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>FAQ</span>
           </div>
 
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[10px]">
