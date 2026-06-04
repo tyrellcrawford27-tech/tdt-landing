@@ -34,11 +34,11 @@ export default function Home() {
   const isDark = tp < 0.5;
   const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
 
-  // Full-screen transition panel colour: #0D0D0D → #FBF6F2
-  const panelBg = `rgb(${lerp(13,251,tp)},${lerp(13,246,tp)},${lerp(13,242,tp)})`;
+  // Full-screen transition panel: #000000 → #FBF6F2
+  const panelBg = `rgb(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)})`;
 
-  // Nav background: rgba(13,13,13,0.88) → rgba(251,246,242,0.88)
-  const navBgStyle = { backgroundColor: `rgba(${lerp(13,251,tp)},${lerp(13,246,tp)},${lerp(13,242,tp)},0.88)` };
+  // Nav background: rgba(0,0,0,0.96) → rgba(251,246,242,0.92)
+  const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.96 : 0.92})` };
   // Nav border
   const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.12)` };
   // Nav text
@@ -84,7 +84,7 @@ export default function Home() {
 
       <main className="flex w-full flex-col">
 
-        <section className="relative flex w-full min-h-screen flex-col items-center justify-center gap-12 text-center bg-[#0D0D0D]">
+        <section className="relative flex w-full min-h-screen flex-col items-center justify-center gap-12 text-center bg-[#000000]">
           <div className="max-w-[874px]">
             <div className="inline-flex h-[24px] min-w-[249px] items-center justify-center rounded-full border border-[#B34929] bg-[rgba(179,73,41,0.15)] px-5 py-[5px] text-center text-[12px] font-normal tracking-[-0.02em] text-[rgba(179,73,41,0.7)]" style={{ boxShadow: "inset 0px 4px 6px rgba(255, 255, 255, 0.09), inset 0px -4px 6px 1px rgba(179, 73, 41, 0.25)" }}>
               COHORT 1 · SEPTEMBER 2026 · 8 SPOTS
@@ -118,7 +118,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="coach" className="relative flex min-h-[889px] w-full flex-col items-center gap-[40px] px-[100px] py-[150px] bg-[#0D0D0D]">
+        <section id="coach" className="relative flex min-h-[889px] w-full flex-col items-center gap-[40px] px-[100px] py-[150px] bg-[#000000]">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
             <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">The Coach</span>
@@ -165,7 +165,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="program" className="relative w-full bg-[#0D0D0D]">
+        <section id="program" className="relative w-full bg-[#000000]">
           {/* Section header — normal scroll flow */}
           <div className="flex flex-col items-center gap-[20px] px-[100px] pt-[150px] pb-[80px]">
             <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
@@ -253,7 +253,7 @@ export default function Home() {
           <div className="h-[60vh]" />
         </section>
 
-        <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-[100px] py-[150px] bg-[#0D0D0D]">
+        <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-[100px] pt-[150px] pb-[60px] bg-[#000000]">
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[20px]">
             <h3 className="w-[215px] text-center text-[20px] font-medium leading-[24px] tracking-[-0.02em] text-[rgba(255,255,255,0.7)]">
               What makes this{' '}
@@ -375,7 +375,7 @@ export default function Home() {
         {/*
           TRANSITION ZONE — 100vh of scroll travel.
           The sticky inner panel fills the entire viewport and its background
-          interpolates from #0D0D0D → #FBF6F2 as you scroll through.
+          interpolates from #000000 → #FBF6F2 as you scroll through.
           This drives both the full-screen visual morph AND the nav theme.
         */}
         <div ref={transitionZoneRef} className="relative w-full" style={{ height: '100vh' }}>
