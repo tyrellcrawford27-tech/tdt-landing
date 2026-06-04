@@ -9,11 +9,15 @@ export default function Home() {
   const [tp, setTp] = useState(0);
   // How many card-heights we've scrolled past the start of the card stack
   const [programProgress, setProgramProgress] = useState(0);
+  // Which section is currently closest to the viewport midpoint
+  const [activeSection, setActiveSection] = useState<string>('');
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
   const cardsStartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const SECTIONS = ['coach', 'program', 'difference', 'pricing', 'faq'];
+
     const onScroll = () => {
       // Dark → light transition progress
       if (transitionZoneRef.current) {
@@ -25,6 +29,16 @@ export default function Home() {
         const r = cardsStartRef.current.getBoundingClientRect();
         setProgramProgress(Math.max(0, -r.top) / window.innerHeight);
       }
+      // Active section — whichever section's top edge is nearest above the midpoint
+      const mid = window.innerHeight * 0.45;
+      let active = '';
+      for (const id of SECTIONS) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top;
+        if (top <= mid) active = id;
+      }
+      setActiveSection(active);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -41,8 +55,14 @@ export default function Home() {
   const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.96 : 0.92})` };
   // Nav border
   const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.12)` };
-  // Nav text
+  // Nav text (base — used for Log In and as fallback)
   const navTextStyle = { color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.6)` };
+  // Per-link style: active links are full opacity, inactive are 0.4
+  const navLinkStyle = (id: string) => ({
+    color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${activeSection === id ? 1 : 0.4})`,
+    transition: 'color 0.3s ease',
+    fontWeight: activeSection === id ? '500' : '400',
+  });
 
   return (
     <div className="relative min-h-screen bg-[#FBF6F2]">
@@ -55,14 +75,11 @@ export default function Home() {
             <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
           </div>
 
-          <nav
-            className="flex h-[17px] w-[751px] items-center justify-center gap-[30px] text-[14px] font-medium tracking-[-0.02em]"
-            style={navTextStyle}
-          >
-            <a href="#coach" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>The Coach</a>
-            <a href="#program" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Program</a>
-            <a href="#pricing" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Pricing</a>
-            <a href="#faq" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Faq</a>
+          <nav className="flex h-[17px] w-[751px] items-center justify-center gap-[30px] text-[14px] tracking-[-0.02em]">
+            <a href="#coach" style={navLinkStyle('coach')}>The Coach</a>
+            <a href="#program" style={navLinkStyle('program')}>Program</a>
+            <a href="#pricing" style={navLinkStyle('pricing')}>Pricing</a>
+            <a href="#faq" style={navLinkStyle('faq')}>FAQ</a>
           </nav>
 
           <div className="flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
@@ -120,8 +137,8 @@ export default function Home() {
 
         <section id="coach" className="relative flex min-h-[889px] w-full flex-col items-center gap-[40px] px-[100px] py-[150px] bg-[#000000]">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
-            <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
-            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">The Coach</span>
+            <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
+            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Coach</span>
           </div>
 
           <div className="flex w-full max-w-[1156px] items-center gap-[100px]">
@@ -169,8 +186,8 @@ export default function Home() {
           {/* Section header — normal scroll flow */}
           <div className="flex flex-col items-center gap-[20px] px-[100px] pt-[150px] pb-[80px]">
             <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
-              <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
-              <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">The Program</span>
+              <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
+              <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
             </div>
           </div>
 
@@ -255,9 +272,9 @@ export default function Home() {
 
         <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-[100px] pt-[150px] pb-[60px] bg-[#000000]">
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[20px]">
-            <h3 className="w-[215px] text-center text-[20px] font-medium leading-[24px] tracking-[-0.02em] text-[rgba(255,255,255,0.7)]">
+            <h3 className="w-[215px] text-center text-[20px] font-medium leading-[24px] tracking-[-0.02em]" style={{ color: `rgba(255,255,255,${activeSection === 'difference' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>
               What makes this{' '}
-              <span className="text-[#B34929] italic">different</span>
+              <span style={{ color: `rgba(179,73,41,${activeSection === 'difference' ? 1 : 0.6})`, transition: 'color 0.4s ease' }} className="italic">different</span>
             </h3>
             <h2 className="w-[586px] text-center text-[26px] font-normal leading-[31px] tracking-[-0.02em] text-white">
               Not your $29.99/month course. This is what it looks like when a coach actually watches your game.
@@ -439,68 +456,82 @@ export default function Home() {
               {[
                 {
                   question: "Who is Jaiden and why should I trust him with my development?",
-                  answer: "Jaiden has spent 7 years coaching serious basketball players and has trained alongside athletes who went on to play professionally. He's not running a YouTube channel or selling a generic program he sits down and watches your son's footage personally every single time. Canada Basketball's National Training Centre, York University, and Brampton City Prep have trusted him with their athletes. The reason USA players are reaching out to train with him is the same reason TDT exists his knowledge is rare and his attention is real.",
+                  answer: "7 years developing serious players. Trained alongside athletes who went on to play professionally. Trusted by Canada Basketball's National Training Centre, York University, and Brampton City Prep. He watches your footage specifically and tells you exactly what's holding you back.",
                 },
                 {
-                  question: "Is online coaching actually effective or do I need to be in person?",
-                  answer: "",
+                  question: "How does this actually develop my game if I'm not training in person?",
+                  answer: "7 years developing serious players. Trained alongside athletes who went on to play professionally. Trusted by Canada Basketball's National Training Centre, York University, and Brampton City Prep. He watches your footage specifically and tells you exactly what's holding you back.",
                 },
                 {
-                  question: "How much time does this require from my each week?",
-                  answer: "",
+                  question: "How much time does this require each week?",
+                  answer: "45-60 minutes of focused drill work daily on top of your existing training. Film submissions take 10-15 minutes. Reviews come back within 24 hours. Sessions are scheduled in advance. If you're serious about developing, it fits.",
                 },
                 {
-                  question: "What if i'm not at the right level for this program?",
-                  answer: "",
+                  question: "What if I'm not at the right level?",
+                  answer: "The program starts with a full diagnosis. Jaiden evaluates exactly where you are before anything begins. What's required isn't a certain level — it's that you show up and do the work.",
                 },
                 {
                   question: "What if we invest and it doesn't work?",
-                  answer: "",
+                  answer: "Results depend on the athlete doing the work. What's guaranteed is Jaiden's full attention on your specific game — every film reviewed, every session delivered, every score updated with a specific reason.",
                 },
                 {
-                  question: "Why does it cost $2,000?",
-                  answer: "",
+                  question: "What am I actually getting for $2,000?",
+                  answer: "Jaiden's eyes on your specific game for 100 days. Full diagnosis, honest scoring, prescribed drills, frame by frame film review, sessions, and documented proof of exactly how far you came. Not a course. Not content. Individual development built around what he finds in you specifically.",
                 },
-              ].map((item, index) => (
-                <div
-                  key={index}
-                  className="flex w-[956px] flex-col border-b border-[rgba(0,0,0,0.15)]"
-                >
-                  <button
-                    onClick={() => setOpenFaq(openFaq === index ? -1 : index)}
-                    className="flex items-start gap-[10px] px-0 py-[20px] text-left"
+              ].map((item, index) => {
+                const isOpen = openFaq === index;
+                return (
+                  <div
+                    key={index}
+                    className="flex w-[956px] flex-col border-b border-[rgba(0,0,0,0.15)]"
                   >
-                    <div className="flex flex-1 flex-col gap-[10px]">
-                      <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(0,0,0,0.7)]">
+                    <button
+                      onClick={() => setOpenFaq(isOpen ? -1 : index)}
+                      className="flex items-start gap-[10px] px-0 py-[20px] text-left w-full"
+                    >
+                      <span className="flex-1 text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(0,0,0,0.7)]">
                         {item.question}
                       </span>
-                      {openFaq === index && item.answer && (
-                        <p className="text-[14px] font-normal leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.4)]">
-                          {item.answer}
-                        </p>
-                      )}
-                    </div>
-                    <div
-                      className={`mt-1 flex h-[24px] w-[24px] items-center justify-center flex-shrink-0 transition-transform ${
-                        openFaq === index ? "rotate-180" : ""
-                      }`}
-                    >
+
+                      {/* mingcute:up-line — rotates down when closed, up when open */}
                       <svg
                         width="24"
                         height="24"
                         viewBox="0 0 24 24"
                         fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
+                        className="flex-shrink-0 mt-[2px]"
+                        style={{
+                          transform: isOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+                          opacity: isOpen ? 0.6 : 0.2,
+                          transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease',
+                        }}
                       >
                         <path
-                          d="M12 16L6 10H18L12 16Z"
-                          fill={openFaq === index ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.2)"}
+                          d="M5.5 15.5L12 8.5L18.5 15.5"
+                          stroke="#000000"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         />
                       </svg>
+                    </button>
+
+                    {/* Answer — animates open/close via max-height + opacity */}
+                    <div
+                      className="overflow-hidden"
+                      style={{
+                        maxHeight: isOpen ? '400px' : '0px',
+                        opacity: isOpen ? 1 : 0,
+                        transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease',
+                      }}
+                    >
+                      <p className="pb-[20px] text-[14px] font-normal leading-[22px] tracking-[-0.02em] text-[rgba(0,0,0,0.5)]">
+                        {item.answer}
+                      </p>
                     </div>
-                  </button>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
