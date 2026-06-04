@@ -1,7 +1,7 @@
 'use client';
 
-import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { TDTLogo } from "@/components/TDTLogo";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
@@ -52,13 +52,7 @@ export default function Home() {
       >
         <div className="flex w-full max-w-[1440px] items-center justify-between gap-[147px] px-[50px] pt-[20px] pb-[20px]">
           <div className="flex h-[58px] w-[50px] items-center justify-center">
-            <Image
-              src="/tdt-logo.png"
-              alt="TDT Logo"
-              width={50}
-              height={58}
-              className="rounded-full object-contain"
-            />
+            <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
           </div>
 
           <nav
@@ -88,19 +82,21 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex w-full flex-col items-center">
+      <main className="flex w-full flex-col">
 
-        <section className="relative flex min-h-screen flex-col items-center justify-center gap-12 text-center bg-[#0D0D0D]">
+        <section className="relative flex w-full min-h-screen flex-col items-center justify-center gap-12 text-center bg-[#0D0D0D]">
           <div className="max-w-[874px]">
             <div className="inline-flex h-[24px] min-w-[249px] items-center justify-center rounded-full border border-[#B34929] bg-[rgba(179,73,41,0.15)] px-5 py-[5px] text-center text-[12px] font-normal tracking-[-0.02em] text-[rgba(179,73,41,0.7)]" style={{ boxShadow: "inset 0px 4px 6px rgba(255, 255, 255, 0.09), inset 0px -4px 6px 1px rgba(179, 73, 41, 0.25)" }}>
               COHORT 1 · SEPTEMBER 2026 · 8 SPOTS
             </div>
-            <h1 className="mt-8 text-[44px] font-bold leading-[53px] tracking-[-0.02em] text-transparent" style={{ background: "linear-gradient(180deg, rgba(255, 255, 255, 0.8) 37.01%, rgba(255, 255, 255, 0.64) 157.14%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              Most of your development happens alone.
-              <span className="block text-[#EAE6E4]">We make sure it counts.</span>
+            <h1 className="mt-8 text-[44px] font-bold leading-[53px] tracking-[-0.02em]">
+              <span style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.65) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                Most of your development happens alone.
+              </span>
+              <span className="block text-[rgba(255,255,255,0.55)]">We make sure it counts.</span>
             </h1>
             <p className="mt-6 max-w-[668px] text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)] mx-auto">
-              Jaiden evaluates your specific game, identifies exactly what’s holding you back, and documents your improvement with real proof over 4 months.
+              Jaiden evaluates your specific game, identifies exactly what's holding you back, and documents your improvement with real proof over 4 months.
             </p>
 
             <div className="mt-10">
@@ -184,37 +180,37 @@ export default function Home() {
           {/* ── Sticky card stack ── */}
           {[
             {
-              label: ‘01 · Diagnosis’,
-              title: ‘Before anything unlocks, Jaiden needs to see you.’,
-              body: ‘Eight drills. One take. No retakes. Film yourself cold and submit. Jaiden reviews everything before your program begins. This is where your journey starts.’,
-              image: ‘diagnosis.png’,
+              label: '01 · Diagnosis',
+              title: 'Before anything unlocks, Jaiden needs to see you.',
+              body: 'Eight drills. One take. No retakes. Film yourself cold and submit. Jaiden reviews everything before your program begins. This is where your journey starts.',
+              image: 'diagnosis.png',
             },
             {
-              label: ‘02 · Drill Library’,
-              title: ‘Your prescription. Built from your weaknesses.’,
-              body: ‘After Jaiden evaluates your game, your drill library is built around exactly what he finds. No generic workouts. Every rep targets something specific he identified in you.’,
-              image: ‘drill-library.png’,
+              label: '02 · Drill Library',
+              title: 'Your prescription. Built from your weaknesses.',
+              body: 'After Jaiden evaluates your game, your drill library is built around exactly what he finds. No generic workouts. Every rep targets something specific he identified in you.',
+              image: 'drill-library.png',
             },
             {
-              label: ‘03 · Film Submission’,
-              title: ‘Film it cold. Upload it raw.’,
-              body: ‘No preparation needed. Film your drill in one take and upload it directly to Jaiden. Tell him what to focus on; he watches everything and tells you exactly what he sees.’,
-              image: ‘film-submission.png’,
+              label: '03 · Film Submission',
+              title: 'Film it cold. Upload it raw.',
+              body: 'No preparation needed. Film your drill in one take and upload it directly to Jaiden. Tell him what to focus on; he watches everything and tells you exactly what he sees.',
+              image: 'film-submission.png',
             },
             {
-              label: ‘04 · Film Study’,
-              title: ‘Jaiden watches every second.’,
-              body: ‘Frame by frame, he marks exactly what needs to change and records his voice at the specific moments that matter to your game.’,
-              image: ‘film-study.png’,
+              label: '04 · Film Study',
+              title: 'Jaiden watches every second.',
+              body: 'Frame by frame, he marks exactly what needs to change and records his voice at the specific moments that matter to your game.',
+              image: 'film-study.png',
             },
             {
-              label: ‘05 · Atlas’,
-              title: ‘Your growth, documented and undeniable.’,
-              body: "Every annotation, every drill, every session tracked in one place. Jaiden updates your ratings as you improve. By graduation you have documented proof of exactly what changed and how far you’ve come.",
-              image: ‘atlas.png’,
+              label: '05 · Atlas',
+              title: 'Your growth, documented and undeniable.',
+              body: "Every annotation, every drill, every session tracked in one place. Jaiden updates your ratings as you improve. By graduation you have documented proof of exactly what changed and how far you've come.",
+              image: 'atlas.png',
             },
           ].map((card, i) => {
-            // How many card-heights of scroll have passed this card’s entry point
+            // How many card-heights of scroll have passed this card's entry point
             const depth = Math.max(0, programProgress - i);
             // Scale down 5% per level of stack depth, floor at 0.78
             const scale = Math.max(0.78, 1 - depth * 0.05);
@@ -229,8 +225,8 @@ export default function Home() {
                   className="flex h-[500px] w-full max-w-[1156px] items-center overflow-hidden rounded-[12px] border border-white/10"
                   style={{
                     transform: `scale(${scale})`,
-                    transformOrigin: ‘center’,
-                    willChange: ‘transform’,
+                    transformOrigin: 'center',
+                    willChange: 'transform',
                   }}
                 >
                   {/* Text column */}
