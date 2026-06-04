@@ -317,12 +317,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Gradient bridge: black → cream */}
-        <div
-          className="w-full h-[180px] flex-shrink-0 pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, #0D0D0D 0%, #FBF6F2 100%)' }}
-        />
-
         <section id="pricing" ref={pricingSectionRef} className="relative flex w-full flex-col items-center gap-[20px] px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
             <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
