@@ -20,7 +20,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#0D0D0D]">
+    <div className="relative min-h-screen bg-[#FBF6F2]">
       <header className={`sticky top-0 z-50 flex h-[98px] w-full items-center justify-center backdrop-blur-[10px] transition-all duration-500 ${isDarkTheme ? 'bg-black/40 border-white/10' : 'bg-white/30 border-black/10'} border-b`}>
         <div className="flex w-full max-w-[1440px] items-center justify-between gap-[147px] px-[50px] pt-[20px] pb-[20px]">
           <div className="flex h-[58px] w-[50px] items-center justify-center">
@@ -57,7 +57,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1440px] flex-col items-center justify-center p-0">
+      <main className="flex w-full flex-col items-center">
 
         <section className="relative flex min-h-screen flex-col items-center justify-center gap-12 text-center bg-[#0D0D0D]">
           <div className="max-w-[874px]">
