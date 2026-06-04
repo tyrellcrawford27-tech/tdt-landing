@@ -71,7 +71,7 @@ export default function Home() {
         className="sticky top-0 z-50 flex h-[98px] w-full items-center justify-center backdrop-blur-[10px] border-b"
         style={{ ...navBgStyle, ...navBorderStyle }}
       >
-        <div className="relative flex w-full max-w-[1440px] items-center justify-between px-[50px] py-[20px]">
+        <div className="relative flex w-full max-w-[1440px] items-center justify-between px-4 py-4 lg:px-[50px] lg:py-[20px]">
           {/* Logo — left */}
           <div className="flex h-[58px] w-[50px] items-center justify-center">
             <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
@@ -79,10 +79,19 @@ export default function Home() {
 
           {/* Nav — absolutely centered against the full header width */}
           <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-[30px] text-[14px] tracking-[-0.02em]">
-            <a href="#coach" style={navLinkStyle('coach')}>The Coach</a>
-            <a href="#program" style={navLinkStyle('program')}>Program</a>
-            <a href="#pricing" style={navLinkStyle('pricing')}>Pricing</a>
-            <a href="#faq" style={navLinkStyle('faq')}>FAQ</a>
+            {(['coach','program','pricing','faq'] as const).map((id) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                style={navLinkStyle(id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+              >
+                {id === 'coach' ? 'The Coach' : id === 'program' ? 'Program' : id === 'pricing' ? 'Pricing' : 'FAQ'}
+              </a>
+            ))}
           </nav>
 
           {/* Right actions */}
