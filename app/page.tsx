@@ -5,47 +5,36 @@ import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
-  // 0 = fully dark theme, 1 = fully light theme
-  const [themeProgress, setThemeProgress] = useState(0);
-  const pricingSectionRef = useRef<HTMLDivElement>(null);
+  // 0 = dark, 1 = light — driven by how far you've scrolled through the transition zone
+  const [tp, setTp] = useState(0);
+  const transitionZoneRef = useRef<HTMLDivElement>(null);
   const programSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (!pricingSectionRef.current) return;
-      const rect = pricingSectionRef.current.getBoundingClientRect();
-      const wh = window.innerHeight;
-      // Transition window: pricing top travels from 90vh → 30vh of the viewport
-      const progress = Math.max(0, Math.min(1, (wh * 0.9 - rect.top) / (wh * 0.6)));
-      setThemeProgress(progress);
+    const onScroll = () => {
+      if (!transitionZoneRef.current) return;
+      const rect = transitionZoneRef.current.getBoundingClientRect();
+      // progress = 0 when zone top hits viewport top, 1 when zone bottom hits viewport top
+      const progress = Math.max(0, Math.min(1, -rect.top / rect.height));
+      setTp(progress);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const isDark = themeProgress < 0.5;
-
-  // Linearly interpolate a single channel
+  const isDark = tp < 0.5;
   const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
 
-  // Nav background: rgba(13,13,13,0.85) → rgba(251,246,242,0.92)
-  const navR = lerp(13, 251, themeProgress);
-  const navG = lerp(13, 246, themeProgress);
-  const navB = lerp(13, 242, themeProgress);
-  const navBgStyle = { backgroundColor: `rgba(${navR},${navG},${navB},0.88)` };
+  // Full-screen transition panel colour: #0D0D0D → #FBF6F2
+  const panelBg = `rgb(${lerp(13,251,tp)},${lerp(13,246,tp)},${lerp(13,242,tp)})`;
 
-  // Nav border: rgba(255,255,255,0.1) → rgba(26,15,10,0.1)
-  const borderR = lerp(255, 26, themeProgress);
-  const borderG = lerp(255, 15, themeProgress);
-  const borderBV = lerp(255, 10, themeProgress);
-  const navBorderStyle = { borderColor: `rgba(${borderR},${borderG},${borderBV},0.12)` };
-
-  // Nav text: rgba(255,255,255,0.6) → rgba(26,15,10,0.6)
-  const textR = lerp(255, 26, themeProgress);
-  const textG = lerp(255, 15, themeProgress);
-  const textBV = lerp(255, 10, themeProgress);
-  const navTextStyle = { color: `rgba(${textR},${textG},${textBV},0.6)` };
+  // Nav background: rgba(13,13,13,0.88) → rgba(251,246,242,0.88)
+  const navBgStyle = { backgroundColor: `rgba(${lerp(13,251,tp)},${lerp(13,246,tp)},${lerp(13,242,tp)},0.88)` };
+  // Nav border
+  const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.12)` };
+  // Nav text
+  const navTextStyle = { color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.6)` };
 
   return (
     <div className="relative min-h-screen bg-[#FBF6F2]">
@@ -351,7 +340,20 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="pricing" ref={pricingSectionRef} className="relative flex w-full flex-col items-center gap-[20px] px-[100px] py-[150px] bg-[#FBF6F2] text-black">
+        {/*
+          TRANSITION ZONE — 100vh of scroll travel.
+          The sticky inner panel fills the entire viewport and its background
+          interpolates from #0D0D0D → #FBF6F2 as you scroll through.
+          This drives both the full-screen visual morph AND the nav theme.
+        */}
+        <div ref={transitionZoneRef} className="relative w-full" style={{ height: '100vh' }}>
+          <div
+            className="sticky top-0 h-screen w-full"
+            style={{ backgroundColor: panelBg }}
+          />
+        </div>
+
+        <section id="pricing" className="relative flex w-full flex-col items-center gap-[20px] px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
             <div className="h-[6px] w-[6px] rounded-full bg-[rgba(184,78,44,0.6)]" />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(184,78,44,0.6)]">Pricing</span>
