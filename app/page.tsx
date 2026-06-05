@@ -166,9 +166,13 @@ export default function Home() {
       >
         <div className="relative flex w-full max-w-[1440px] items-center justify-between px-6 md:px-12 lg:px-[50px] py-3 lg:py-[20px]">
           {/* Logo */}
-          <div className="flex h-[40px] w-[35px] lg:h-[58px] lg:w-[50px] items-center justify-center">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex h-[40px] w-[35px] lg:h-[58px] lg:w-[50px] items-center justify-center"
+            aria-label="Back to top"
+          >
             <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
-          </div>
+          </button>
 
           {/* Desktop nav — absolutely centered */}
           <nav className="absolute left-1/2 -translate-x-1/2 hidden lg:flex items-center gap-[30px] text-[14px] tracking-[-0.02em]">
