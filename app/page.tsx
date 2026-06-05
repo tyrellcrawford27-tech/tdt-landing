@@ -106,13 +106,11 @@ export default function Home() {
           <a href="#login" className="text-white/60 text-[14px]">Log In</a>
           <a
             href="#book-demo"
-            className="w-full inline-flex h-[49px] items-center justify-center rounded-[33px] bg-[#B34929] text-[14px] font-medium text-[rgba(255,255,255,0.8)]"
-            style={{
-              backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%), #B34929",
-              boxShadow: "inset 0px 0px 0px 0.8px rgba(0,0,0,0.25), inset 0px 0px 5px 5px rgba(255,255,255,0.1)",
-            }}
+            className="group relative w-full inline-flex h-[49px] items-center justify-center overflow-hidden rounded-[33px] text-[14px] font-medium text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98]"
           >
-            Book Demo
+            <div className="absolute inset-0 rounded-[33px] pointer-events-none bg-[#B34929] transition-[filter,background-color] duration-200 ease-out group-hover:bg-[#C25433] group-hover:brightness-[1.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%)", backgroundBlendMode: "soft-light, normal", boxShadow: "rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset" }} />
+            <div className="absolute inset-0 rounded-[33px] pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)" }} />
+            <span className="relative">Book Demo</span>
           </a>
         </div>
       </div>
@@ -150,14 +148,11 @@ export default function Home() {
             <a href="#login" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Log In</a>
             <a
               href="#book-demo"
-              className="inline-flex h-[37px] items-center justify-center rounded-[103px] bg-[#B34929] px-[20px] text-[14px] font-medium text-[rgba(255,255,255,0.6)] transition hover:bg-[#C25433]"
-              style={{
-                backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%), #B34929",
-                backgroundBlendMode: "soft-light, normal",
-                boxShadow: "inset 0px 0px 0px 0.8px rgba(0,0,0,0.25), inset 0px 0px 5px 5px rgba(255,255,255,0.1), inset 0px 0px 3px 1px rgba(255,255,255,0.25), inset 0px 0px 4px 20px rgba(255,255,255,0.04)",
-              }}
+              className="group relative inline-flex h-[37px] items-center justify-center overflow-hidden rounded-[33px] px-[20px] text-[14px] font-medium text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98]"
             >
-              Book Demo
+              <div className="absolute inset-0 rounded-[33px] pointer-events-none bg-[#B34929] transition-[filter,background-color] duration-200 ease-out group-hover:bg-[#C25433] group-hover:brightness-[1.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%)", backgroundBlendMode: "soft-light, normal", boxShadow: "rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset" }} />
+              <div className="absolute inset-0 rounded-[33px] pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)" }} />
+              <span className="relative">Book Demo</span>
             </a>
           </div>
 
@@ -183,7 +178,7 @@ export default function Home() {
             <div className="inline-flex h-[24px] items-center justify-center rounded-full border border-[#B34929] bg-[rgba(179,73,41,0.15)] px-4 md:px-5 py-[5px] text-center text-[11px] md:text-[12px] font-normal tracking-[-0.02em] text-[rgba(179,73,41,0.7)]" style={{ boxShadow: "inset 0px 4px 6px rgba(255,255,255,0.09), inset 0px -4px 6px 1px rgba(179,73,41,0.25)" }}>
               COHORT 1 · SEPTEMBER 2026 · 8 SPOTS
             </div>
-            <h1 className="mt-6 md:mt-8 text-[32px] md:text-[48px] lg:text-[64px] font-bold leading-tight tracking-[-0.02em]">
+            <h1 className="mt-6 md:mt-8 text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-tight tracking-[-0.02em]">
               <span className="text-[rgba(255,255,255,0.8)]">Most of your development happens alone.</span>
               <span className="block text-[rgba(255,255,255,0.8)]">We make sure it counts.</span>
             </h1>
@@ -485,8 +480,10 @@ export default function Home() {
               90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
             </p>
 
-            <button className="w-full md:w-[139px] flex h-[44px] items-center justify-center rounded-[33px] bg-[#D7481D] px-[20px] text-[14px] font-normal leading-[17px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)] shadow-[inset_0px_0px_0px_0.8px_rgba(0,0,0,0.25),inset_0px_0px_5px_5px_rgba(255,255,255,0.1),inset_0px_0px_3px_1px_rgba(255,255,255,0.25),inset_0px_0px_4px_20px_rgba(255,255,255,0.04)]">
-              Apply for Cohort 1
+            <button className="group relative w-full md:w-auto inline-flex h-[49px] items-center justify-center overflow-hidden rounded-[33px] px-8 text-[16px] font-normal text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98]">
+              <div className="absolute inset-0 rounded-[33px] pointer-events-none bg-[#B34929] transition-[filter,background-color] duration-200 ease-out group-hover:bg-[#C25433] group-hover:brightness-[1.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%)", backgroundBlendMode: "soft-light, normal", boxShadow: "rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset" }} />
+              <div className="absolute inset-0 rounded-[33px] pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)" }} />
+              <span className="relative">Apply for Cohort 1</span>
             </button>
           </div>
         </section>
