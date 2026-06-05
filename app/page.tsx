@@ -120,13 +120,13 @@ export default function Home() {
               COHORT 1 · SEPTEMBER 2026 · 8 SPOTS
             </div>
             <h1 className="mt-8 text-[44px] font-bold leading-[53px] tracking-[-0.02em]">
-              <span style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.65) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              <span style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.72) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                 Most of your development happens alone.
               </span>
-              <span className="block text-[rgba(255,255,255,0.55)]">We make sure it counts.</span>
+              <span className="block" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.55) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>We make sure it counts.</span>
             </h1>
             <p className="mt-6 max-w-[668px] text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)] mx-auto">
-              Jaiden evaluates your specific game, identifies exactly what's holding you back, and documents your improvement with real proof over 4 months.
+              Jaiden studies your film, identifies exactly what's holding you back, and tracks your improvement with documented proof over 100 days.
             </p>
 
             <div className="mt-10">
