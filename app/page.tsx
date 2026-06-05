@@ -53,7 +53,7 @@ export default function Home() {
   const panelBg = `rgb(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)})`;
 
   // Nav background: rgba(0,0,0,0.96) → rgba(251,246,242,0.92)
-  const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.96 : 0.92})` };
+  const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 1 : 0.92})` };
   // Nav border
   const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.12)` };
   // Nav text (base — used for Log In and as fallback)
@@ -473,19 +473,19 @@ export default function Home() {
                 },
                 {
                   question: "How does this actually develop my game if I'm not training in person?",
-                  answer: "7 years developing serious players. Trained alongside athletes who went on to play professionally. Trusted by Canada Basketball's National Training Centre, York University, and Brampton City Prep. He watches your footage specifically and tells you exactly what's holding you back.",
+                  answer: "90% of your development happens alone. No one watching. No one correcting. This program changes that. Jaiden diagnoses exactly what's wrong, prescribes the specific work to fix it, and reviews your film to make sure every rep you take alone is actually making you better.",
                 },
                 {
                   question: "How much time does this require each week?",
-                  answer: "45-60 minutes of focused drill work daily on top of your existing training. Film submissions take 10-15 minutes. Reviews come back within 24 hours. Sessions are scheduled in advance. If you're serious about developing, it fits.",
+                  answer: "45 to 60 minutes of focused drill work daily on top of your existing training. Film submissions take 10 to 15 minutes. Reviews come back within 24 hours. Sessions are scheduled in advance. If you're serious about developing, it fits.",
                 },
                 {
                   question: "What if I'm not at the right level?",
-                  answer: "The program starts with a full diagnosis. Jaiden evaluates exactly where you are before anything begins. What's required isn't a certain level — it's that you show up and do the work.",
+                  answer: "The program starts with a full diagnosis. Jaiden evaluates exactly where you are before anything begins. What's required isn't a certain level. It's that you show up and do the work.",
                 },
                 {
                   question: "What if we invest and it doesn't work?",
-                  answer: "Results depend on the athlete doing the work. What's guaranteed is Jaiden's full attention on your specific game — every film reviewed, every session delivered, every score updated with a specific reason.",
+                  answer: "Results depend on the athlete doing the work. What's guaranteed is Jaiden's full attention on your specific game. Every film reviewed, every session delivered, every score updated with a specific reason.",
                 },
                 {
                   question: "What am I actually getting for $2,000?",
