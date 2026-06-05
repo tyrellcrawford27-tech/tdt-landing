@@ -4,6 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'spline-viewer': React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & { url?: string },
+        HTMLElement
+      >;
+    }
+  }
+}
+
 const NAV_LINKS = [
   { id: 'coach', label: 'The Coach' },
   { id: 'program', label: 'Program' },
@@ -17,9 +28,11 @@ export default function Home() {
   const [programProgress, setProgramProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [coachVisible, setCoachVisible] = useState(false);
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
   const cardsStartRef = useRef<HTMLDivElement>(null);
+  const coachContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const SECTIONS = ['coach', 'program', 'difference', 'pricing', 'faq'];
@@ -47,6 +60,25 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (document.querySelector('script[src*="spline-viewer"]')) return;
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@splinetool/viewer@1.12.96/build/spline-viewer.js';
+    s.type = 'module';
+    document.head.appendChild(s);
+  }, []);
+
+  useEffect(() => {
+    const el = coachContentRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setCoachVisible(true); observer.disconnect(); } },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     const onResize = () => { if (window.innerWidth >= 1024) setMenuOpen(false); };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -69,6 +101,18 @@ export default function Home() {
     transition: 'color 0.3s ease',
     fontWeight: activeSection === id ? '500' : '400',
   });
+
+  const fadeUp = (delay: number): React.CSSProperties => ({
+    opacity: coachVisible ? 1 : 0,
+    transform: coachVisible ? 'translateY(0px)' : 'translateY(18px)',
+    transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+  });
+
+  const signatureReveal: React.CSSProperties = {
+    opacity: coachVisible ? 1 : 0,
+    clipPath: coachVisible ? 'inset(0 0% 0 0)' : 'inset(0 102% 0 0)',
+    transition: 'opacity 0.4s ease 580ms, clip-path 1.2s cubic-bezier(0.4, 0, 0.15, 1) 520ms',
+  };
 
   return (
     <div className="relative min-h-screen bg-[#FBF6F2]">
@@ -212,23 +256,42 @@ export default function Home() {
           </div>
 
           <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center gap-[50px] lg:gap-[100px]">
-            <div className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
-              <div className="flex flex-col gap-[20px]">
-                <p className="text-[15px] md:text-[18px] font-bold leading-[22px] md:leading-[20px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
-                  Seven years. I've trained with some of the best this country has produced. I know the difference between someone who works hard and someone who actually gets better and most of the time it's not talent or effort. It's knowing exactly what to fix and having someone who won't let you look away from it.
+            <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
+              <div className="flex flex-col gap-[16px]">
+                <p style={fadeUp(0)} className="text-[15px] md:text-[18px] font-bold leading-[24px] md:leading-[26px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
+                  Seven years. I've trained with some of the{' '}
+                  <span className="text-white">best this country has produced.</span>
                 </p>
-                <p className="text-[20px] md:text-[24px] font-normal leading-[28px] md:leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Centralwell - Personal use', sans-serif" }}>
+                <p style={fadeUp(130)} className="text-[15px] md:text-[18px] font-bold leading-[24px] md:leading-[26px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
+                  I know the difference between someone who works hard and someone{' '}
+                  <span className="text-white">who actually gets better</span>
+                  {' '}and most of the time it's not talent or effort.
+                </p>
+                <p style={fadeUp(260)} className="text-[15px] md:text-[18px] font-bold leading-[24px] md:leading-[26px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
+                  It's knowing exactly what to fix and having someone{' '}
+                  <span className="text-white">who won't let you look away from it.</span>
+                </p>
+                <p className="text-[20px] md:text-[24px] font-normal leading-[28px] md:leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Centralwell - Personal use', sans-serif", ...signatureReveal }}>
                   - Jaiden Francais
                 </p>
               </div>
-              <div className="flex flex-col gap-[10px] text-left">
+              <div style={fadeUp(700)} className="flex flex-col gap-[12px] text-left">
                 <span className="text-[12px] font-normal leading-[14px] tracking-[-0.02em] text-[rgba(255,255,255,0.5)]">ATHLETES TRAINED FROM</span>
-                <div className="flex items-center gap-[30px]">
-                  <div className="h-[44px] w-[19px] rounded-full bg-white/20" />
-                  <div className="h-[43px] w-[32px] rounded-full bg-white/20 opacity-75" />
-                  <div className="h-[34px] w-[41px] rounded-full bg-white/20 opacity-75" />
-                  <div className="h-[40px] w-[40px] rounded-full bg-white/20 opacity-75" />
-                  <div className="h-[44px] w-[44px] rounded-full bg-white/20 opacity-75" />
+                <div className="flex items-center gap-[24px]">
+                  {[
+                    { src: '/nba.png', alt: 'NBA', h: 44 },
+                    { src: '/canada-basketball.png', alt: 'Canada Basketball', h: 48 },
+                    { src: '/york-university.png', alt: 'York University', h: 40 },
+                    { src: '/bcp.png', alt: 'Brampton City Prep', h: 42 },
+                  ].map(({ src, alt, h }, i) => (
+                    <img
+                      key={alt}
+                      src={src}
+                      alt={alt}
+                      style={{ height: h, width: 'auto', ...fadeUp(760 + i * 80) }}
+                      className="object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -460,20 +523,11 @@ export default function Home() {
               Your Membership
             </h2>
 
-            <div className="relative w-full rounded-[10px] bg-[#3D2218] p-6 md:p-0 md:h-[336px]">
-              <div className="flex justify-between text-[13px] font-normal leading-[16px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] md:absolute md:left-[25px] md:top-[25px]">
-                <span>Think Different Training</span>
-                <span className="text-[10px] md:hidden">COHORT 1 · 8 SPOTS</span>
-              </div>
-              <div className="hidden md:block absolute right-[25px] top-[25px] text-[10px] font-normal leading-[12px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]">
-                COHORT 1 · 8 SPOTS
-              </div>
-              <div className="flex flex-col items-center justify-center py-8 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:py-0 text-center">
-                <h3 className="text-[60px] md:text-[73px] font-medium leading-tight md:leading-[88px] tracking-[-0.02em] text-white">$2,000</h3>
-                <p className="text-[10px] font-medium leading-[12px] tracking-[-0.01em] text-[rgba(255,255,255,0.3)]">
-                  Your own coach. Four months. Eight athletes.
-                </p>
-              </div>
+            <div className="relative w-full rounded-[10px] overflow-hidden" style={{ height: '440px' }}>
+              <spline-viewer
+                url="https://prod.spline.design/UAVGmShPrQNdRCoO/scene.splinecode"
+                style={{ width: '100%', height: '100%', display: 'block' }}
+              />
             </div>
 
             <p className="w-full text-center text-[14px] font-normal leading-[20px] tracking-[-0.02em] text-black">
