@@ -71,7 +71,7 @@ export default function Home() {
   });
 
   return (
-    <div className="relative min-h-screen bg-[#FBF6F2] overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#FBF6F2]">
 
       {/* ── Mobile full-screen menu overlay ── */}
       <div
@@ -183,7 +183,7 @@ export default function Home() {
             <div className="inline-flex h-[24px] items-center justify-center rounded-full border border-[#B34929] bg-[rgba(179,73,41,0.15)] px-4 md:px-5 py-[5px] text-center text-[11px] md:text-[12px] font-normal tracking-[-0.02em] text-[rgba(179,73,41,0.7)]" style={{ boxShadow: "inset 0px 4px 6px rgba(255,255,255,0.09), inset 0px -4px 6px 1px rgba(179,73,41,0.25)" }}>
               COHORT 1 · SEPTEMBER 2026 · 8 SPOTS
             </div>
-            <h1 className="mt-6 md:mt-8 text-[32px] md:text-[48px] lg:text-[72px] font-bold leading-tight tracking-[-0.02em]">
+            <h1 className="mt-6 md:mt-8 text-[32px] md:text-[48px] lg:text-[64px] font-bold leading-tight tracking-[-0.02em]">
               <span className="text-[rgba(255,255,255,0.8)]">Most of your development happens alone.</span>
               <span className="block text-[rgba(255,255,255,0.8)]">We make sure it counts.</span>
             </h1>
@@ -305,7 +305,7 @@ export default function Home() {
             return (
               <div
                 key={card.label}
-                className="relative py-6 md:sticky md:top-0 md:h-screen md:py-0 flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
+                className="sticky top-0 h-screen flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
                 style={{ zIndex: i + 1 }}
               >
                 <div
@@ -461,7 +461,7 @@ export default function Home() {
           </div>
 
           <div className="flex w-full max-w-[532px] flex-col items-center gap-[20px]">
-            <h2 className="text-center text-[40px] md:text-[50px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
+            <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Your Membership
             </h2>
 
@@ -499,7 +499,7 @@ export default function Home() {
           </div>
 
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[10px]">
-            <h2 className="w-full max-w-[634px] text-center text-[32px] md:text-[44px] lg:text-[50px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
+            <h2 className="w-full max-w-[634px] text-center text-[28px] md:text-[40px] lg:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Everything you need to know before applying.
             </h2>
 
