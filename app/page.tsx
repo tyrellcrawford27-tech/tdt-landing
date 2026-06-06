@@ -38,7 +38,7 @@ export default function Home() {
   useEffect(() => {
     const SECTIONS = ['coach', 'program', 'difference', 'pricing', 'faq'];
     const onScroll = () => {
-      setScrolled(window.scrollY > 60);
+      setScrolled(prev => window.scrollY > (prev ? 40 : 80));
       if (transitionZoneRef.current) {
         const r = transitionZoneRef.current.getBoundingClientRect();
         setTp(Math.max(0, Math.min(1, -r.top / r.height)));
@@ -117,7 +117,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#FBF6F2]">
+    <div className="relative min-h-screen bg-[#000000]">
 
       {/* ── Mobile full-screen menu overlay ── */}
       <div
@@ -162,18 +162,16 @@ export default function Home() {
       </div>
 
       {/* ── Header ── */}
-      <header
-        className={`sticky top-0 z-50 flex w-full items-center justify-center transition-[height] duration-500 ${scrolled ? 'h-[72px]' : 'h-[64px] lg:h-[98px]'}`}
-      >
+      <header className="sticky top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center">
         <div
-          className={`relative flex items-center justify-between backdrop-blur-[12px] border ${!scrolled ? 'py-3 lg:py-[20px] px-6 md:px-12 lg:px-[50px]' : ''}`}
+          className={`relative flex items-center justify-between backdrop-blur-[14px] ${scrolled ? 'border' : 'border-b'} ${!scrolled ? 'py-3 lg:py-[20px] px-6 md:px-12 lg:px-[50px]' : ''}`}
           style={{
             width: scrolled ? 'calc(100% - 40px)' : '100%',
-            maxWidth: scrolled ? '960px' : '1440px',
+            maxWidth: scrolled ? '960px' : '100%',
             height: scrolled ? '52px' : '100%',
             ...(scrolled ? { paddingLeft: '20px', paddingRight: '20px' } : {}),
             borderRadius: scrolled ? '9999px' : '0px',
-            backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.96 : 0.92})`,
+            backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.65 : 0.88})`,
             borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${scrolled ? 0.18 : 0.12})`,
             boxShadow: scrolled ? `0 8px 32px rgba(0,0,0,${tp < 0.5 ? 0.25 : 0.08})` : 'none',
             transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1), max-width 0.5s cubic-bezier(0.4,0,0.2,1), height 0.5s cubic-bezier(0.4,0,0.2,1), border-radius 0.5s cubic-bezier(0.4,0,0.2,1), padding 0.5s cubic-bezier(0.4,0,0.2,1), box-shadow 0.5s cubic-bezier(0.4,0,0.2,1)',
@@ -182,13 +180,10 @@ export default function Home() {
           {/* Logo */}
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex items-center justify-center transition-all duration-500"
-            style={{ height: scrolled ? '32px' : undefined, width: scrolled ? '28px' : undefined }}
+            className={`flex items-center justify-center flex-shrink-0 transition-all duration-500 overflow-hidden ${scrolled ? 'h-[36px] w-[32px]' : 'h-[46px] w-[40px] lg:h-[58px] lg:w-[50px]'}`}
             aria-label="Back to top"
           >
-            <div className={`transition-all duration-500 ${scrolled ? 'h-[32px] w-[28px]' : 'h-[40px] w-[35px] lg:h-[58px] lg:w-[50px]'}`}>
-              <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
-            </div>
+            <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
           </button>
 
           {/* Desktop nav — absolutely centered */}
