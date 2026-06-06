@@ -28,6 +28,7 @@ export default function Home() {
   const [programProgress, setProgramProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [coachVisible, setCoachVisible] = useState(false);
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,7 @@ export default function Home() {
   useEffect(() => {
     const SECTIONS = ['coach', 'program', 'difference', 'pricing', 'faq'];
     const onScroll = () => {
+      setScrolled(window.scrollY > 60);
       if (transitionZoneRef.current) {
         const r = transitionZoneRef.current.getBoundingClientRect();
         setTp(Math.max(0, Math.min(1, -r.top / r.height)));
@@ -161,17 +163,32 @@ export default function Home() {
 
       {/* ── Header ── */}
       <header
-        className="sticky top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center backdrop-blur-[10px] border-b"
-        style={{ ...navBgStyle, ...navBorderStyle }}
+        className={`sticky top-0 z-50 flex w-full items-center justify-center transition-[height] duration-500 ${scrolled ? 'h-[72px]' : 'h-[64px] lg:h-[98px]'}`}
       >
-        <div className="relative flex w-full max-w-[1440px] items-center justify-between px-6 md:px-12 lg:px-[50px] py-3 lg:py-[20px]">
+        <div
+          className={`relative flex items-center justify-between backdrop-blur-[12px] border ${!scrolled ? 'py-3 lg:py-[20px] px-6 md:px-12 lg:px-[50px]' : ''}`}
+          style={{
+            width: scrolled ? 'calc(100% - 40px)' : '100%',
+            maxWidth: scrolled ? '960px' : '1440px',
+            height: scrolled ? '52px' : '100%',
+            ...(scrolled ? { paddingLeft: '20px', paddingRight: '20px' } : {}),
+            borderRadius: scrolled ? '9999px' : '0px',
+            backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.96 : 0.92})`,
+            borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${scrolled ? 0.18 : 0.12})`,
+            boxShadow: scrolled ? `0 8px 32px rgba(0,0,0,${tp < 0.5 ? 0.25 : 0.08})` : 'none',
+            transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1), max-width 0.5s cubic-bezier(0.4,0,0.2,1), height 0.5s cubic-bezier(0.4,0,0.2,1), border-radius 0.5s cubic-bezier(0.4,0,0.2,1), padding 0.5s cubic-bezier(0.4,0,0.2,1), box-shadow 0.5s cubic-bezier(0.4,0,0.2,1)',
+          }}
+        >
           {/* Logo */}
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex h-[40px] w-[35px] lg:h-[58px] lg:w-[50px] items-center justify-center"
+            className="flex items-center justify-center transition-all duration-500"
+            style={{ height: scrolled ? '32px' : undefined, width: scrolled ? '28px' : undefined }}
             aria-label="Back to top"
           >
-            <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
+            <div className={`transition-all duration-500 ${scrolled ? 'h-[32px] w-[28px]' : 'h-[40px] w-[35px] lg:h-[58px] lg:w-[50px]'}`}>
+              <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
+            </div>
           </button>
 
           {/* Desktop nav — absolutely centered */}
@@ -253,7 +270,7 @@ export default function Home() {
         </section>
 
         {/* ── Coach ── */}
-        <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[80px] lg:py-[150px] bg-[#000000]">
+        <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[80px] bg-[#000000]">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
             <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Coach</span>
@@ -320,7 +337,7 @@ export default function Home() {
 
         {/* ── Program ── */}
         <section id="program" className="relative w-full bg-[#000000]">
-          <div className="flex flex-col items-center gap-[20px] px-6 md:px-12 lg:px-[100px] pt-[80px] lg:pt-[150px] pb-[40px] lg:pb-[80px]">
+          <div className="flex flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[40px]">
             <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
               <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
               <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
@@ -400,7 +417,7 @@ export default function Home() {
         </section>
 
         {/* ── Difference ── */}
-        <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[80px] lg:pt-[150px] pb-[40px] lg:pb-[60px] bg-[#000000]">
+        <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[60px] bg-[#000000]">
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[20px]">
             <h3 className="text-center text-[18px] md:text-[20px] font-medium leading-[24px] tracking-[-0.02em]" style={{ color: `rgba(255,255,255,${activeSection === 'difference' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>
               What makes this{' '}
@@ -516,7 +533,7 @@ export default function Home() {
         </div>
 
         {/* ── Pricing ── */}
-        <section id="pricing" className="relative flex w-full flex-col items-center gap-[20px] px-6 md:px-12 lg:px-[100px] py-[80px] lg:py-[150px] bg-[#FBF6F2] text-black">
+        <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[80px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
             <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>Pricing</span>
@@ -547,7 +564,7 @@ export default function Home() {
         </section>
 
         {/* ── FAQ ── */}
-        <section id="faq" className="relative flex w-full flex-col items-center gap-[20px] px-6 md:px-12 lg:px-[100px] py-[80px] lg:py-[150px] bg-[#FBF6F2] text-black">
+        <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[80px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
             <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>FAQ</span>
