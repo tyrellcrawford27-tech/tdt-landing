@@ -315,86 +315,158 @@ export default function Home() {
         </section>
 
         {/* ── Program ── */}
-        <section id="program" className="relative w-full bg-[#000000]">
+        {(() => {
+          const STEPS = [
+            { slug: 'diagnosis',       label: 'Diagnosis',       num: '01', title: 'Before anything unlocks, Jaiden needs to see you.',       body: 'Eight drills. One take. No retakes. Film yourself cold and submit. Jaiden reviews everything before your program begins. This is where your journey starts.',                                                                                                           image: 'diagnosis.png'       },
+            { slug: 'drill-library',   label: 'Drill Library',   num: '02', title: 'Your prescription. Built from your weaknesses.',           body: 'After Jaiden evaluates your game, your drill library is built around exactly what he finds. No generic workouts. Every rep targets something specific he identified in you.',                                                                          image: 'drill-library.png'   },
+            { slug: 'film-submission', label: 'Film Submission',  num: '03', title: 'Film it cold. Upload it raw.',                             body: 'No preparation needed. Film your drill in one take and upload it directly to Jaiden. Tell him what to focus on; he watches everything and tells you exactly what he sees.',                                                                    image: 'film-submission.png' },
+            { slug: 'film-study',      label: 'Film Study',       num: '04', title: 'Jaiden watches every second.',                             body: 'Frame by frame, he marks exactly what needs to change and records his voice at the specific moments that matter to your game.',                                                                                                           image: 'film-study.png'      },
+            { slug: 'atlas',           label: 'Atlas',            num: '05', title: 'Your growth, documented and undeniable.',                  body: "Every annotation, every drill, every session tracked in one place. Jaiden updates your ratings as you improve. By graduation you have documented proof of exactly what changed and how far you've come.",                               image: 'atlas.png'           },
+          ];
+          const activeStep = Math.min(STEPS.length - 1, Math.max(0, Math.floor(programProgress)));
 
-          <div ref={cardsStartRef} />
+          return (
+            <section id="program" className="relative w-full bg-[#000000]">
+              {/* Tall scroll container — one screen per step */}
+              <div style={{ height: `${STEPS.length * 100}vh` }}>
 
-          {[
-            {
-              label: '01 · Diagnosis',
-              title: 'Before anything unlocks, Jaiden needs to see you.',
-              body: 'Eight drills. One take. No retakes. Film yourself cold and submit. Jaiden reviews everything before your program begins. This is where your journey starts.',
-              image: 'diagnosis.png',
-            },
-            {
-              label: '02 · Drill Library',
-              title: 'Your prescription. Built from your weaknesses.',
-              body: 'After Jaiden evaluates your game, your drill library is built around exactly what he finds. No generic workouts. Every rep targets something specific he identified in you.',
-              image: 'drill-library.png',
-            },
-            {
-              label: '03 · Film Submission',
-              title: 'Film it cold. Upload it raw.',
-              body: 'No preparation needed. Film your drill in one take and upload it directly to Jaiden. Tell him what to focus on; he watches everything and tells you exactly what he sees.',
-              image: 'film-submission.png',
-            },
-            {
-              label: '04 · Film Study',
-              title: 'Jaiden watches every second.',
-              body: 'Frame by frame, he marks exactly what needs to change and records his voice at the specific moments that matter to your game.',
-              image: 'film-study.png',
-            },
-            {
-              label: '05 · Atlas',
-              title: 'Your growth, documented and undeniable.',
-              body: "Every annotation, every drill, every session tracked in one place. Jaiden updates your ratings as you improve. By graduation you have documented proof of exactly what changed and how far you've come.",
-              image: 'atlas.png',
-            },
-          ].map((card, i) => {
-            const depth = Math.max(0, programProgress - i);
-            const scale = Math.max(0.78, 1 - depth * 0.05);
+                <div ref={cardsStartRef} />
 
-            return (
-              <div
-                key={card.label}
-                className="sticky top-0 h-screen flex flex-col items-center justify-center gap-[40px] px-6 md:px-12 lg:px-[100px]"
-                style={{ zIndex: i + 1 }}
-              >
-                {/* Pill — only shown on first card */}
-                {i === 0 && (
-                  <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
-                    <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
-                    <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
+                {/* Single sticky viewport */}
+                <div className="sticky top-0 h-screen flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
+
+                  {/* Watermark step number */}
+                  <div aria-hidden="true" className="pointer-events-none select-none absolute inset-0 flex items-center overflow-hidden">
+                    {STEPS.map((s, i) => (
+                      <span
+                        key={s.slug}
+                        className="absolute font-black leading-none text-white"
+                        style={{
+                          fontSize: 'clamp(160px, 26vw, 380px)',
+                          letterSpacing: '-0.04em',
+                          left: '-0.02em',
+                          opacity: activeStep === i ? 0.045 : 0,
+                          transition: 'opacity 0.6s ease',
+                        }}
+                      >
+                        {s.num}
+                      </span>
+                    ))}
                   </div>
-                )}
-                <div
-                  className="flex flex-col md:flex-row w-full max-w-[1156px] overflow-hidden rounded-[12px] border border-white/10"
-                  style={{
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'center',
-                    willChange: 'transform',
-                  }}
-                >
-                  <div className="flex w-full md:w-[460px] md:flex-shrink-0 flex-col justify-center gap-[20px] px-[24px] md:px-[50px] py-[28px] md:py-[40px] bg-[#3D2218]">
-                    <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[0.02em] text-[rgba(255,255,255,0.8)]">{card.label}</span>
-                    <div className="flex flex-col gap-[10px]">
-                      <h3 className="text-[18px] md:text-[20px] font-medium leading-[22px] md:leading-[24px] tracking-[0.02em] text-white">{card.title}</h3>
-                      <p className="text-[14px] md:text-[16px] font-normal leading-[20px] md:leading-[22px] tracking-[0.02em] text-[rgba(255,255,255,0.7)]">{card.body}</p>
+
+                  {/* Header row */}
+                  <div className="relative z-10 flex items-center justify-between pt-[36px] pb-[44px] flex-shrink-0">
+                    <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
+                      <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
+                      <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
                     </div>
+                    <span className="text-[12px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {STEPS[activeStep].num} <span className="text-white/12">/ 05</span>
+                    </span>
                   </div>
-                  <div className="flex h-[180px] md:h-[500px] flex-1 items-center justify-center bg-[#1E0F09] p-[16px] md:p-[20px] shadow-[inset_-2px_0px_10px_#000000]">
-                    <div
-                      className="h-full w-full rounded-[8px] bg-[rgba(255,255,255,0.04)] bg-cover bg-center"
-                      style={{ backgroundImage: `url(/${card.image})` }}
-                    />
+
+                  {/* Main content */}
+                  <div className="relative z-10 flex flex-1 items-center gap-[60px] lg:gap-[80px] min-h-0">
+
+                    {/* Left — animated text */}
+                    <div className="relative w-full md:w-[42%] lg:w-[38%] flex-shrink-0 h-full flex items-center">
+                      {STEPS.map((s, i) => (
+                        <div
+                          key={s.slug}
+                          className="absolute inset-0 flex flex-col justify-center gap-[18px]"
+                          style={{
+                            opacity:   activeStep === i ? 1 : 0,
+                            transform: `translateY(${activeStep === i ? 0 : activeStep > i ? -20 : 20}px)`,
+                            transition: 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)',
+                            pointerEvents: activeStep === i ? 'auto' : 'none',
+                          }}
+                        >
+                          <span className="text-[11px] font-semibold tracking-[0.14em] uppercase text-[rgba(179,73,41,0.85)]">
+                            {s.label}
+                          </span>
+                          <h2 className="text-[28px] md:text-[34px] lg:text-[40px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
+                            {s.title}
+                          </h2>
+                          <p className="text-[14px] md:text-[15px] font-normal leading-[26px] text-white/50 max-w-[400px]">
+                            {s.body}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Right — persistent UI frame */}
+                    <div className="hidden md:flex flex-1 items-center justify-end h-full py-[16px]">
+                      {/* Ambient glow behind frame */}
+                      <div className="relative w-full" style={{ maxHeight: '100%', aspectRatio: '16 / 10' }}>
+                        <div
+                          className="absolute inset-0 rounded-[24px] pointer-events-none"
+                          style={{ background: 'radial-gradient(ellipse at 50% 110%, rgba(179,73,41,0.18) 0%, transparent 65%)' }}
+                        />
+                        {/* Frame */}
+                        <div
+                          className="relative w-full h-full overflow-hidden rounded-[16px]"
+                          style={{
+                            background: '#0c0c0c',
+                            border: '1px solid rgba(255,255,255,0.07)',
+                            boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 100px rgba(0,0,0,0.65), 0 8px 32px rgba(0,0,0,0.4)',
+                          }}
+                        >
+                          {/* Browser chrome */}
+                          <div className="h-[34px] flex items-center px-[14px] gap-[6px] flex-shrink-0" style={{ background: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="w-[9px] h-[9px] rounded-full bg-[rgba(255,255,255,0.09)]" />
+                            <div className="w-[9px] h-[9px] rounded-full bg-[rgba(255,255,255,0.06)]" />
+                            <div className="w-[9px] h-[9px] rounded-full bg-[rgba(255,255,255,0.06)]" />
+                            <div className="ml-[10px] flex-1 h-[18px] rounded-[4px] flex items-center px-[8px]" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                              <span className="text-[10px] text-white/18">thinkdifferenttraining.app</span>
+                            </div>
+                          </div>
+                          {/* Screenshot layers */}
+                          <div className="relative" style={{ height: 'calc(100% - 34px)' }}>
+                            {STEPS.map((s, i) => (
+                              <div
+                                key={s.slug}
+                                className="absolute inset-0 bg-cover bg-top"
+                                style={{
+                                  backgroundImage: `url(/${s.image})`,
+                                  backgroundColor: 'rgba(255,255,255,0.025)',
+                                  opacity:   activeStep === i ? 1 : 0,
+                                  transform: `scale(${activeStep === i ? 1 : 1.025})`,
+                                  transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
+                                }}
+                              />
+                            ))}
+                            {/* Bottom fade so screenshot bleeds into darkness */}
+                            <div className="absolute bottom-0 left-0 right-0 h-[30%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.8))' }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
+
+                  {/* Bottom — step progress */}
+                  <div className="relative z-10 flex items-center gap-[5px] pb-[36px] pt-[28px] flex-shrink-0">
+                    {STEPS.map((s, i) => (
+                      <div key={s.slug} className="flex items-center gap-[5px]" style={{ flex: activeStep === i ? 4 : 1, transition: 'flex 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
+                        <div
+                          className="h-[2px] w-full rounded-full"
+                          style={{
+                            background: i < activeStep ? 'rgba(179,73,41,0.35)' : i === activeStep ? '#B34929' : 'rgba(255,255,255,0.08)',
+                            transition: 'background 0.4s ease',
+                          }}
+                        />
+                        {activeStep === i && (
+                          <span className="text-[10px] font-medium text-[rgba(179,73,41,0.7)] tracking-[0.08em] whitespace-nowrap">{s.label.toUpperCase()}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
                 </div>
               </div>
-            );
-          })}
-
-          <div className="h-[20vh] md:h-[60vh]" />
-        </section>
+            </section>
+          );
+        })()}
 
         {/* ── Difference ── */}
         <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
