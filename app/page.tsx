@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
+import { FilmGrain } from "@/components/FilmGrain";
+import { CTAButton } from "@/components/CTAButton";
 
 declare global {
   namespace JSX {
@@ -119,6 +121,9 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#000000]">
 
+      {/* ── Film grain overlay ── */}
+      <FilmGrain />
+
       {/* ── Mobile full-screen menu overlay ── */}
       <div
         className={`fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center lg:hidden transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
@@ -141,7 +146,7 @@ export default function Home() {
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
-                setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 10, behavior: 'smooth' }); }, 150);
               }}
             >
               {label}
@@ -150,14 +155,9 @@ export default function Home() {
         </nav>
         <div className="absolute bottom-10 flex flex-col items-center gap-4 w-full px-6">
           <a href="#login" className="text-white/60 text-[14px]">Log In</a>
-          <a
-            href="#book-demo"
-            className="group relative w-full inline-flex h-[49px] items-center justify-center overflow-hidden rounded-[33px] text-[14px] font-medium text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98]"
-          >
-            <div className="absolute inset-0 rounded-[33px] pointer-events-none bg-[#B34929] transition-[filter,background-color] duration-200 ease-out group-hover:bg-[#C25433] group-hover:brightness-[1.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%)", backgroundBlendMode: "soft-light, normal", boxShadow: "rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset" }} />
-            <div className="absolute inset-0 rounded-[33px] pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)" }} />
-            <span className="relative">Book Demo</span>
-          </a>
+          <CTAButton href="#book-demo" className="w-full h-[42px] text-[14px]">
+            Book Demo
+          </CTAButton>
         </div>
       </div>
 
@@ -195,7 +195,7 @@ export default function Home() {
                 style={navLinkStyle(id)}
                 onClick={(e) => {
                   e.preventDefault();
-                  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 10, behavior: 'smooth' });
                 }}
               >
                 {label}
@@ -206,14 +206,9 @@ export default function Home() {
           {/* Desktop right actions */}
           <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
             <a href="#login" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Log In</a>
-            <a
-              href="#book-demo"
-              className="group relative inline-flex h-[37px] items-center justify-center overflow-hidden rounded-[33px] px-[20px] text-[14px] font-medium text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98]"
-            >
-              <div className="absolute inset-0 rounded-[33px] pointer-events-none bg-[#B34929] transition-[filter,background-color] duration-200 ease-out group-hover:bg-[#C25433] group-hover:brightness-[1.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%)", backgroundBlendMode: "soft-light, normal", boxShadow: "rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset" }} />
-              <div className="absolute inset-0 rounded-[33px] pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)" }} />
-              <span className="relative">Book Demo</span>
-            </a>
+            <CTAButton href="#book-demo" className="h-[37px] px-[20px] text-[14px]">
+              Book Demo
+            </CTAButton>
           </div>
 
           {/* Mobile hamburger */}
@@ -246,26 +241,15 @@ export default function Home() {
               Jaiden studies your film, identifies exactly what's holding you back, and tracks your improvement with documented proof over 100 days.
             </p>
             <div className="mt-8 md:mt-10 flex justify-center">
-              <a
-                href="#apply"
-                className="group relative inline-flex w-full md:w-auto h-[49px] items-center justify-center overflow-hidden rounded-[33px] px-8 text-[16px] leading-[19px] font-normal text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98]"
-              >
-                <div className="absolute inset-0 rounded-[33px] pointer-events-none bg-[#B34929] transition-[filter,background-color] duration-200 ease-out group-hover:bg-[#C25433] group-hover:brightness-[1.06]" style={{
-                  backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%)",
-                  backgroundBlendMode: "soft-light, normal",
-                  boxShadow: "rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset",
-                }} />
-                <div className="absolute inset-0 rounded-[33px] pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{
-                  background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)",
-                }} />
-                <span className="relative">Apply for Cohort 1</span>
-              </a>
+              <CTAButton href="#apply" className="w-full md:w-auto h-[42px] px-8 text-[16px] leading-[19px]">
+                Apply for Cohort 1
+              </CTAButton>
             </div>
           </div>
         </section>
 
         {/* ── Coach ── */}
-        <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[80px] bg-[#000000]">
+        <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
             <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Coach</span>
@@ -332,12 +316,6 @@ export default function Home() {
 
         {/* ── Program ── */}
         <section id="program" className="relative w-full bg-[#000000]">
-          <div className="flex flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[40px]">
-            <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
-              <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
-              <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
-            </div>
-          </div>
 
           <div ref={cardsStartRef} />
 
@@ -379,9 +357,16 @@ export default function Home() {
             return (
               <div
                 key={card.label}
-                className="sticky top-0 h-screen flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
+                className="sticky top-0 h-screen flex flex-col items-center justify-center gap-[40px] px-6 md:px-12 lg:px-[100px]"
                 style={{ zIndex: i + 1 }}
               >
+                {/* Pill — only shown on first card */}
+                {i === 0 && (
+                  <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
+                    <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
+                    <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
+                  </div>
+                )}
                 <div
                   className="flex flex-col md:flex-row w-full max-w-[1156px] overflow-hidden rounded-[12px] border border-white/10"
                   style={{
@@ -412,7 +397,7 @@ export default function Home() {
         </section>
 
         {/* ── Difference ── */}
-        <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[60px] bg-[#000000]">
+        <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[20px]">
             <h3 className="text-center text-[18px] md:text-[20px] font-medium leading-[24px] tracking-[-0.02em]" style={{ color: `rgba(255,255,255,${activeSection === 'difference' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>
               What makes this{' '}
@@ -528,7 +513,7 @@ export default function Home() {
         </div>
 
         {/* ── Pricing ── */}
-        <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[80px] bg-[#FBF6F2] text-black">
+        <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
             <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>Pricing</span>
@@ -550,16 +535,14 @@ export default function Home() {
               90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
             </p>
 
-            <button className="group relative w-full md:w-auto inline-flex h-[49px] items-center justify-center overflow-hidden rounded-[33px] px-8 text-[16px] font-normal text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98]">
-              <div className="absolute inset-0 rounded-[33px] pointer-events-none bg-[#B34929] transition-[filter,background-color] duration-200 ease-out group-hover:bg-[#C25433] group-hover:brightness-[1.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50.18%)", backgroundBlendMode: "soft-light, normal", boxShadow: "rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset" }} />
-              <div className="absolute inset-0 rounded-[33px] pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)" }} />
-              <span className="relative">Apply for Cohort 1</span>
-            </button>
+            <CTAButton className="w-full md:w-auto h-[42px] px-8 text-[16px]">
+              Apply for Cohort 1
+            </CTAButton>
           </div>
         </section>
 
         {/* ── FAQ ── */}
-        <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[80px] bg-[#FBF6F2] text-black">
+        <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
             <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>FAQ</span>
@@ -639,12 +622,10 @@ export default function Home() {
         </section>
 
         {/* ── Footer ── */}
-        <section className="w-full flex justify-center bg-[#FBF6F2] text-black">
-          <div className="w-full max-w-[1356px] flex flex-col justify-center items-center px-6 md:px-12 lg:px-[100px] py-[40px] overflow-visible">
-            <div className="w-full max-w-[1156px] flex flex-col justify-center items-center gap-[10px] p-[20px] overflow-visible">
-              <FooterText />
-            </div>
-            <div className="w-full max-w-[1156px] flex flex-col md:flex-row items-center gap-3 md:gap-[10px] p-[10px]">
+        <section className="w-full bg-[#FBF6F2] text-black">
+          <div className="w-full px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[40px]">
+            <FooterText />
+            <div className="flex flex-col md:flex-row items-center gap-3 md:gap-[10px] pt-[10px]">
               <div className="flex-1 text-center md:text-left">
                 <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)]">
                   © 2026 Think Different Training. All rights reserved.
