@@ -354,13 +354,13 @@ export default function Home() {
                     ))}
                   </div>
 
-                  {/* Header row */}
-                  <div className="relative z-10 flex items-center justify-between pt-[36px] pb-[44px] flex-shrink-0">
+                  {/* Header row — pill centered, counter pinned right */}
+                  <div className="relative z-10 flex items-center justify-center pt-[36px] pb-[44px] flex-shrink-0">
                     <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
                       <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
                       <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
                     </div>
-                    <span className="text-[12px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    <span className="absolute right-0 text-[12px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                       {STEPS[activeStep].num} <span className="text-white/12">/ 05</span>
                     </span>
                   </div>
