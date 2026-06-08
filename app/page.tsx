@@ -469,115 +469,156 @@ export default function Home() {
         })()}
 
         {/* ── Difference ── */}
-        <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
-          <div className="flex w-full max-w-[1156px] flex-col items-center gap-[20px]">
-            <h3 className="text-center text-[18px] md:text-[20px] font-medium leading-[24px] tracking-[-0.02em]" style={{ color: `rgba(255,255,255,${activeSection === 'difference' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>
-              What makes this{' '}
-              <span style={{ color: `rgba(179,73,41,${activeSection === 'difference' ? 1 : 0.6})`, transition: 'color 0.4s ease' }} className="italic">different</span>
-            </h3>
-            <h2 className="w-full max-w-[586px] text-center text-[22px] md:text-[26px] font-normal leading-[28px] md:leading-[31px] tracking-[-0.02em] text-white">
-              Not your $29.99/month course. This is what it looks like when a coach actually watches your game.
-            </h2>
-          </div>
+        {(() => {
+          const ROWS = [
+            {
+              slug: 'stand',
+              topic: 'Knowing where you stand',
+              tdt: 'Honest scores across every dimension of your game before day one',
+              others: 'Guessing based on how practice felt',
+            },
+            {
+              slug: 'alone',
+              topic: 'What to work on alone',
+              tdt: 'Drills prescribed to exactly what Jaiden finds in your game',
+              others: 'Generic content or whatever your coach mentioned last session',
+            },
+            {
+              slug: 'feedback',
+              topic: <>Feedback on <em>your</em> work</>,
+              tdt: "Jaiden watches every submission frame by frame and tells you what's changing",
+              others: 'No one watching. No one correcting.',
+            },
+            {
+              slug: 'proof',
+              topic: 'Proof your improving',
+              tdt: 'Tracked scores, annotated footage, documented from day one to graduation',
+              others: 'A feeling. Maybe a compliment.',
+            },
+          ];
 
-          {/* Mobile/tablet: stacked feature cards */}
-          <div className="flex lg:hidden w-full max-w-[700px] flex-col gap-3">
-            {[
-              { topic: 'Basketball drills', tdt: 'Based on what Jaiden specifically finds in your game', others: 'Browsed by yourself, unsure what you really need' },
-              { topic: 'Personal film review', tdt: 'Jaiden watches every clip, Apple Pencil annotations frame by frame', others: null },
-              { topic: 'Individual focus', tdt: "8 athletes, Jaiden's full attention on you", others: 'Hundreds to thousands of members' },
-              { topic: 'Documented growth', tdt: 'Tracked scores, annotated footage, before and after proof', others: null },
-              { topic: 'Mindset module', tdt: 'Dedicated kobe mindset module built to fix how you think about your game', others: 'Generic motivational content' },
-            ].map((row) => (
-              <div key={row.topic} className="overflow-hidden rounded-[12px] border border-[#333]">
-                <div className="bg-[#1B1B1B] px-4 py-3 text-[11px] font-medium text-white/50 tracking-[0.06em] uppercase">{row.topic}</div>
-                <div className="bg-[#B34929] px-4 py-3">
-                  <p className="text-[11px] font-medium text-white/60 mb-1 tracking-[0.06em]">THINK DIFFERENT</p>
-                  <p className="text-[14px] text-white leading-[20px]">{row.tdt}</p>
-                </div>
-                <div className="px-4 py-3 border-t border-[#333]">
-                  <p className="text-[11px] font-medium text-white/30 mb-1 tracking-[0.06em]">OTHERS</p>
-                  {row.others ? (
-                    <p className="text-[14px] text-white/40 leading-[20px]">{row.others}</p>
-                  ) : (
-                    <div className="relative w-[40px] h-[36px] mt-1">
-                      <svg width="41" height="25" viewBox="0 0 41 25" fill="none" className="absolute top-[6px] left-0">
-                        <path d="M4 4L37 21" stroke="#FF7171" strokeWidth="5" strokeLinecap="round"/>
-                      </svg>
-                      <svg width="16" height="36" viewBox="0 0 16 36" fill="none" className="absolute top-0 left-[12px]">
-                        <path d="M4 4L12 32" stroke="#FF7171" strokeWidth="5" strokeLinecap="round"/>
-                      </svg>
+          return (
+            <section id="difference" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
+              <div className="flex w-full max-w-[1156px] flex-col items-center gap-[20px]">
+                <h3 className="text-center text-[18px] md:text-[20px] font-medium leading-[24px] tracking-[-0.02em]" style={{ color: `rgba(255,255,255,${activeSection === 'difference' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>
+                  What makes this{' '}
+                  <span style={{ color: `rgba(179,73,41,${activeSection === 'difference' ? 1 : 0.6})`, transition: 'color 0.4s ease' }} className="italic">different</span>
+                </h3>
+                <h2 className="w-full max-w-[620px] text-center text-[22px] md:text-[26px] font-normal leading-[30px] md:leading-[34px] tracking-[-0.02em] text-white">
+                  Not your <strong className="italic">$29.99/month</strong> course. This is what it looks like when a coach actually watches your game.
+                </h2>
+              </div>
+
+              {/* Mobile: stacked cards */}
+              <div className="flex lg:hidden w-full max-w-[540px] flex-col gap-3">
+                {ROWS.map((row) => (
+                  <div key={row.slug} className="overflow-hidden rounded-[12px] border border-white/[0.08]">
+                    <div className="bg-[#111] px-4 py-3 text-[11px] font-semibold text-white/40 tracking-[0.08em] uppercase">{row.topic}</div>
+                    <div className="bg-[#B34929] px-4 py-4">
+                      <p className="text-[10px] font-semibold text-white/60 mb-[6px] tracking-[0.1em]">THINK DIFFERENT TRAINING</p>
+                      <p className="text-[14px] text-white leading-[22px]">{row.tdt}</p>
                     </div>
-                  )}
-                </div>
+                    <div className="px-4 py-4 border-t border-white/[0.08]">
+                      <p className="text-[10px] font-semibold text-white/25 mb-[6px] tracking-[0.1em]">YOUR CURRENTLY DOING</p>
+                      <p className="text-[14px] text-white/40 leading-[22px]">{row.others}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Desktop: 3-column table */}
-          <div className="hidden lg:flex w-[900px] h-[720px] items-end gap-0 border-b border-[#333333] rounded-[14px]">
-            <div className="flex w-[300px] h-[600px] flex-col">
-              <div className="flex h-[120px] w-full" />
-              {['Basketball drills', 'Personal film review', 'Individual focus', 'Documented growth'].map((label) => (
-                <div key={label} className="flex h-[120px] w-full items-center justify-center border-t border-l border-[#333333]">
-                  <span className="text-center text-[16px] font-medium leading-[19px] tracking-[-0.02em] text-white">{label}</span>
+              {/* Desktop: pixel-perfect Figma spec */}
+              <div
+                className="hidden lg:flex flex-row items-end w-[900px] h-[600px]"
+                style={{ borderBottom: '1px solid #333333', borderRadius: '14px' }}
+              >
+                {/* Topics column — 300×480, aligned to bottom via parent align-items:flex-end */}
+                <div className="flex flex-col w-[300px] h-[480px]">
+                  {[
+                    { slug: 'stand',    topic: 'Knowing where you stand', bw: '1px 0px 1px 1px', br: '15px 0px 0px 0px' },
+                    { slug: 'alone',    topic: 'What to work on alone',    bw: '1px 0px 1px 1px', br: '0px' },
+                    { slug: 'feedback', topic: <>Feedback on <em>your</em> work</>,  bw: '0px 0px 1px 1px', br: '0px' },
+                    { slug: 'proof',    topic: 'Proof your improving',     bw: '0px 0px 1px 1px', br: '0px' },
+                  ].map((row) => (
+                    <div
+                      key={row.slug}
+                      className="flex items-center justify-center p-[10px] w-[300px] h-[120px]"
+                      style={{ borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333', borderRadius: row.br }}
+                    >
+                      <span className="text-center text-[16px] font-medium leading-[19px] tracking-[-0.02em] text-white">
+                        {row.topic}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="flex w-[300px] h-[720px] flex-col border-l border-[rgba(255,255,255,0.2)]">
-              <div className="flex items-center gap-[10px] bg-[#B34929] px-[30px] h-[120px] rounded-tr-[15px]">
-                <div className="h-[37px] w-[37px] flex-shrink-0" />
-                <span className="text-[18px] font-medium leading-[22px] tracking-[-0.02em] text-white">Think Different Training</span>
-              </div>
-              {[
-                'Based on what Jaiden specifically finds in your game',
-                'Jaiden watches every clip, Apple Pencil annotations frame by frame',
-                "8 athletes, Jaiden's full attention on you",
-                'Tracked scores, annotated footage, before and after proof',
-                'Dedicated kobe mindset module built to fix how you think about your game',
-              ].map((text) => (
-                <div key={text} className="flex items-center px-[30px] h-[120px] bg-[#B34929] border-t border-[rgba(0,0,0,0.4)]">
-                  <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white">{text}</span>
+
+                {/* Differences container — TDT + Others, 600×600 */}
+                <div
+                  className="flex flex-row w-[600px] h-[600px]"
+                  style={{ border: '1px solid rgba(255,255,255,0.2)', borderRadius: '15px 0px 0px 0px' }}
+                >
+                  {/* TDT column */}
+                  <div className="flex flex-col w-[300px] h-[600px]">
+                    <div
+                      className="flex items-center w-[300px] h-[120px] px-[30px] gap-[10px] bg-[#B34929] flex-shrink-0"
+                      style={{ borderRadius: '15px 15px 0px 0px' }}
+                    >
+                      <div className="w-[38px] h-[44px] flex-shrink-0">
+                        <TDTLogo letterColor="white" />
+                      </div>
+                      <span className="text-[18px] font-medium leading-[22px] tracking-[-0.02em] text-white">
+                        Think Different Training
+                      </span>
+                    </div>
+                    {[
+                      { slug: 'stand',    text: 'Honest scores across every dimension of your game before day one', bw: '1px 1px 1px 1px' },
+                      { slug: 'alone',    text: 'Drills prescribed to exactly what Jaiden finds in your game',      bw: '0px 1px 1px 1px' },
+                      { slug: 'feedback', text: "Jaiden watches every submission frame by frame and tells you what's changing", bw: '0px 1px 1px 1px' },
+                      { slug: 'proof',    text: 'Tracked scores, annotated footage, documented from day one to graduation',    bw: '0px 1px 1px 1px' },
+                    ].map((row) => (
+                      <div
+                        key={row.slug}
+                        className="flex items-center w-[300px] h-[120px] px-[30px] bg-[#B34929]"
+                        style={{ borderWidth: row.bw, borderStyle: 'solid', borderColor: 'rgba(0,0,0,0.4)' }}
+                      >
+                        <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white">
+                          {row.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Others column */}
+                  <div className="flex flex-col w-[300px] h-[600px]">
+                    <div
+                      className="flex items-center w-[300px] h-[120px] px-[30px] flex-shrink-0"
+                      style={{ borderWidth: '1px 1px 0px 0px', borderStyle: 'solid', borderColor: '#333333', borderRadius: '0px 15px 0px 0px' }}
+                    >
+                      <span className="text-[18px] font-medium leading-[22px] tracking-[-0.02em] text-white/50">
+                        Your currently doing
+                      </span>
+                    </div>
+                    {[
+                      { slug: 'stand',    text: 'Guessing based on how practice felt',                           bw: '1px 1px 1px 0px' },
+                      { slug: 'alone',    text: 'Generic content or whatever your coach mentioned last session', bw: '0px 1px 1px 0px' },
+                      { slug: 'feedback', text: 'No one watching. No one correcting.',                           bw: '0px 1px 1px 0px' },
+                      { slug: 'proof',    text: 'A feeling. Maybe a compliment.',                                bw: '0px 1px 1px 0px' },
+                    ].map((row) => (
+                      <div
+                        key={row.slug}
+                        className="flex items-center justify-center w-[300px] h-[120px] px-[30px]"
+                        style={{ borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333' }}
+                      >
+                        <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/50 text-center">
+                          {row.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-            <div className="flex w-[300px] h-[720px] flex-col border-l border-[rgba(255,255,255,0.2)]">
-              <div className="flex items-center gap-[10px] px-[30px] h-[120px] border-b border-r border-[#333333] rounded-tr-[15px]">
-                <div className="h-[40px] w-[40px] flex-shrink-0" />
-                <span className="text-[18px] font-medium leading-[22px] tracking-[-0.02em] text-[rgba(255,255,255,0.5)]">Other programs</span>
               </div>
-              <div className="flex items-center justify-center px-[30px] h-[120px] border-b border-r border-[#333333]">
-                <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(255,255,255,0.5)] text-center">Browsed by yourself, unsure what you really need</span>
-              </div>
-              <div className="flex items-center justify-center px-[30px] h-[120px] border-b border-r border-[#333333]">
-                <div className="relative w-[64px] h-[57px]">
-                  <svg width="65" height="40" viewBox="0 0 65 40" fill="none" className="absolute top-[9px] left-0">
-                    <path d="M7 7L58 33" stroke="#FF7171" strokeWidth="7" strokeLinecap="round"/>
-                  </svg>
-                  <svg width="26" height="57" viewBox="0 0 26 57" fill="none" className="absolute top-[0px] left-[19px]">
-                    <path d="M7 7L19 50" stroke="#FF7171" strokeWidth="7" strokeLinecap="round"/>
-                  </svg>
-                </div>
-              </div>
-              <div className="flex items-center justify-center px-[30px] h-[120px] border-b border-r border-[#333333]">
-                <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(255,255,255,0.5)] text-center">Hundreds to thousands of members</span>
-              </div>
-              <div className="flex items-center justify-center px-[30px] h-[120px] border-b border-r border-[#333333]">
-                <div className="relative w-[64px] h-[57px]">
-                  <svg width="65" height="40" viewBox="0 0 65 40" fill="none" className="absolute top-[9px] left-0">
-                    <path d="M7 7L58 33" stroke="#FF7171" strokeWidth="7" strokeLinecap="round"/>
-                  </svg>
-                  <svg width="26" height="57" viewBox="0 0 26 57" fill="none" className="absolute top-[0px] left-[19px]">
-                    <path d="M7 7L19 50" stroke="#FF7171" strokeWidth="7" strokeLinecap="round"/>
-                  </svg>
-                </div>
-              </div>
-              <div className="flex items-center justify-center px-[30px] h-[120px] border-r border-[#333333]">
-                <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-[rgba(255,255,255,0.5)] text-center">Generic motivational content</span>
-              </div>
-            </div>
-          </div>
-        </section>
+            </section>
+          );
+        })()}
 
         {/* ── Transition zone ── */}
         <div ref={transitionZoneRef} className="relative w-full" style={{ height: '100vh' }}>
