@@ -7,9 +7,9 @@
  *
  * The basketball graphic (black body, orange arcs, grey bands) never changes.
  */
-export function TDTLogo({ letterColor = 'white' }: { letterColor?: string }) {
+export function TDTLogo({ letterColor = 'white', width = 50, height = 58 }: { letterColor?: string; width?: number; height?: number }) {
   return (
-    <svg width="50" height="58" viewBox="0 0 50 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={width} height={height} viewBox="0 0 50 58" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g clipPath="url(#clip0_2387_252)">
         <mask id="mask0_2387_252" style={{ maskType: 'luminance' }} maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="58">
           <path d="M0 -1.70384e-06H50V58H0V-1.70384e-06Z" fill="white"/>

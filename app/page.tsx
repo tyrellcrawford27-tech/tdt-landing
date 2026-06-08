@@ -32,10 +32,13 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [coachVisible, setCoachVisible] = useState(false);
+  const [tableVisible, setTableVisible] = useState(false);
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
   const cardsStartRef = useRef<HTMLDivElement>(null);
   const coachContentRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const SECTIONS = ['coach', 'program', 'difference', 'pricing', 'faq'];
@@ -77,6 +80,17 @@ export default function Home() {
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setCoachVisible(true); observer.disconnect(); } },
       { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = tableRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setTableVisible(true); observer.disconnect(); } },
+      { threshold: 0.12 }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -528,7 +542,8 @@ export default function Home() {
 
               {/* Desktop: pixel-perfect Figma spec */}
               <div
-                className="hidden lg:flex flex-row items-end w-[900px] h-[600px]"
+                ref={tableRef}
+                className="hidden lg:flex flex-row items-end w-[900px] h-[600px] overflow-hidden"
                 style={{ borderBottom: '1px solid #333333', borderRadius: '14px' }}
               >
                 {/* Topics column — 300×480, aligned to bottom via parent align-items:flex-end */}
@@ -537,14 +552,30 @@ export default function Home() {
                     { slug: 'stand',    topic: 'Knowing where you stand', bw: '1px 0px 1px 1px', br: '15px 0px 0px 0px' },
                     { slug: 'alone',    topic: 'What to work on alone',    bw: '1px 0px 1px 1px', br: '0px' },
                     { slug: 'feedback', topic: <>Feedback on <em>your</em> work</>,  bw: '0px 0px 1px 1px', br: '0px' },
-                    { slug: 'proof',    topic: 'Proof your improving',     bw: '0px 0px 1px 1px', br: '0px' },
-                  ].map((row) => (
+                    { slug: 'proof',    topic: 'Proof your improving',     bw: '0px 0px 1px 1px', br: '0px 0px 0px 14px' },
+                  ].map((row, i) => (
                     <div
                       key={row.slug}
                       className="flex items-center justify-center p-[10px] w-[300px] h-[120px]"
-                      style={{ borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333', borderRadius: row.br }}
+                      style={{
+                        borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333', borderRadius: row.br,
+                        // Entrance
+                        opacity: tableVisible ? 1 : 0,
+                        transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
+                        transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
+                        // Hover: orange left-edge selector line
+                        boxShadow: hoveredRow === row.slug ? 'inset 3px 0 0 #B34929' : 'none',
+                      }}
+                      onMouseEnter={() => setHoveredRow(row.slug)}
+                      onMouseLeave={() => setHoveredRow(null)}
                     >
-                      <span className="text-center text-[16px] font-medium leading-[19px] tracking-[-0.02em] text-white">
+                      <span
+                        className="text-center text-[16px] font-medium leading-[19px] tracking-[-0.02em]"
+                        style={{
+                          color: hoveredRow === row.slug ? '#ffffff' : 'rgba(255,255,255,0.75)',
+                          transition: 'color 0.25s ease',
+                        }}
+                      >
                         {row.topic}
                       </span>
                     </div>
@@ -554,17 +585,15 @@ export default function Home() {
                 {/* Differences container — TDT + Others, 600×600 */}
                 <div
                   className="flex flex-row w-[600px] h-[600px]"
-                  style={{ border: '1px solid rgba(255,255,255,0.2)', borderRadius: '15px 0px 0px 0px' }}
+                  style={{ border: '1px solid rgba(255,255,255,0.2)', borderRadius: '15px 0px 14px 14px' }}
                 >
                   {/* TDT column */}
                   <div className="flex flex-col w-[300px] h-[600px]">
                     <div
                       className="flex items-center w-[300px] h-[120px] px-[30px] gap-[10px] bg-[#B34929] flex-shrink-0"
-                      style={{ borderRadius: '15px 15px 0px 0px' }}
+                      style={{ borderRadius: '15px 0px 0px 0px' }}
                     >
-                      <div className="w-[38px] h-[44px] flex-shrink-0">
-                        <TDTLogo letterColor="white" />
-                      </div>
+                      <TDTLogo letterColor="white" width={30} height={35} />
                       <span className="text-[18px] font-medium leading-[22px] tracking-[-0.02em] text-white">
                         Think Different Training
                       </span>
@@ -573,12 +602,22 @@ export default function Home() {
                       { slug: 'stand',    text: 'Honest scores across every dimension of your game before day one', bw: '1px 1px 1px 1px' },
                       { slug: 'alone',    text: 'Drills prescribed to exactly what Jaiden finds in your game',      bw: '0px 1px 1px 1px' },
                       { slug: 'feedback', text: "Jaiden watches every submission frame by frame and tells you what's changing", bw: '0px 1px 1px 1px' },
-                      { slug: 'proof',    text: 'Tracked scores, annotated footage, documented from day one to graduation',    bw: '0px 1px 1px 1px' },
-                    ].map((row) => (
+                      { slug: 'proof',    text: 'Tracked scores, annotated footage, documented from day one to graduation',    bw: '0px 1px 1px 1px', br: '0px 0px 0px 0px' },
+                    ].map((row, i) => (
                       <div
                         key={row.slug}
                         className="flex items-center w-[300px] h-[120px] px-[30px] bg-[#B34929]"
-                        style={{ borderWidth: row.bw, borderStyle: 'solid', borderColor: 'rgba(0,0,0,0.4)' }}
+                        style={{
+                          borderWidth: row.bw, borderStyle: 'solid', borderColor: 'rgba(0,0,0,0.4)',
+                          // Entrance
+                          opacity: tableVisible ? 1 : 0,
+                          transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
+                          transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, filter 0.25s ease`,
+                          // Hover: TDT stays strong, lifts slightly
+                          filter: hoveredRow !== null && hoveredRow !== row.slug ? 'brightness(0.88)' : 'brightness(1)',
+                        }}
+                        onMouseEnter={() => setHoveredRow(row.slug)}
+                        onMouseLeave={() => setHoveredRow(null)}
                       >
                         <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white">
                           {row.text}
@@ -601,12 +640,21 @@ export default function Home() {
                       { slug: 'stand',    text: 'Guessing based on how practice felt',                           bw: '1px 1px 1px 0px' },
                       { slug: 'alone',    text: 'Generic content or whatever your coach mentioned last session', bw: '0px 1px 1px 0px' },
                       { slug: 'feedback', text: 'No one watching. No one correcting.',                           bw: '0px 1px 1px 0px' },
-                      { slug: 'proof',    text: 'A feeling. Maybe a compliment.',                                bw: '0px 1px 1px 0px' },
-                    ].map((row) => (
+                      { slug: 'proof',    text: 'A feeling. Maybe a compliment.',                                bw: '0px 1px 1px 0px', br: '0px 0px 14px 0px' },
+                    ].map((row, i) => (
                       <div
                         key={row.slug}
                         className="flex items-center justify-center w-[300px] h-[120px] px-[30px]"
-                        style={{ borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333' }}
+                        style={{
+                          borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333',
+                          borderRadius: (row as any).br ?? '0px',
+                          // Entrance
+                          opacity: tableVisible ? 1 : 0,
+                          transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
+                          transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
+                        }}
+                        onMouseEnter={() => setHoveredRow(row.slug)}
+                        onMouseLeave={() => setHoveredRow(null)}
                       >
                         <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/50 text-center">
                           {row.text}
