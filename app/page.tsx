@@ -160,7 +160,7 @@ export default function Home() {
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
-                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 10, behavior: 'smooth' }); }, 150);
+                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' }); }, 150);
               }}
             >
               {label}
@@ -209,7 +209,7 @@ export default function Home() {
                 style={navLinkStyle(id)}
                 onClick={(e) => {
                   e.preventDefault();
-                  const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 10, behavior: 'smooth' });
+                  const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
                 }}
               >
                 {label}
@@ -256,7 +256,7 @@ export default function Home() {
             </p>
             <div className="mt-8 md:mt-10 flex justify-center">
               <CTAButton href="#apply" className="w-full md:w-auto h-[42px] px-8 text-[16px] leading-[19px]">
-                Apply for Cohort 1
+                Claim your spot
               </CTAButton>
             </div>
           </div>
@@ -271,19 +271,21 @@ export default function Home() {
 
           <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center gap-[50px] lg:gap-[100px]">
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
-              <div className="flex flex-col gap-[16px]">
-                <p style={fadeUp(0)} className="text-[15px] md:text-[18px] font-bold leading-[24px] md:leading-[26px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
+              <div>
+                <p style={{ ...fadeUp(0), lineHeight: '20px' }} className="text-[15px] md:text-[18px] font-bold tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
                   Seven years. I've trained with some of the{' '}
                   <span className="text-white">best this country has produced.</span>
-                </p>
-                <p style={fadeUp(130)} className="text-[15px] md:text-[18px] font-bold leading-[24px] md:leading-[26px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
-                  I know the difference between someone who works hard and someone{' '}
-                  <span className="text-white">who actually gets better</span>
-                  {' '}and most of the time it's not talent or effort.
-                </p>
-                <p style={fadeUp(260)} className="text-[15px] md:text-[18px] font-bold leading-[24px] md:leading-[26px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
-                  It's knowing exactly what to fix and having someone{' '}
-                  <span className="text-white">who won't let you look away from it.</span>
+                  {' '}I know the difference between someone who works hard and someone who{' '}
+                  <span className="text-white">actually gets better</span>
+                  {' '}and most of the time it's not talent or effort. It's knowing{' '}
+                  <span className="text-white">exactly what to fix</span>
+                  {' '}and having someone who{' '}
+                  <span className="text-white">won't let you look away from it.</span>
+                  {' '}That's why every athlete in this program gets{' '}
+                  <span className="text-white">my eyes on their specific game</span>
+                  {' '}not generic feedback, not group sessions. Just the{' '}
+                  <span className="text-white">truth about what's holding you back</span>
+                  {' '}and exactly how to fix it.
                 </p>
                 <p className="text-[20px] md:text-[24px] font-normal leading-[28px] md:leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Centralwell - Personal use', sans-serif", ...signatureReveal }}>
                   - Jaiden Francais
@@ -347,7 +349,7 @@ export default function Home() {
                 <div ref={cardsStartRef} />
 
                 {/* Single sticky viewport */}
-                <div className="sticky top-0 h-screen flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
+                <div className="sticky top-[64px] lg:top-[98px] h-[calc(100vh-64px)] lg:h-[calc(100vh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
 
                   {/* Watermark step number */}
                   <div aria-hidden="true" className="pointer-events-none select-none absolute inset-0 flex items-center overflow-hidden">
@@ -697,7 +699,7 @@ export default function Home() {
             </p>
 
             <CTAButton className="w-full md:w-auto h-[42px] px-8 text-[16px]">
-              Apply for Cohort 1
+              Claim your spot
             </CTAButton>
           </div>
         </section>
