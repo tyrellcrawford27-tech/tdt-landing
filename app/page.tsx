@@ -507,7 +507,7 @@ export default function Home() {
             },
             {
               slug: 'proof',
-              topic: 'Proof your improving',
+              topic: "Proof you're improving",
               tdt: 'Tracked scores, annotated footage, documented from day one to graduation',
               others: 'A feeling. Maybe a compliment.',
             },
@@ -535,7 +535,7 @@ export default function Home() {
                       <p className="text-[14px] text-white leading-[22px]">{row.tdt}</p>
                     </div>
                     <div className="px-4 py-4 border-t border-white/[0.08]">
-                      <p className="text-[10px] font-semibold text-white/25 mb-[6px] tracking-[0.1em]">YOUR CURRENTLY DOING</p>
+                      <p className="text-[10px] font-semibold text-white/25 mb-[6px] tracking-[0.1em]">YOU'RE CURRENTLY DOING</p>
                       <p className="text-[14px] text-white/40 leading-[22px]">{row.others}</p>
                     </div>
                   </div>
@@ -554,7 +554,7 @@ export default function Home() {
                     { slug: 'stand',    topic: 'Knowing where you stand', bw: '1px 0px 1px 1px', br: '15px 0px 0px 0px' },
                     { slug: 'alone',    topic: 'What to work on alone',    bw: '1px 0px 1px 1px', br: '0px' },
                     { slug: 'feedback', topic: <>Feedback on <em>your</em> work</>,  bw: '0px 0px 1px 1px', br: '0px' },
-                    { slug: 'proof',    topic: 'Proof your improving',     bw: '0px 0px 1px 1px', br: '0px 0px 0px 14px' },
+                    { slug: 'proof',    topic: "Proof you're improving",     bw: '0px 0px 1px 1px', br: '0px 0px 0px 14px' },
                   ].map((row, i) => (
                     <div
                       key={row.slug}
@@ -635,7 +635,7 @@ export default function Home() {
                       style={{ borderWidth: '1px 1px 0px 0px', borderStyle: 'solid', borderColor: '#333333', borderRadius: '0px 15px 0px 0px' }}
                     >
                       <span className="text-[18px] font-medium leading-[22px] tracking-[-0.02em] text-white/50">
-                        Your currently doing
+                        You're currently doing
                       </span>
                     </div>
                     {[
