@@ -178,7 +178,7 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center">
         <div
-          className={`relative flex items-center justify-between backdrop-blur-[14px] ${scrolled ? 'border' : 'border-b'} ${!scrolled ? 'py-3 lg:py-[20px] px-6 md:px-12 lg:px-[50px]' : ''}`}
+          className={`grid grid-cols-[1fr_auto_1fr] items-center backdrop-blur-[14px] ${scrolled ? 'border' : 'border-b'} ${!scrolled ? 'py-3 lg:py-[20px] px-6 md:px-12 lg:px-[50px]' : ''}`}
           style={{
             width: scrolled ? 'calc(100% - 40px)' : '100%',
             maxWidth: scrolled ? '960px' : '100%',
@@ -200,8 +200,8 @@ export default function Home() {
             <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
           </button>
 
-          {/* Desktop nav — absolutely centered */}
-          <nav className="absolute left-1/2 -translate-x-1/2 hidden lg:flex items-center gap-[30px] text-[14px] tracking-[-0.02em]">
+          {/* Desktop nav — grid center column */}
+          <nav className="hidden lg:flex items-center justify-center gap-[30px] text-[14px] tracking-[-0.02em]">
             {NAV_LINKS.map(({ id, label }) => (
               <a
                 key={id}
@@ -217,25 +217,25 @@ export default function Home() {
             ))}
           </nav>
 
-          {/* Desktop right actions */}
-          <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
-            <a href="#login" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Log In</a>
-            <CTAButton href="#book-demo" className="h-[37px] px-[20px] text-[14px]">
-              Book Demo
-            </CTAButton>
+          {/* Right side — desktop actions + mobile hamburger */}
+          <div className="flex items-center justify-end">
+            <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
+              <a href="#login" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Log In</a>
+              <CTAButton href="#book-demo" className="h-[37px] px-[20px] text-[14px]">
+                Book Demo
+              </CTAButton>
+            </div>
+            <button
+              className="lg:hidden flex h-11 w-11 items-center justify-center"
+              style={navTextStyle}
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              <svg width="22" height="15" viewBox="0 0 22 15" fill="none">
+                <path d="M0 1H22M0 7.5H22M0 14H22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
           </div>
-
-          {/* Mobile hamburger */}
-          <button
-            className="lg:hidden flex h-11 w-11 items-center justify-center"
-            style={navTextStyle}
-            onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
-          >
-            <svg width="22" height="15" viewBox="0 0 22 15" fill="none">
-              <path d="M0 1H22M0 7.5H22M0 14H22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </button>
         </div>
       </header>
 
