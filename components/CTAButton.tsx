@@ -45,7 +45,7 @@ export function CTAButton({ href, onClick, children, className = '' }: Props) {
   );
 
   const shared =
-    `group relative inline-flex items-center justify-center overflow-hidden rounded-[33px] font-normal text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98] ${className}`;
+    `group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-[33px] font-normal text-white transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-[0_8px_22px_-6px_rgba(179,73,41,0.55)] active:translate-y-0 active:scale-[0.98] ${className}`;
 
   if (href) {
     return (

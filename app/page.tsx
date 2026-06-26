@@ -1,21 +1,19 @@
 'use client';
 
 import { useState, useEffect, useRef } from "react";
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'spline-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & { url?: string }, HTMLElement>;
+    }
+  }
+}
 import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'spline-viewer': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & { url?: string },
-        HTMLElement
-      >;
-    }
-  }
-}
 
 const NAV_LINKS = [
   { id: 'coach', label: 'The Coach' },
@@ -23,6 +21,56 @@ const NAV_LINKS = [
   { id: 'pricing', label: 'Pricing' },
   { id: 'faq', label: 'FAQ' },
 ] as const;
+
+const COACH_IMAGES = [
+  { src: '/coach-1.jpg.png', position: 'center 45%' },
+  { src: '/coach-2.jpg.png', position: 'center 30%' },
+  { src: '/coach-3.jpg.png', position: 'top' },
+  { src: '/coach-4.jpg.png', position: 'top' },
+  { src: '/coach-5.jpg.png', position: 'top' },
+];
+
+function CoachCarousel() {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setCurrent(i => (i + 1) % COACH_IMAGES.length), 3500);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end">
+      {/* Dot indicators */}
+      <div className="absolute left-0 top-0 hidden lg:flex h-full w-[12px] flex-col items-center justify-center gap-[10px]">
+        {COACH_IMAGES.map((_img, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className="h-[12px] w-[12px] cursor-pointer rounded-full transition-all duration-300"
+            style={{ backgroundColor: current === i ? 'white' : 'rgba(255,255,255,0.2)' }}
+            aria-label={`Go to image ${i + 1}`}
+          />
+        ))}
+      </div>
+      {/* Frame */}
+      <div className="relative w-full aspect-video lg:aspect-auto lg:h-[434px] lg:w-[543px] overflow-hidden rounded-[12px] border border-white/40 bg-[#111111]">
+        {COACH_IMAGES.map((img, i) => (
+          <div
+            key={img.src}
+            className="absolute inset-0 bg-cover transition-opacity duration-700"
+            style={{
+              backgroundImage: `url(${img.src})`,
+              backgroundPosition: img.position,
+              opacity: current === i ? 1 : 0,
+            }}
+          />
+        ))}
+        {/* Subtle bottom vignette */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_60%,rgba(0,0,0,0.45)_100%)] pointer-events-none" />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
@@ -66,13 +114,7 @@ export default function Home() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    if (document.querySelector('script[src*="spline-viewer"]')) return;
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/@splinetool/viewer@1.12.96/build/spline-viewer.js';
-    s.type = 'module';
-    document.head.appendChild(s);
-  }, []);
+
 
   useEffect(() => {
     const el = coachContentRef.current;
@@ -83,6 +125,14 @@ export default function Home() {
     );
     observer.observe(el);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (document.querySelector('script[src*="spline-viewer"]')) return;
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@splinetool/viewer@1.12.97/build/spline-viewer.js';
+    s.type = 'module';
+    document.head.appendChild(s);
   }, []);
 
   useEffect(() => {
@@ -133,7 +183,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#000000]">
+    <div className="relative min-h-screen">
 
       {/* ── Film grain overlay ── */}
       <FilmGrain />
@@ -144,7 +194,7 @@ export default function Home() {
       >
         <button
           onClick={() => setMenuOpen(false)}
-          className="absolute top-5 right-6 flex h-11 w-11 items-center justify-center text-white/60"
+          className="absolute top-5 right-6 flex h-11 w-11 cursor-pointer items-center justify-center text-white/60"
           aria-label="Close menu"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -156,7 +206,7 @@ export default function Home() {
             <a
               key={id}
               href={`#${id}`}
-              className="text-[28px] font-medium text-white/80 tracking-[-0.02em]"
+              className="cursor-pointer text-[28px] font-medium text-white/80 tracking-[-0.02em]"
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
@@ -178,23 +228,30 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center">
         <div
-          className={`grid grid-cols-[1fr_auto_1fr] items-center backdrop-blur-[14px] ${scrolled ? 'border' : 'border-b'} ${!scrolled ? 'py-3 lg:py-[20px] px-6 md:px-12 lg:px-[50px]' : ''}`}
+          className="grid grid-cols-[1fr_auto_1fr] items-center border backdrop-blur-[20px]"
           style={{
-            width: scrolled ? 'calc(100% - 40px)' : '100%',
-            maxWidth: scrolled ? '960px' : '100%',
-            height: scrolled ? '52px' : '100%',
-            ...(scrolled ? { paddingLeft: '20px', paddingRight: '20px' } : {}),
-            borderRadius: scrolled ? '9999px' : '0px',
-            backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.65 : 0.88})`,
-            borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${scrolled ? 0.18 : 0.12})`,
-            boxShadow: scrolled ? `0 8px 32px rgba(0,0,0,${tp < 0.5 ? 0.25 : 0.08})` : 'none',
-            transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1), max-width 0.5s cubic-bezier(0.4,0,0.2,1), height 0.5s cubic-bezier(0.4,0,0.2,1), border-radius 0.5s cubic-bezier(0.4,0,0.2,1), padding 0.5s cubic-bezier(0.4,0,0.2,1), box-shadow 0.5s cubic-bezier(0.4,0,0.2,1)',
+            width: 'calc(100% - 40px)',
+            maxWidth: scrolled ? '960px' : '1036px',
+            height: scrolled ? '52px' : '60px',
+            paddingLeft: scrolled ? '20px' : '28px',
+            paddingRight: scrolled ? '20px' : '28px',
+            borderRadius: '9999px',
+            backgroundColor: isDark
+              ? `rgba(255,255,255,${scrolled ? 0.10 : 0.07})`
+              : `rgba(251,246,242,${scrolled ? 0.92 : 0.88})`,
+            borderColor: isDark
+              ? `rgba(255,255,255,${scrolled ? 0.18 : 0.12})`
+              : 'rgba(26,15,10,0.12)',
+            boxShadow: isDark
+              ? '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.18)'
+              : `0 8px 32px rgba(0,0,0,${scrolled ? 0.08 : 0.04})`,
+            transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1), max-width 0.5s cubic-bezier(0.4,0,0.2,1), height 0.5s cubic-bezier(0.4,0,0.2,1), padding 0.5s cubic-bezier(0.4,0,0.2,1), background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease',
           }}
         >
           {/* Logo */}
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className={`flex items-center justify-center flex-shrink-0 transition-all duration-500 overflow-hidden ${scrolled ? 'h-[36px] w-[32px]' : 'h-[46px] w-[40px] lg:h-[58px] lg:w-[50px]'}`}
+            className={`flex cursor-pointer items-center justify-center flex-shrink-0 transition-all duration-500 overflow-hidden ${scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}
             aria-label="Back to top"
           >
             <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
@@ -226,7 +283,7 @@ export default function Home() {
               </CTAButton>
             </div>
             <button
-              className="lg:hidden flex h-11 w-11 items-center justify-center"
+              className="lg:hidden flex h-11 w-11 cursor-pointer items-center justify-center"
               style={navTextStyle}
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
@@ -242,24 +299,55 @@ export default function Home() {
       <main className="flex w-full flex-col">
 
         {/* ── Hero ── */}
-        <section className="relative flex w-full min-h-screen flex-col items-center justify-center gap-8 lg:gap-12 text-center bg-[#000000] px-6 md:px-12 lg:px-[100px]">
-          <div className="max-w-[874px] w-full">
-            <div className="inline-flex h-[24px] items-center justify-center rounded-full border border-[#B34929] bg-[rgba(179,73,41,0.15)] px-4 md:px-5 py-[5px] text-center text-[11px] md:text-[12px] font-normal tracking-[-0.02em] text-[rgba(179,73,41,0.7)]" style={{ boxShadow: "inset 0px 4px 6px rgba(255,255,255,0.09), inset 0px -4px 6px 1px rgba(179,73,41,0.25)" }}>
-              COHORT 1 · SEPTEMBER 2026 · 8 SPOTS
-            </div>
-            <h1 className="mt-6 md:mt-8 text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-tight tracking-[-0.02em]">
-              <span className="text-[rgba(255,255,255,0.8)]">Most of your development happens alone.</span>
-              <span className="block text-[rgba(255,255,255,0.8)]">We make sure it counts.</span>
+        <section className="relative w-full min-h-screen overflow-hidden">
+          {/* Background image */}
+          <div
+            className="absolute inset-0 bg-cover bg-top"
+            style={{ backgroundImage: "url('/hero.png')" }}
+          />
+          {/* Bottom gradient overlay */}
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 96%)' }}
+          />
+
+          {/* Bottom-left content */}
+          <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[72px] md:pb-[80px]">
+            <h1
+              className="text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-[1.2] lg:leading-[53px] tracking-[-0.02em] max-w-[808px] mb-[14px]"
+              style={{
+                background: 'linear-gradient(90deg, #FFFFFF 0%, rgba(20,20,20,0.75) 135%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Most of your development happens alone.<br className="hidden md:block" /> We make sure it counts.
             </h1>
-            <p className="mt-4 md:mt-6 max-w-[668px] text-[13px] md:text-[14px] font-medium leading-[20px] tracking-[-0.02em] text-[rgba(255,255,255,0.6)] mx-auto">
+            <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
               Jaiden studies your film, identifies exactly what's holding you back, and tracks your improvement with documented proof over 100 days.
             </p>
-            <div className="mt-8 md:mt-10 flex justify-center">
-              <CTAButton href="#apply" className="w-full md:w-auto h-[42px] px-8 text-[16px] leading-[19px]">
+            <div className="flex items-center gap-[16px]">
+              <CTAButton href="#apply" className="h-[37px] px-[20px] text-[14px]">
                 Claim your spot
               </CTAButton>
+              <span className="text-[14px] italic font-normal leading-[17px] tracking-[-0.02em] text-white/70 cursor-pointer">
+                See how it works
+              </span>
             </div>
           </div>
+
+          {/* Play button — bottom right */}
+          <button
+            className="absolute cursor-pointer right-6 md:right-[60px] bottom-[80px] w-[60px] h-[60px] rounded-full flex items-center justify-center transition-opacity duration-200 hover:opacity-90"
+            style={{ background: 'rgba(146,146,146,0.75)', backdropFilter: 'blur(8px)' }}
+            aria-label="Play video"
+          >
+            <svg width="20" height="22" viewBox="0 0 20 22" fill="none">
+              <path d="M4 2.5L18 11L4 19.5V2.5Z" fill="#343434"/>
+            </svg>
+          </button>
+
         </section>
 
         {/* ── Coach ── */}
@@ -312,21 +400,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end">
-              <div className="absolute left-0 top-0 hidden lg:flex h-[100px] w-[12px] flex-col items-center justify-center gap-[10px]">
-                <div className="h-[12px] w-[12px] rounded-full bg-white" />
-                <div className="h-[12px] w-[12px] rounded-full bg-white/20" />
-                <div className="h-[12px] w-[12px] rounded-full bg-white/20" />
-                <div className="h-[12px] w-[12px] rounded-full bg-white/20" />
-                <div className="h-[12px] w-[12px] rounded-full bg-white/20" />
-              </div>
-              <div className="relative w-full aspect-video lg:aspect-auto lg:h-[434px] lg:w-[543px] overflow-hidden rounded-[12px] border border-white/40 bg-[#111111]">
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,#000000_0%,rgba(0,0,0,0.6)_100%)]" />
-                <div className="absolute inset-0 flex items-center justify-center text-[14px] text-white/40">
-                  Placeholder content
-                </div>
-              </div>
-            </div>
+            <CoachCarousel />
           </div>
         </section>
 
@@ -682,19 +756,19 @@ export default function Home() {
             <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>Pricing</span>
           </div>
 
-          <div className="flex w-full max-w-[532px] flex-col items-center gap-[20px]">
+          <div className="flex w-full max-w-[900px] flex-col items-center gap-[20px]">
             <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Your Membership
             </h2>
 
-            <div className="relative w-full rounded-[10px] overflow-hidden" style={{ height: '440px' }}>
+            <div className="relative w-full max-w-[900px]" style={{ aspectRatio: '633/399' }}>
               <spline-viewer
-                url="https://prod.spline.design/UAVGmShPrQNdRCoO/scene.splinecode"
+                url="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
                 style={{ width: '100%', height: '100%', display: 'block' }}
               />
             </div>
 
-            <p className="w-full text-center text-[14px] font-normal leading-[20px] tracking-[-0.02em] text-black">
+            <p className="w-full text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60">
               90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
             </p>
 
@@ -748,7 +822,7 @@ export default function Home() {
                   <div key={index} className="flex w-full flex-col border-b border-[rgba(0,0,0,0.15)]">
                     <button
                       onClick={() => setOpenFaq(isOpen ? -1 : index)}
-                      className="flex items-start gap-[10px] px-0 py-[20px] text-left w-full min-h-[44px]"
+                      className="flex cursor-pointer items-start gap-[10px] px-0 py-[20px] text-left w-full min-h-[44px]"
                     >
                       <span className="flex-1 text-[14px] md:text-[16px] font-normal leading-[22px] md:leading-[19px] tracking-[-0.02em] text-[rgba(0,0,0,0.7)]">
                         {item.question}
