@@ -22,6 +22,14 @@ const NAV_LINKS = [
   { id: 'faq', label: 'FAQ' },
 ] as const;
 
+const SECTION_LABELS: Record<string, string> = {
+  coach: 'Meet the Coach',
+  program: 'The Program',
+  difference: 'Why TDT',
+  pricing: 'Pricing',
+  faq: 'FAQ',
+};
+
 const COACH_IMAGES = [
   { src: '/coach-1.jpg.png', position: 'center 45%' },
   { src: '/coach-2.jpg.png', position: 'center 30%' },
@@ -78,6 +86,7 @@ export default function Home() {
   const [programProgress, setProgramProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navHovered, setNavHovered] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [coachVisible, setCoachVisible] = useState(false);
   const [tableVisible, setTableVisible] = useState(false);
@@ -158,6 +167,8 @@ export default function Home() {
   }, [menuOpen]);
 
   const isDark = tp < 0.5;
+  const isCompact = !!activeSection;
+  const showCompact = isCompact && !navHovered;
   const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
 
   const panelBg = `rgb(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)})`;
@@ -226,59 +237,90 @@ export default function Home() {
       </div>
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center">
+      <header className="fixed top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none">
         <div
-          className="grid grid-cols-[1fr_auto_1fr] items-center border backdrop-blur-[20px]"
+          className="grid grid-cols-[1fr_auto_1fr] items-center border backdrop-blur-[20px] pointer-events-auto"
+          onMouseEnter={() => setNavHovered(true)}
+          onMouseLeave={() => setNavHovered(false)}
           style={{
             width: 'calc(100% - 40px)',
-            maxWidth: scrolled ? '960px' : '1036px',
-            height: scrolled ? '52px' : '60px',
-            paddingLeft: scrolled ? '20px' : '28px',
-            paddingRight: scrolled ? '20px' : '28px',
+            maxWidth: showCompact ? '380px' : scrolled ? '960px' : '1036px',
+            height: showCompact ? '52px' : scrolled ? '52px' : '60px',
+            paddingLeft: showCompact ? '16px' : scrolled ? '20px' : '28px',
+            paddingRight: showCompact ? '16px' : scrolled ? '20px' : '28px',
             borderRadius: '9999px',
             backgroundColor: isDark
-              ? `rgba(255,255,255,${scrolled ? 0.10 : 0.07})`
-              : `rgba(251,246,242,${scrolled ? 0.92 : 0.88})`,
+              ? `rgba(255,255,255,${showCompact ? 0.08 : scrolled ? 0.10 : 0.07})`
+              : `rgba(251,246,242,${showCompact ? 0.55 : scrolled ? 0.65 : 0.60})`,
             borderColor: isDark
               ? `rgba(255,255,255,${scrolled ? 0.18 : 0.12})`
-              : 'rgba(26,15,10,0.12)',
+              : `rgba(26,15,10,${scrolled ? 0.10 : 0.08})`,
             boxShadow: isDark
               ? '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.18)'
-              : `0 8px 32px rgba(0,0,0,${scrolled ? 0.08 : 0.04})`,
-            transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1), max-width 0.5s cubic-bezier(0.4,0,0.2,1), height 0.5s cubic-bezier(0.4,0,0.2,1), padding 0.5s cubic-bezier(0.4,0,0.2,1), background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease',
+              : '0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+            transition: 'all 0.5s cubic-bezier(0.4,0,0.2,1)',
           }}
         >
           {/* Logo */}
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className={`flex cursor-pointer items-center justify-center flex-shrink-0 transition-all duration-500 overflow-hidden ${scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}
+            className={`flex cursor-pointer items-center justify-center flex-shrink-0 overflow-hidden transition-all duration-500 ${showCompact ? 'h-[38px] w-[34px]' : scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}
             aria-label="Back to top"
           >
             <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
           </button>
 
-          {/* Desktop nav — grid center column */}
-          <nav className="hidden lg:flex items-center justify-center gap-[30px] text-[14px] tracking-[-0.02em]">
-            {NAV_LINKS.map(({ id, label }) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                style={navLinkStyle(id)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
-                }}
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
+          {/* Desktop center — crossfades between nav links and section label */}
+          <div className="relative hidden lg:flex items-center justify-center" style={{ minWidth: 0 }}>
+            {/* Nav links — shown when not in a section */}
+            <nav
+              className="flex items-center justify-center gap-[30px] text-[14px] tracking-[-0.02em] transition-all duration-500"
+              style={{
+                opacity: showCompact ? 0 : 1,
+                transform: showCompact ? 'translateY(-5px)' : 'translateY(0)',
+                pointerEvents: showCompact ? 'none' : 'auto',
+              }}
+            >
+              {NAV_LINKS.map(({ id, label }) => (
+                <a
+                  key={id}
+                  href={`#${id}`}
+                  style={navLinkStyle(id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
+                  }}
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
+            {/* Section label — shown when in a section */}
+            <span
+              className="absolute text-[14px] font-medium tracking-[-0.02em] whitespace-nowrap transition-all duration-500"
+              style={{
+                opacity: showCompact ? 1 : 0,
+                transform: showCompact ? 'translateY(0)' : 'translateY(5px)',
+                color: isDark ? 'rgba(255,255,255,0.85)' : `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.85)`,
+                pointerEvents: 'none',
+              }}
+            >
+              {SECTION_LABELS[activeSection] ?? ''}
+            </span>
+          </div>
 
           {/* Right side — desktop actions + mobile hamburger */}
           <div className="flex items-center justify-end">
             <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
-              <a href="#login" className={`transition-opacity hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}>Log In</a>
-              <CTAButton href="#book-demo" className="h-[37px] px-[20px] text-[14px]">
+              {/* Log In fades out in compact mode */}
+              <a
+                href="#login"
+                className={`transition-all duration-500 hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}
+                style={{ opacity: showCompact ? 0 : 1, pointerEvents: showCompact ? 'none' : 'auto', marginRight: showCompact ? '-60px' : '0' }}
+              >
+                Log In
+              </a>
+              <CTAButton href="#book-demo" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
                 Book Demo
               </CTAButton>
             </div>
@@ -299,10 +341,10 @@ export default function Home() {
       <main className="flex w-full flex-col">
 
         {/* ── Hero ── */}
-        <section className="relative w-full min-h-screen overflow-hidden">
+        <section className="relative w-full h-screen overflow-hidden">
           {/* Background image */}
           <div
-            className="absolute inset-0 bg-cover bg-top"
+            className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: "url('/hero.png')" }}
           />
           {/* Bottom gradient overlay */}
@@ -352,11 +394,6 @@ export default function Home() {
 
         {/* ── Coach ── */}
         <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
-          <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
-            <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
-            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'coach' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Coach</span>
-          </div>
-
           <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center gap-[50px] lg:gap-[100px]">
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
               <div>
@@ -444,12 +481,8 @@ export default function Home() {
                     ))}
                   </div>
 
-                  {/* Header row — pill centered, counter pinned right */}
+                  {/* Header row — counter pinned right */}
                   <div className="relative z-10 flex items-center justify-center pt-[36px] pb-[44px] flex-shrink-0">
-                    <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#1B1B1B] px-[20px] shadow-[inset_-3px_-2px_3px_rgba(54,54,54,0.25),inset_0px_4px_4px_rgba(54,54,54,0.25)]">
-                      <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
-                      <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'program' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>The Program</span>
-                    </div>
                     <span className="absolute right-0 text-[12px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                       {STEPS[activeStep].num} <span className="text-white/12">/ 05</span>
                     </span>
@@ -751,11 +784,6 @@ export default function Home() {
 
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
-            <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
-            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'pricing' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>Pricing</span>
-          </div>
-
           <div className="flex w-full max-w-[900px] flex-col items-center gap-[20px]">
             <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Your Membership
@@ -780,11 +808,6 @@ export default function Home() {
 
         {/* ── FAQ ── */}
         <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="inline-flex h-[35px] items-center justify-center gap-[10px] rounded-[35px] bg-[#FFE4CE] px-[20px] shadow-[inset_-3px_-2px_3px_#FFDEC4,inset_0px_4px_4px_#FFE6D3]">
-            <div className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'background-color 0.4s ease' }} />
-            <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em]" style={{ color: `rgba(184,78,44,${activeSection === 'faq' ? 1 : 0.5})`, transition: 'color 0.4s ease' }}>FAQ</span>
-          </div>
-
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[10px]">
             <h2 className="w-full max-w-[634px] text-center text-[28px] md:text-[40px] lg:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Everything you need to know before applying.
