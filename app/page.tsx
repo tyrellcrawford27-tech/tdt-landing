@@ -91,8 +91,11 @@ export default function Home() {
   const [coachVisible, setCoachVisible] = useState(false);
   const [tableVisible, setTableVisible] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [heroIconMorphed, setHeroIconMorphed] = useState(false);
+  const [heroPlaying, setHeroPlaying] = useState(false);
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
   const cardsStartRef = useRef<HTMLDivElement>(null);
   const coachContentRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -144,6 +147,16 @@ export default function Home() {
     document.head.appendChild(s);
   }, []);
 
+  const handleHeroPlay = () => {
+    // First click: morph icon, then start inline video
+    setHeroIconMorphed(true);
+    setTimeout(() => setHeroPlaying(true), 180);
+  };
+
+  const handleHeroFullscreen = () => {
+    heroRef.current?.requestFullscreen?.().catch(() => {});
+  };
+
   useEffect(() => {
     const el = tableRef.current;
     if (!el) return;
@@ -174,11 +187,15 @@ export default function Home() {
   const panelBg = `rgb(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)})`;
   const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.96 : 0.92})` };
   const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.12)` };
-  const navTextStyle = { color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.6)` };
+  const navTextStyle = {
+    color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${!scrolled && !showCompact ? 0.8 : 0.6})`,
+    textShadow: !scrolled && !showCompact ? '0 1px 6px rgba(0,0,0,0.5)' : 'none',
+  };
   const navLinkStyle = (id: string) => ({
-    color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${activeSection === id ? 1 : 0.4})`,
+    color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${activeSection === id ? 1 : !scrolled && !showCompact ? 0.72 : 0.4})`,
     transition: 'color 0.3s ease',
     fontWeight: activeSection === id ? '500' : '400',
+    textShadow: !scrolled && !showCompact ? '0 1px 6px rgba(0,0,0,0.5)' : 'none',
   });
 
   const fadeUp = (delay: number): React.CSSProperties => ({
@@ -239,25 +256,29 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="fixed top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none">
         <div
-          className="grid grid-cols-[1fr_auto_1fr] items-center border backdrop-blur-[20px] pointer-events-auto"
+          className="grid grid-cols-[1fr_auto_1fr] items-center border pointer-events-auto"
           onMouseEnter={() => setNavHovered(true)}
           onMouseLeave={() => setNavHovered(false)}
           style={{
-            width: 'calc(100% - 40px)',
-            maxWidth: showCompact ? '380px' : scrolled ? '960px' : '1036px',
+            width: 'calc(100% - 80px)',
+            maxWidth: showCompact ? '380px' : scrolled ? '960px' : '100%',
             height: showCompact ? '52px' : scrolled ? '52px' : '60px',
-            paddingLeft: showCompact ? '16px' : scrolled ? '20px' : '28px',
-            paddingRight: showCompact ? '16px' : scrolled ? '20px' : '28px',
-            borderRadius: '9999px',
-            backgroundColor: isDark
-              ? `rgba(255,255,255,${showCompact ? 0.08 : scrolled ? 0.10 : 0.07})`
-              : `rgba(251,246,242,${showCompact ? 0.55 : scrolled ? 0.65 : 0.60})`,
+            paddingLeft: showCompact ? '16px' : scrolled ? '20px' : '0px',
+            paddingRight: showCompact ? '16px' : scrolled ? '20px' : '0px',
+            borderRadius: scrolled || showCompact ? '9999px' : '16px',
+            backdropFilter: scrolled || showCompact ? 'blur(20px)' : 'none',
+            backgroundColor: scrolled || showCompact
+              ? isDark
+                ? `rgba(255,255,255,${showCompact ? 0.08 : 0.10})`
+                : `rgba(251,246,242,${showCompact ? 0.55 : 0.65})`
+              : 'transparent',
             borderColor: isDark
-              ? `rgba(255,255,255,${scrolled ? 0.18 : 0.12})`
-              : `rgba(26,15,10,${scrolled ? 0.10 : 0.08})`,
-            boxShadow: isDark
-              ? '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.18)'
-              : '0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+              ? `rgba(255,255,255,${showCompact ? 0.12 : scrolled ? 0.10 : 0})`
+              : `rgba(26,15,10,${scrolled || showCompact ? 0.10 : 0})`,
+            boxShadow: !(scrolled || showCompact) ? 'none'
+              : isDark
+                ? '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.09)'
+                : '0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
             transition: 'all 0.5s cubic-bezier(0.4,0,0.2,1)',
           }}
         >
@@ -285,6 +306,7 @@ export default function Home() {
                 <a
                   key={id}
                   href={`#${id}`}
+                  className={`transition-colors duration-150 ${isDark ? 'hover:!text-white' : 'hover:!text-[#1A0F0A]'}`}
                   style={navLinkStyle(id)}
                   onClick={(e) => {
                     e.preventDefault();
@@ -341,20 +363,31 @@ export default function Home() {
       <main className="flex w-full flex-col">
 
         {/* ── Hero ── */}
-        <section className="relative w-full h-screen overflow-hidden">
-          {/* Background image */}
+        <section ref={heroRef} className="relative w-full min-h-screen bg-black" style={{ minHeight: '100dvh' }}>
+          {/* Background image — fades out when video is playing */}
           <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: "url('/hero.png')" }}
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-500"
+            style={{ backgroundImage: "url('/hero.png')", opacity: heroPlaying ? 0 : 1, backgroundSize: 'cover', backgroundAttachment: 'local' }}
+          />
+          {/* Video iframe — replace src with your video embed URL */}
+          <iframe
+            src={heroPlaying ? 'about:blank' : ''}
+            className="absolute inset-0 w-full h-full transition-opacity duration-500"
+            style={{ opacity: heroPlaying ? 1 : 0, pointerEvents: heroPlaying ? 'auto' : 'none', border: 'none' }}
+            allow="autoplay; fullscreen"
+            allowFullScreen
           />
           {/* Bottom gradient overlay */}
           <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 96%)' }}
+            className="absolute inset-0 transition-opacity duration-500"
+            style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 96%)', opacity: heroPlaying ? 0 : 1 }}
           />
 
-          {/* Bottom-left content */}
-          <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[72px] md:pb-[80px]">
+          {/* Bottom-left content — hidden when video is playing */}
+          <div
+            className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px] md:pb-[100px] transition-opacity duration-500 pointer-events-none"
+            style={{ opacity: heroPlaying ? 0 : 1, pointerEvents: heroPlaying ? 'none' : 'auto' }}
+          >
             <h1
               className="text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-[1.2] lg:leading-[53px] tracking-[-0.02em] max-w-[808px] mb-[14px]"
               style={{
@@ -373,21 +406,58 @@ export default function Home() {
               <CTAButton href="#apply" className="h-[37px] px-[20px] text-[14px]">
                 Claim your spot
               </CTAButton>
-              <span className="text-[14px] italic font-normal leading-[17px] tracking-[-0.02em] text-white/70 cursor-pointer">
+              <span
+                className="text-[14px] italic font-normal leading-[17px] tracking-[-0.02em] text-white/70 cursor-pointer"
+                onClick={() => {
+                  const el = document.getElementById('program');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 See how it works
               </span>
             </div>
           </div>
 
-          {/* Play button — bottom right */}
+          {/* Play / fullscreen button — bottom right */}
           <button
-            className="absolute cursor-pointer right-6 md:right-[60px] bottom-[80px] w-[60px] h-[60px] rounded-full flex items-center justify-center transition-opacity duration-200 hover:opacity-90"
-            style={{ background: 'rgba(146,146,146,0.75)', backdropFilter: 'blur(8px)' }}
-            aria-label="Play video"
+            onClick={heroPlaying ? handleHeroFullscreen : handleHeroPlay}
+            className="absolute cursor-pointer right-6 md:right-[60px] bottom-[80px] w-[60px] h-[60px] rounded-full flex items-center justify-center hover:opacity-90 active:scale-95"
+            style={{
+              background: 'rgba(146,146,146,0.75)',
+              backdropFilter: 'blur(8px)',
+              transition: 'opacity 0.2s ease, transform 0.15s ease',
+            }}
+            aria-label={heroPlaying ? 'Go fullscreen' : 'Play video'}
           >
-            <svg width="20" height="22" viewBox="0 0 20 22" fill="none">
-              <path d="M4 2.5L18 11L4 19.5V2.5Z" fill="#343434"/>
-            </svg>
+            {/* ▶ play — visible when idle */}
+            <span
+              className="absolute flex items-center justify-center"
+              style={{
+                opacity: heroIconMorphed ? 0 : 1,
+                transform: heroIconMorphed ? 'scale(1.25) rotate(60deg)' : 'scale(1) rotate(0deg)',
+                transition: 'opacity 0.18s ease, transform 0.18s ease',
+              }}
+            >
+              <svg width="20" height="22" viewBox="0 0 20 22" fill="none">
+                <path d="M4 2.5L18 11L4 19.5V2.5Z" fill="#343434"/>
+              </svg>
+            </span>
+            {/* ⤢ expand — visible when video is playing */}
+            <span
+              className="absolute flex items-center justify-center"
+              style={{
+                opacity: heroIconMorphed ? 1 : 0,
+                transform: heroIconMorphed ? 'scale(1) rotate(0deg)' : 'scale(0.6) rotate(-60deg)',
+                transition: 'opacity 0.18s ease 0.05s, transform 0.18s ease 0.05s',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M2 2H7M2 2V7M2 2L7 7" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 2H13M18 2V7M18 2L13 7" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 18H7M2 18V13M2 18L7 13" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 18H13M18 18V13M18 18L13 13" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
           </button>
 
         </section>
