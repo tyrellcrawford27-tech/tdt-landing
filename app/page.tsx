@@ -13,6 +13,7 @@ import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
+import { LaunchReveal } from "@/components/LaunchReveal";
 
 
 const NAV_LINKS = [
@@ -80,6 +81,87 @@ function CoachCarousel() {
   );
 }
 
+// TESTING: 30s from load — change back to new Date('2026-08-01T00:00:00') for production
+const LAUNCH_DATE = new Date('2026-08-01T00:00:00');
+
+function useCountdown() {
+  function calc() {
+    const diff = Math.max(0, LAUNCH_DATE.getTime() - Date.now());
+    return {
+      days:    Math.floor(diff / 86400000),
+      hours:   Math.floor((diff / 3600000) % 24),
+      minutes: Math.floor((diff / 60000) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    };
+  }
+  const [t, setT] = useState(calc);
+  useEffect(() => {
+    const id = setInterval(() => setT(calc()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return t;
+}
+
+function CountdownEyebrow({ onLaunch }: { onLaunch?: () => void }) {
+  const { days, hours, minutes, seconds } = useCountdown();
+  const fired = useRef(false);
+  useEffect(() => {
+    if (!fired.current && days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
+      fired.current = true;
+      onLaunch?.();
+    }
+  }, [days, hours, minutes, seconds, onLaunch]);
+  const units = [
+    { v: days,    l: 'd' },
+    { v: hours,   l: 'h' },
+    { v: minutes, l: 'm' },
+    { v: seconds, l: 's' },
+  ];
+
+  return (
+    <div
+      className="inline-flex items-center rounded-full mb-6 select-none"
+      style={{
+        border: '1px solid rgba(255,255,255,0.10)',
+        background: 'rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(14px)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 20px rgba(0,0,0,0.25)',
+      }}
+    >
+      {/* Left — label with live dot */}
+      <div className="flex items-center gap-[8px] pl-[14px] pr-[12px] py-[9px]">
+        <span className="relative flex h-[6px] w-[6px] flex-shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: '#B34929' }} />
+          <span className="relative inline-flex h-[6px] w-[6px] rounded-full" style={{ backgroundColor: '#B34929' }} />
+        </span>
+        <span className="text-[11px] font-medium tracking-[0.09em] uppercase whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          Cohort 1 · Aug 1
+        </span>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px self-stretch" style={{ background: 'rgba(255,255,255,0.09)', margin: '6px 0' }} />
+
+      {/* Right — countdown units */}
+      <div className="flex items-center gap-[14px] pl-[14px] pr-[16px] py-[9px]">
+        {units.map(({ v, l }, i) => (
+          <div key={l} className="flex items-baseline gap-[2px]">
+            <span
+              className="text-[15px] font-semibold leading-none text-white"
+              style={{ fontVariantNumeric: 'tabular-nums', fontFeatureSettings: '"tnum"', letterSpacing: '-0.01em' }}
+            >
+              {String(v).padStart(2, '0')}
+            </span>
+            <span className="text-[10px] font-medium leading-none" style={{ color: 'rgba(255,255,255,0.30)' }}>
+              {l}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
   const [tp, setTp] = useState(0);
@@ -93,6 +175,7 @@ export default function Home() {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [heroIconMorphed, setHeroIconMorphed] = useState(false);
   const [heroPlaying, setHeroPlaying] = useState(false);
+  const [launched, setLaunched] = useState(false);
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -215,6 +298,7 @@ export default function Home() {
 
       {/* ── Film grain overlay ── */}
       <FilmGrain />
+      {launched && <LaunchReveal onClose={() => setLaunched(false)} />}
 
       {/* ── Mobile full-screen menu overlay ── */}
       <div
@@ -388,6 +472,7 @@ export default function Home() {
             className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px] md:pb-[100px] transition-opacity duration-500 pointer-events-none"
             style={{ opacity: heroPlaying ? 0 : 1, pointerEvents: heroPlaying ? 'none' : 'auto' }}
           >
+            <CountdownEyebrow onLaunch={() => setLaunched(true)} />
             <h1
               className="text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-[1.2] lg:leading-[53px] tracking-[-0.02em] max-w-[808px] mb-[14px]"
               style={{
