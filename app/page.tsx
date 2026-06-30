@@ -552,7 +552,7 @@ export default function Home() {
                   <span className="text-white">eyes on their specific game.</span>
                   {' '}Not generic feedback. The truth about what's holding you back.
                 </p>
-                <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
+                <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
                   -Jaiden Francais
                 </p>
               </div>
