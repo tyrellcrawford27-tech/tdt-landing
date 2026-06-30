@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { CTAButton } from '@/components/CTAButton';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
@@ -153,11 +153,11 @@ type NominatimResult = {
   address: { city?: string; town?: string; village?: string; state?: string; country?: string };
 };
 
-function LocationInput({ value, onChange, baseStyle }: {
+const LocationInput = forwardRef<HTMLInputElement, {
   value: string;
   onChange: (v: string) => void;
   baseStyle: React.CSSProperties;
-}) {
+}>(function LocationInput({ value, onChange, baseStyle }, ref) {
   const [query, setQuery]     = useState(value);
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [open, setOpen]       = useState(false);
@@ -208,12 +208,13 @@ function LocationInput({ value, onChange, baseStyle }: {
   return (
     <div style={{ position: 'relative', width: '100%' }}>
       <input
+        ref={ref}
         type="text"
         value={query}
         onChange={handleChange}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onFocus={() => results.length > 0 && setOpen(true)}
-        placeholder="Oakville, Ontario, Canada"
+        placeholder="Mississauga, Ontario"
         autoComplete="off"
         style={baseStyle}
       />
@@ -274,7 +275,7 @@ function LocationInput({ value, onChange, baseStyle }: {
       )}
     </div>
   );
-}
+});
 
 // ── Go back button (secondary) ────────────────────────────────────────────────
 function GoBackButton({ onClick }: { onClick: () => void }) {
@@ -411,26 +412,29 @@ export default function ApplyPage() {
     setSubmitting(true);
     setError(null);
     const payload = {
-      athlete_name:         `${form.first_name} ${form.last_name}`.trim(),
-      athlete_email:        form.email,
-      athlete_phone:        form.phone,
-      age:                  form.age ? parseInt(form.age) : null,
-      city:                 form.city_state,
-      position:             form.position,
-      years_playing:        form.years_playing,
-      current_team_school:  form.current_team_school,
-      biggest_weakness:     form.biggest_weakness,
-      goal:                 form.goal,
-      why_this_program:     form.why_this_program,
-      time_commitment:      form.time_commitment,
-      why_basketball:       form.why_basketball,
-      guardian_name:        form.guardian_name,
-      guardian_phone:       form.guardian_phone,
-      guardian_email:       form.guardian_email || null,
-      guardian_aware:       form.guardian_aware || null,
-      anything_else:        form.anything_else || null,
-      submitted_at:         new Date().toISOString(),
-      status:               'pending',
+      first_name:   form.first_name,
+      last_name:    form.last_name,
+      email:        form.email,
+      phone:        form.phone,
+      age:          form.age ? parseInt(form.age) : null,
+      city:         form.city_state,
+      position:     form.position,
+      years_playing: form.years_playing
+                      ? (form.years_playing.toLowerCase().includes('less') ? 0 : parseInt(form.years_playing.match(/\d+/)?.[0] ?? '0'))
+                      : null,
+      current_team:      form.current_team_school,
+      biggest_weakness:  form.biggest_weakness,
+      goal:              form.goal,
+      why_program:       form.why_this_program,
+      time_commitment:   form.time_commitment,
+      why_basketball:    form.why_basketball,
+      parent_name:       form.guardian_name,
+      parent_phone:      form.guardian_phone,
+      parent_email:      form.guardian_email || null,
+      parent_aware:      form.guardian_aware || null,
+      additional_notes:  form.anything_else || null,
+      submitted_at:      new Date().toISOString(),
+      status:            'pending',
     };
     try {
       const res  = await fetch('/api/apply', {
@@ -476,7 +480,7 @@ export default function ApplyPage() {
   if (screen === 0) return (
     <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 25 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
         @keyframes tdt-char-in {
           from { opacity: 0; transform: translateY(14px); filter: blur(8px); }
           to   { opacity: 1; transform: translateY(0px);  filter: blur(0px); }
@@ -500,7 +504,7 @@ export default function ApplyPage() {
           textAlign: 'center',
           lineHeight: '18px',
         }}>
-          This isn't a quick signup. The questions are real, the time commitment is real, and so is the $2,000. Answer honestly — Jaiden's deciding if this is the right fit, not just whether you're good enough.
+          This isn't a quick signup. The questions are real, the time commitment is real, and so is the $2,000. Answer honestly. Jaiden's deciding if this is the right fit, not just whether you're good enough.
         </p>
         <CTAButton onClick={advance} className="h-[33px] px-[18px] text-[14px] font-normal mt-[10px]">
           Let's Begin
@@ -511,22 +515,37 @@ export default function ApplyPage() {
 
   // ── 20: Success ───────────────────────────────────────────────────────────
   if (screen === 20) return (
-    <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
+    <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 100px' }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');`}</style>
       <div style={{ ...fadeStyle, width: '100%', maxWidth: 700 }}>
-        <p style={{ ...text(18, 600, TERRA), textAlign: 'center', marginBottom: 24 }}>
+
+        {/* Section label — matches question screens exactly */}
+        <p style={{ ...text(18, 500, TERRA), textAlign: 'center', marginBottom: 25 }}>
           You're in the queue.
         </p>
-        <div style={{ background: CARD, borderRadius: 20, padding: '44px 48px', boxShadow: '0 2px 24px rgba(0,0,0,0.06)' }}>
-          <p style={{ ...text(16, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, marginBottom: 28 }}>
-            Jaiden's going to read this himself — not skim it, read it. Most people hear back within a few days. Either way you'll get a real answer, not silence.
-          </p>
-          <p style={{ ...text(16, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, marginBottom: 36 }}>
-            In the meantime, get back to work. The version of you that gets into Cohort 1 is the same version that doesn't wait around for a yes to start putting in the work.
-          </p>
-          <p style={{ fontFamily: "'Dancing Script', cursive", fontSize: 26, fontWeight: 600, color: TERRA, textAlign: 'center', margin: 0 }}>
-            Jaiden Francais
-          </p>
+
+        {/* Card — matches Frame 422 */}
+        <div style={{
+          boxSizing: 'border-box',
+          width: '100%',
+          background: CARD,
+          border: '1px solid rgba(0,0,0,0.05)',
+          borderRadius: 32,
+          padding: '50px 20px',
+        }}>
+          <div style={{ padding: '0px 60px', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
+            <p style={{ ...text(16, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
+              Jaiden's going to read this himself. Not skim it, read it. Most people hear back within a few days. Either way you'll get a real answer, not silence.
+            </p>
+            <p style={{ ...text(16, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
+              In the meantime, get back to work. The version of you that gets into Cohort 1 is the same version that doesn't wait around for a yes to start putting in the work.
+            </p>
+            <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, textAlign: 'center', margin: '8px 0 0' }}>
+              Jaiden Francais
+            </p>
+          </div>
         </div>
+
         <div style={{ textAlign: 'center', marginTop: 28 }}>
           <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
             ← Back to home
@@ -579,6 +598,7 @@ export default function ApplyPage() {
     if (q.type === 'location') {
       return (
         <LocationInput
+          ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
           value={val}
           onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
           baseStyle={inputBoxStyle}
@@ -697,7 +717,7 @@ export default function ApplyPage() {
   return (
     <div style={{ minHeight: '100vh', background: BG }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }

@@ -4,6 +4,8 @@ import { useState } from 'react';
 
 interface Props {
   href?: string;
+  target?: string;
+  rel?: string;
   onClick?: () => void;
   children: React.ReactNode;
   className?: string;
@@ -16,7 +18,7 @@ const BASE_BG: React.CSSProperties = {
     'rgba(0,0,0,0.25) 0px 0px 0px 0.8px inset, rgba(255,255,255,0.1) 0px 0px 5px 5px inset, rgba(255,255,255,0.25) 0px 0px 3px 1px inset, rgba(255,255,255,0.04) 0px 0px 4px 20px inset',
 };
 
-export function CTAButton({ href, onClick, children, className = '' }: Props) {
+export function CTAButton({ href, target, rel, onClick, children, className = '' }: Props) {
   const [pos, setPos] = useState({ x: 0, y: 0, on: false });
 
   const onMove = (e: React.MouseEvent<HTMLElement>) => {
@@ -49,7 +51,7 @@ export function CTAButton({ href, onClick, children, className = '' }: Props) {
 
   if (href) {
     return (
-      <a href={href} className={shared} onMouseMove={onMove} onMouseLeave={onLeave}>
+      <a href={href} target={target} rel={rel} className={shared} onMouseMove={onMove} onMouseLeave={onLeave}>
         {inner}
       </a>
     );
