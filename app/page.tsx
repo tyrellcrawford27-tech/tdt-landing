@@ -1,19 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from "react";
-
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'spline-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & { url?: string }, HTMLElement>;
-    }
-  }
-}
 import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
 import { LaunchReveal } from "@/components/LaunchReveal";
+
 
 
 const NAV_LINKS = [
@@ -482,13 +475,13 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              Most of your development happens alone.<br className="hidden md:block" /> We make sure it counts.
+              Most of your development happens alone.<br className="hidden md:block" /> We make damn sure it counts.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
               Jaiden studies your film, identifies exactly what's holding you back, and tracks your improvement with documented proof over 100 days.
             </p>
             <div className="flex items-center gap-[16px]">
-              <CTAButton href="#apply" className="h-[37px] px-[20px] text-[14px]">
+              <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
                 Claim your spot
               </CTAButton>
               <span
@@ -827,8 +820,7 @@ export default function Home() {
                         opacity: tableVisible ? 1 : 0,
                         transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
                         transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
-                        // Hover: orange left-edge selector line
-                        boxShadow: hoveredRow === row.slug ? 'inset 3px 0 0 #B34929' : 'none',
+                        backgroundColor: hoveredRow === row.slug ? 'rgba(255,255,255,0.05)' : 'transparent',
                       }}
                       onMouseEnter={() => setHoveredRow(row.slug)}
                       onMouseLeave={() => setHoveredRow(null)}
@@ -876,9 +868,8 @@ export default function Home() {
                           // Entrance
                           opacity: tableVisible ? 1 : 0,
                           transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
-                          transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, filter 0.25s ease`,
-                          // Hover: TDT stays strong, lifts slightly
-                          filter: hoveredRow !== null && hoveredRow !== row.slug ? 'brightness(0.88)' : 'brightness(1)',
+                          transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, background-color 0.2s ease`,
+                          backgroundColor: hoveredRow !== null && hoveredRow !== row.slug ? '#8C3820' : '#B34929',
                         }}
                         onMouseEnter={() => setHoveredRow(row.slug)}
                         onMouseLeave={() => setHoveredRow(null)}
@@ -915,7 +906,8 @@ export default function Home() {
                           // Entrance
                           opacity: tableVisible ? 1 : 0,
                           transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
-                          transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
+                          transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, background-color 0.2s ease`,
+                          backgroundColor: hoveredRow === row.slug ? 'rgba(255,255,255,0.05)' : 'transparent',
                         }}
                         onMouseEnter={() => setHoveredRow(row.slug)}
                         onMouseLeave={() => setHoveredRow(null)}
@@ -945,6 +937,7 @@ export default function Home() {
             </h2>
 
             <div className="relative w-full max-w-[900px]" style={{ aspectRatio: '633/399' }}>
+              {/* @ts-ignore — spline-viewer is a custom element loaded via CDN */}
               <spline-viewer
                 url="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
                 style={{ width: '100%', height: '100%', display: 'block' }}
@@ -955,7 +948,7 @@ export default function Home() {
               90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
             </p>
 
-            <CTAButton className="w-full md:w-auto h-[42px] px-8 text-[16px]">
+            <CTAButton href="/apply" className="w-full md:w-auto h-[42px] px-8 text-[16px]">
               Claim your spot
             </CTAButton>
           </div>

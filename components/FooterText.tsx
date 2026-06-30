@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 const REST_TEXT    = 'THINK DIFFERENT';
-const HOVER_TEXT   = 'BUILT IN THE DARK';
+const HOVER_TEXT   = 'THE WORLD IS YOURS';
 const MEASURE_TEXT = HOVER_TEXT; // longer string sets the container width
 const MEASURE_SIZE = 100;
 
