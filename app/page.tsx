@@ -25,11 +25,11 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 const COACH_IMAGES = [
-  { src: '/coach-1.jpg.png', position: 'center 45%' },
-  { src: '/coach-2.jpg.png', position: 'center 30%' },
-  { src: '/coach-3.jpg.png', position: 'top' },
-  { src: '/coach-4.jpg.png', position: 'top' },
-  { src: '/coach-5.jpg.png', position: 'top' },
+  { src: '/coach-1.jpg', position: 'center 45%' },
+  { src: '/coach-2.jpg', position: 'center 30%' },
+  { src: '/coach-3.jpg', position: 'top' },
+  { src: '/coach-4.jpg', position: 'top' },
+  { src: '/coach-5.jpg', position: 'top' },
 ];
 
 function CoachCarousel() {
@@ -444,7 +444,7 @@ export default function Home() {
           {/* Background image — fades out when video is playing */}
           <div
             className="absolute inset-0 bg-cover bg-center transition-opacity duration-500"
-            style={{ backgroundImage: "url('/hero.png')", opacity: heroPlaying ? 0 : 1, backgroundSize: 'cover', backgroundAttachment: 'local' }}
+            style={{ backgroundImage: "url('/hero.jpg')", opacity: heroPlaying ? 0 : 1, backgroundSize: 'cover', backgroundAttachment: 'local' }}
           />
           {/* Video iframe — replace src with your video embed URL */}
           <iframe
