@@ -127,7 +127,7 @@ function CountdownEyebrow({ onLaunch }: { onLaunch?: () => void }) {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: '#B34929' }} />
           <span className="relative inline-flex h-[6px] w-[6px] rounded-full" style={{ backgroundColor: '#B34929' }} />
         </span>
-        <span className="text-[11px] font-medium tracking-[0.09em] uppercase whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <span className="text-[11px] font-medium tracking-[-0.02em] whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Cohort 1 · Aug 1
         </span>
       </div>
@@ -475,7 +475,7 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              Most of your development happens alone.<br className="hidden md:block" /> We make damn sure it counts.
+              Most of your development happens alone.<br className="hidden md:block" /> We make sure every rep counts.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
               Jaiden studies your film, identifies exactly what's holding you back, and tracks your improvement with documented proof over 100 days.
