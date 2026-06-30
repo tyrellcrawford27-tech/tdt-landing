@@ -560,7 +560,7 @@ export default function Home() {
                   <span className="text-white">truth about what's holding you back</span>
                   {' '}and exactly how to fix it.
                 </p>
-                <p className="text-[20px] md:text-[24px] font-normal leading-[28px] md:leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Centralwell - Personal use', sans-serif", ...signatureReveal }}>
+                <p className="text-[20px] md:text-[24px] font-normal leading-[28px] md:leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
                   - Jaiden Francais
                 </p>
               </div>

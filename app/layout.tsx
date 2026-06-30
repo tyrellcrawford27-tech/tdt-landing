@@ -13,6 +13,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased overflow-x-hidden">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet" />
+      </head>
       <body className="min-h-full flex flex-col overflow-x-hidden">{children}</body>
     </html>
   );
