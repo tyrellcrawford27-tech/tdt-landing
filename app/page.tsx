@@ -545,23 +545,15 @@ export default function Home() {
           <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center gap-[50px] lg:gap-[100px]">
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
               <div>
-                <p style={{ ...fadeUp(0), lineHeight: '20px' }} className="text-[15px] md:text-[18px] font-bold tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
-                  Seven years. I've trained with some of the{' '}
-                  <span className="text-white">best this country has produced.</span>
-                  {' '}I know the difference between someone who works hard and someone who{' '}
-                  <span className="text-white">actually gets better</span>
-                  {' '}and most of the time it's not talent or effort. It's knowing{' '}
-                  <span className="text-white">exactly what to fix</span>
-                  {' '}and having someone who{' '}
-                  <span className="text-white">won't let you look away from it.</span>
-                  {' '}That's why every athlete in this program gets{' '}
-                  <span className="text-white">my eyes on their specific game</span>
-                  {' '}not generic feedback, not group sessions. Just the{' '}
-                  <span className="text-white">truth about what's holding you back</span>
-                  {' '}and exactly how to fix it.
+                <p style={{ ...fadeUp(0), lineHeight: '20px' }} className="text-[18px] font-bold tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
+                  Seven years alongside some of the best this country has produced. I know the difference between someone who works hard and someone who{' '}
+                  <span className="text-white">actually gets better.</span>
+                  {' '}It's knowing exactly what to fix. Every athlete here gets my{' '}
+                  <span className="text-white">eyes on their specific game.</span>
+                  {' '}Not generic feedback. The truth about what's holding you back.
                 </p>
-                <p className="text-[20px] md:text-[24px] font-normal leading-[28px] md:leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
-                  - Jaiden Francais
+                <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)]" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
+                  -Jaiden Francais
                 </p>
               </div>
               <div style={fadeUp(700)} className="flex flex-col gap-[12px] text-left">
