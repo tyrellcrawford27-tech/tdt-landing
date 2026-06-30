@@ -89,10 +89,10 @@ const CYCLING_WORDS = [
   'D1', 'U SPORTS', 'The League', 'A Scholarship', 'The Pros',
   'The Draft', 'A Roster Spot', 'The National Team', 'A Full Ride', 'The Next Level',
 ];
-const CHAR_STAGGER = 32;  // ms between each letter
-const ENTER_DUR    = 460; // ms per letter animation
-const EXIT_DUR     = 320; // ms per letter animation
-const HOLD_MS      = 2000;
+const CHAR_STAGGER = 26;  // ms between each letter
+const ENTER_DUR    = 370; // ms per letter animation
+const EXIT_DUR     = 260; // ms per letter animation
+const HOLD_MS      = 1700;
 
 function CyclingHeadline({ style }: { style?: React.CSSProperties }) {
   const [idx, setIdx]     = useState(0);
@@ -412,10 +412,13 @@ export default function ApplyPage() {
     setSubmitting(true);
     setError(null);
     const payload = {
-      first_name:   form.first_name,
-      last_name:    form.last_name,
-      email:        form.email,
-      phone:        form.phone,
+      athlete_name:  `${form.first_name} ${form.last_name}`.trim(),
+      athlete_email: form.email,
+      athlete_phone: form.phone,
+      first_name:    form.first_name,
+      last_name:     form.last_name,
+      email:         form.email,
+      phone:         form.phone,
       age:          form.age ? parseInt(form.age) : null,
       city:         form.city_state,
       position:     form.position,
