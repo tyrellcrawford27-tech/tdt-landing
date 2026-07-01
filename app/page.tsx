@@ -595,13 +595,28 @@ export default function Home() {
 
           return (
             <section id="program" className="relative w-full bg-[#000000]">
-              {/* Tall scroll container — one screen per step */}
-              <div style={{ height: `${STEPS.length * 100}dvh` }}>
+
+              {/* ── Mobile: simple stacked steps ── */}
+              <div className="flex lg:hidden flex-col gap-[60px] px-6 py-[80px]">
+                {STEPS.map((s, i) => (
+                  <div key={s.slug} className="flex flex-col gap-[14px]">
+                    <div className="flex items-center gap-[10px]">
+                      <span className="text-[10px] font-semibold tracking-[0.14em] uppercase text-[rgba(179,73,41,0.85)]">{s.label}</span>
+                      <span className="text-[10px] font-medium text-white/20 tracking-[0.06em]">0{i + 1}</span>
+                    </div>
+                    <h2 className="text-[22px] font-bold leading-[1.15] tracking-[-0.025em] text-white">{s.title}</h2>
+                    <p className="text-[14px] font-normal leading-[24px] text-white/50">{s.body}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Desktop: sticky scroll ── */}
+              <div className="hidden lg:block" style={{ height: `${STEPS.length * 100}dvh` }}>
 
                 <div ref={cardsStartRef} />
 
                 {/* Single sticky viewport */}
-                <div className="sticky top-[64px] lg:top-[98px] h-[calc(100dvh-64px)] lg:h-[calc(100dvh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
+                <div className="sticky top-[98px] h-[calc(100dvh-98px)] flex flex-col overflow-hidden px-[100px]">
 
                   {/* Watermark step number */}
                   <div aria-hidden="true" className="pointer-events-none select-none absolute inset-0 flex items-center overflow-hidden">
