@@ -391,7 +391,7 @@ export default function ApplyPage() {
     first_name:          ["Name pls", "C'mon, what's your name?", "Give me your name!!"],
     last_name:           ["Last name too", "We need your last name", "LAST NAME. GO."],
     age:                 ["How old are you?", "Age. Just a number.", "YOUR AGE — TYPE IT."],
-    city_state:          ["Where are you based?", "City, province or state", "WHERE ARE YOU FROM?!"],
+    city_state:          ["Where are you based?", "City and province/state please", "WHERE ARE YOU FROM?!"],
     email:               ["We'll need your email", "Email address please", "YOUR EMAIL — NOW."],
     phone:               ["Add a phone number", "Phone number, please", "PHONE NUMBER!!"],
     position:            ["Pick your position", "Choose one", "PICK. A. POSITION."],
@@ -410,6 +410,7 @@ export default function ApplyPage() {
   // Escalating messages when content doesn't pass validation
   const VALIDATION_BAD: Partial<Record<keyof FormData, string[]>> = {
     first_name:          ["That doesn't look like a name", "Letters only please", "REAL NAME."],
+    city_state:          ["Needs to be 'City, Province' format", "e.g. Mississauga, Ontario", "CITY, PROVINCE. THAT'S IT."],
     last_name:           ["That doesn't look like a last name", "Letters only please", "REAL LAST NAME."],
     age:                 ["Age must be between 10 and 25", "Enter a real age", "REAL AGE. 10–25."],
     email:               ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
@@ -450,6 +451,15 @@ export default function ApplyPage() {
       case 'phone':
       case 'guardian_phone':
         return v.replace(/[\s\-\(\)\+\.]/g, '').length < 10 || !/^[\d\s\-\(\)\+\.]+$/.test(v);
+      case 'city_state': {
+        if (!v.includes(',')) return true;                   // must have city, province format
+        const [city, region] = v.split(',').map(s => s.trim());
+        if (!city || city.length < 2) return true;           // city must exist
+        if (!region || region.length < 2) return true;       // region must exist
+        if (!/[aeiou]/i.test(city)) return true;             // city must have vowels
+        if (/[^aeiou\s''\-]{5,}/i.test(city)) return true;  // no consonant mashing
+        return false;
+      }
       case 'current_team_school':
         return v.length < 3;
       case 'biggest_weakness':
