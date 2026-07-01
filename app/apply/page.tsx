@@ -386,7 +386,7 @@ export default function ApplyPage() {
     setNudgeMsg(null);
   };
 
-  // Escalating validation messages per field — gets more impatient each attempt
+  // Escalating messages when field is empty
   const VALIDATION: Partial<Record<keyof FormData, string[]>> = {
     first_name:          ["Name pls", "C'mon, what's your name?", "Give me your name!!"],
     last_name:           ["Last name too", "We need your last name", "LAST NAME. GO."],
@@ -406,6 +406,53 @@ export default function ApplyPage() {
     guardian_phone:      ["Add their number", "Their phone number please", "THEIR NUMBER — GO."],
     guardian_aware:      ["Yes or no?", "Pick one", "YES. OR. NO."],
   };
+
+  // Escalating messages when content doesn't pass validation
+  const VALIDATION_BAD: Partial<Record<keyof FormData, string[]>> = {
+    first_name:          ["That doesn't look like a name", "Letters only please", "REAL NAME."],
+    last_name:           ["That doesn't look like a last name", "Letters only please", "REAL LAST NAME."],
+    age:                 ["Age must be between 10 and 25", "Enter a real age", "REAL AGE. 10–25."],
+    email:               ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
+    phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
+    current_team_school: ["Give us a real team or school name", "More than one letter", "TEAM OR SCHOOL NAME."],
+    biggest_weakness:    ["Give more detail than that", "Dig deeper — be specific", "ACTUALLY ANSWER IT."],
+    goal:                ["That's too vague, give us more", "Be specific about your goal", "REAL ANSWER. MORE DETAIL."],
+    why_this_program:    ["That's not enough — tell Jaiden more", "Why specifically this program?", "WE NEED MORE THAN THAT."],
+    why_basketball:      ["More than that — what are you really chasing?", "Be honest, dig deeper", "REAL ANSWER. GO DEEPER."],
+    guardian_name:       ["That doesn't look like a full name", "Letters only please", "REAL NAME."],
+    guardian_phone:      ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
+    guardian_email:      ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
+  };
+
+  // Returns true if the value fails content validation for that field
+  const validateContent = (field: keyof FormData, v: string): boolean => {
+    switch (field) {
+      case 'first_name':
+      case 'last_name':
+      case 'guardian_name':
+        return v.length < 2 || !/^[a-zA-ZÀ-ÿ\s''\-]+$/.test(v);
+      case 'age': {
+        const n = parseInt(v);
+        return isNaN(n) || n < 10 || n > 25;
+      }
+      case 'email':
+        return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      case 'phone':
+      case 'guardian_phone':
+        return v.replace(/[\s\-\(\)\+\.]/g, '').length < 10 || !/^[\d\s\-\(\)\+\.]+$/.test(v);
+      case 'current_team_school':
+        return v.length < 3;
+      case 'biggest_weakness':
+      case 'goal':
+      case 'why_basketball':
+        return v.length < 20;
+      case 'why_this_program':
+        return v.length < 25;
+      default:
+        return false;
+    }
+  };
+
   const OPTIONAL = new Set<keyof FormData>(['guardian_email', 'anything_else']);
 
   const handleSubmit = async () => {
@@ -459,8 +506,16 @@ export default function ApplyPage() {
     if (screen === 0) { goTo(1); return; }
     if (screen === TOTAL) { handleSubmit(); return; }
     const q = QUESTIONS[screen - 1];
-    if (!OPTIONAL.has(q.field) && !form[q.field].toString().trim()) {
+    const v = form[q.field].toString().trim();
+    if (!OPTIONAL.has(q.field) && !v) {
       const msgs = VALIDATION[q.field] ?? ["Fill this in to continue", "Still need this", "FILL IT IN."];
+      fireNudge(msgs[attempts % msgs.length]);
+      setAttempts(a => a + 1);
+      triggerShake();
+      return;
+    }
+    if (v && validateContent(q.field, v)) {
+      const msgs = VALIDATION_BAD[q.field] ?? ["That doesn't look right", "Check your answer", "FIX IT."];
       fireNudge(msgs[attempts % msgs.length]);
       setAttempts(a => a + 1);
       triggerShake();
