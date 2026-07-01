@@ -186,7 +186,8 @@ export default function Home() {
       }
       if (cardsStartRef.current) {
         const r = cardsStartRef.current.getBoundingClientRect();
-        setProgramProgress(Math.max(0, -r.top) / window.innerHeight);
+        const vh = window.visualViewport?.height ?? window.innerHeight;
+        setProgramProgress(Math.max(0, -r.top) / vh);
       }
       const mid = window.innerHeight * 0.45;
       let active = '';
@@ -595,12 +596,12 @@ export default function Home() {
           return (
             <section id="program" className="relative w-full bg-[#000000]">
               {/* Tall scroll container — one screen per step */}
-              <div style={{ height: `${STEPS.length * 100}vh` }}>
+              <div style={{ height: `${STEPS.length * 100}dvh` }}>
 
                 <div ref={cardsStartRef} />
 
                 {/* Single sticky viewport */}
-                <div className="sticky top-[64px] lg:top-[98px] h-[calc(100vh-64px)] lg:h-[calc(100vh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
+                <div className="sticky top-[64px] lg:top-[98px] h-[calc(100dvh-64px)] lg:h-[calc(100dvh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
 
                   {/* Watermark step number */}
                   <div aria-hidden="true" className="pointer-events-none select-none absolute inset-0 flex items-center overflow-hidden">
