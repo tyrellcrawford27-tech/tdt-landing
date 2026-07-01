@@ -478,7 +478,7 @@ export default function Home() {
               Most of your development happens alone.<br className="hidden md:block" /> We make sure every rep counts.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              Jaiden studies your film, identifies exactly what's holding you back, and tracks your improvement with documented proof over 100 days.
+              The player you know you can become is already in there. Find out exactly what's holding him back and prove how far he's come by day 100.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
