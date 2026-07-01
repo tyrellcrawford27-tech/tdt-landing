@@ -325,7 +325,7 @@ export default function Home() {
         <div className="absolute bottom-10 flex flex-col items-center gap-4 w-full px-6">
           <a href="#login" className="text-white/60 text-[14px]">Log In</a>
           <CTAButton href="https://cal.com/tyrell-crawford/tdt-demo-call" target="_blank" rel="noopener noreferrer" className="w-full h-[42px] text-[14px]">
-            Book Demo
+            See it in action
           </CTAButton>
         </div>
       </div>
@@ -420,7 +420,7 @@ export default function Home() {
                 Log In
               </a>
               <CTAButton href="https://cal.com/tyrell-crawford/tdt-demo-call" target="_blank" rel="noopener noreferrer" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
-                Book Demo
+                See it in action
               </CTAButton>
             </div>
             <button
