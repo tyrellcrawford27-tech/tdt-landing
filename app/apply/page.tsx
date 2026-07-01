@@ -426,11 +426,21 @@ export default function ApplyPage() {
 
   // Returns true if the value fails content validation for that field
   const validateContent = (field: keyof FormData, v: string): boolean => {
+    const isGibberishName = (s: string) =>
+      !/[aeiou]/i.test(s) ||                    // no vowels at all
+      /[^aeiou\s''\-]{5,}/i.test(s) ||          // 5+ consecutive consonants
+      /(.)\1{3,}/.test(s);                       // same char repeated 4+ times
+
+    const isGibberishText = (s: string) =>
+      s.trim().split(/\s+/).length < 3 ||        // fewer than 3 words
+      /(.)\1{4,}/.test(s) ||                     // same char repeated 5+ times
+      /^(.{1,4})\1{3,}/.test(s);                 // short pattern repeated (asdasdasd)
+
     switch (field) {
       case 'first_name':
       case 'last_name':
       case 'guardian_name':
-        return v.length < 2 || !/^[a-zA-ZÀ-ÿ\s''\-]+$/.test(v);
+        return v.length < 2 || !/^[a-zA-ZÀ-ÿ\s''\-]+$/.test(v) || isGibberishName(v);
       case 'age': {
         const n = parseInt(v);
         return isNaN(n) || n < 10 || n > 25;
@@ -445,9 +455,9 @@ export default function ApplyPage() {
       case 'biggest_weakness':
       case 'goal':
       case 'why_basketball':
-        return v.length < 20;
+        return v.length < 20 || isGibberishText(v);
       case 'why_this_program':
-        return v.length < 25;
+        return v.length < 25 || isGibberishText(v);
       default:
         return false;
     }
