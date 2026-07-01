@@ -312,6 +312,7 @@ export default function ApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [nudgeMsg, setNudgeMsg]     = useState<string | null>(null);
+  const [nudgeType, setNudgeType]   = useState<'error' | 'info'>('error');
   const [nudgeKey, setNudgeKey]     = useState(0);
   const [attempts, setAttempts]     = useState(0);
   const [shaking, setShaking]       = useState(false);
@@ -364,7 +365,8 @@ export default function ApplyPage() {
     requestAnimationFrame(() => requestAnimationFrame(() => setShaking(true)));
   };
 
-  const fireNudge = (msg: string) => {
+  const fireNudge = (msg: string, type: 'error' | 'info' = 'error') => {
+    setNudgeType(type);
     setNudgeMsg(msg);
     setNudgeKey(k => k + 1);
   };
@@ -770,7 +772,7 @@ export default function ApplyPage() {
                   onClick={() => {
                     setForm(f => ({ ...f, [q.field]: opt }));
                     if (q.field === 'guardian_aware') {
-                      if (opt === 'No') fireNudge('Consider letting them know :)');
+                      if (opt === 'No') fireNudge('Consider letting them know :)', 'info');
                       else setNudgeMsg(null);
                     } else {
                       setNudgeMsg(null);
@@ -897,7 +899,7 @@ export default function ApplyPage() {
                   alignItems: 'center',
                   padding: '5px 10px',
                   gap: 10,
-                  background: '#FFE2E2',
+                  background: nudgeType === 'info' ? '#E6F4EC' : '#FFE2E2',
                   borderRadius: 36,
                   height: 28,
                   pointerEvents: 'none',
@@ -911,7 +913,7 @@ export default function ApplyPage() {
                     fontSize: 12,
                     lineHeight: '18px',
                     letterSpacing: '-0.02em',
-                    color: '#FF5050',
+                    color: nudgeType === 'info' ? '#1A7A3F' : '#FF5050',
                   }}>
                     {nudgeMsg}
                   </span>
