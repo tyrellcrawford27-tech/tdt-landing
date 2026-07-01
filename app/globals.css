@@ -27,7 +27,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: "PP Neue Montreal", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Offset anchor targets so they don't hide under the 98px sticky nav */

@@ -20,9 +20,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-full flex flex-col">
-        <div className="relative w-full overflow-x-hidden">
-          {children}
-        </div>
+        {children}
         <Analytics />
       </body>
     </html>
