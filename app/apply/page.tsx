@@ -10,8 +10,7 @@ const CARD  = '#FFFFFF';
 
 // ── Form data ─────────────────────────────────────────────────────────────────
 type FormData = {
-  first_name: string;
-  last_name: string;
+  full_name: string;
   age: string;
   city_state: string;
   email: string;
@@ -32,7 +31,7 @@ type FormData = {
 };
 
 const EMPTY: FormData = {
-  first_name: '', last_name: '', age: '', city_state: '',
+  full_name: '', age: '', city_state: '',
   email: '', phone: '', position: '', years_playing: '',
   current_team_school: '', biggest_weakness: '', goal: '',
   why_this_program: '', time_commitment: '', why_basketball: '',
@@ -49,28 +48,27 @@ type Q =
   | { num: string; section: string; question: string; field: keyof FormData; type: 'choice'; options: string[] };
 
 const QUESTIONS: Q[] = [
-  { num: '01', section: 'Info',              question: "What's your first name?",                               field: 'first_name',          type: 'text',       placeholder: 'Type your answer here...' },
-  { num: '02', section: 'Info',              question: "What's your last name?",                                field: 'last_name',           type: 'text',       placeholder: 'Type your answer here...' },
-  { num: '03', section: 'Info',              question: 'How old are you?',                                      field: 'age',                 type: 'number',     placeholder: '17' },
-  { num: '04', section: 'Info',              question: 'City, State / Province',                                field: 'city_state',          type: 'location' },
-  { num: '05', section: 'Info',              question: "What's your email?",                                    field: 'email',               type: 'email',      placeholder: 'you@email.com' },
-  { num: '06', section: 'Info',              question: "What's your phone number?",                             field: 'phone',               type: 'tel',        placeholder: '(416) 000-0000' },
-  { num: '07', section: 'Your game',         question: 'What position do you play?',                            field: 'position',            type: 'radio-grid', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
-  { num: '08', section: 'Your game',         question: 'Years playing competitively',                           field: 'years_playing',       type: 'radio-grid', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
-  { num: '09', section: 'Your game',         question: 'Current team or school?',                               field: 'current_team_school', type: 'text',       placeholder: 'St. Marcellinus senior boys' },
-  { num: '10', section: 'Your game',         question: "What's your biggest weakness as a player right now?",   field: 'biggest_weakness',    type: 'textarea',   placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
-  { num: '11', section: 'Your game',         question: "What's your goal?",                                     field: 'goal',                type: 'textarea',   placeholder: 'Play D1 and earn a scholarship' },
-  { num: '12', section: 'Your commitment',   question: 'Why do you want to do this program specifically?',      field: 'why_this_program',    type: 'textarea',   placeholder: "What made you want to apply? What are you hoping changes after 100 days?" },
-  { num: '13', section: 'Your commitment',   question: 'How much time can you realistically commit per day?',   field: 'time_commitment',     type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
-  { num: '14', section: 'Your commitment',   question: "Why basketball? What are you actually chasing?",        field: 'why_basketball',      type: 'textarea',   placeholder: "Be honest — there's no wrong answer." },
-  { num: '15', section: 'Parent / Guardian', question: 'Parent / guardian name',                                field: 'guardian_name',       type: 'text',       placeholder: 'Full name' },
-  { num: '16', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '(416) 000-0000' },
-  { num: '17', section: 'Parent / Guardian', question: 'Their email address (optional)',                         field: 'guardian_email',      type: 'email',      placeholder: 'parent@email.com' },
-  { num: '18', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
-  { num: '19', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
+  { num: '01', section: 'Info',              question: "What's your full name?",                                field: 'full_name',           type: 'text',       placeholder: 'First and last name' },
+  { num: '02', section: 'Info',              question: 'How old are you?',                                      field: 'age',                 type: 'number',     placeholder: '17' },
+  { num: '03', section: 'Info',              question: 'City, State / Province',                                field: 'city_state',          type: 'location' },
+  { num: '04', section: 'Info',              question: "What's your email?",                                    field: 'email',               type: 'email',      placeholder: 'you@email.com' },
+  { num: '05', section: 'Info',              question: "What's your phone number?",                             field: 'phone',               type: 'tel',        placeholder: '(416) 000-0000' },
+  { num: '06', section: 'Your game',         question: 'What position do you play?',                            field: 'position',            type: 'radio-grid', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
+  { num: '07', section: 'Your game',         question: 'Years playing competitively',                           field: 'years_playing',       type: 'radio-grid', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
+  { num: '08', section: 'Your game',         question: 'Current team or school?',                               field: 'current_team_school', type: 'text',       placeholder: 'St. Marcellinus senior boys' },
+  { num: '09', section: 'Your game',         question: "What's your biggest weakness as a player right now?",   field: 'biggest_weakness',    type: 'textarea',   placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
+  { num: '10', section: 'Your game',         question: "What's your goal?",                                     field: 'goal',                type: 'textarea',   placeholder: 'Play D1 and earn a scholarship' },
+  { num: '11', section: 'Your commitment',   question: 'Why do you want to do this program specifically?',      field: 'why_this_program',    type: 'textarea',   placeholder: "What made you want to apply? What are you hoping changes after 100 days?" },
+  { num: '12', section: 'Your commitment',   question: 'How much time can you realistically commit per day?',   field: 'time_commitment',     type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
+  { num: '13', section: 'Your commitment',   question: "Why basketball? What are you actually chasing?",        field: 'why_basketball',      type: 'textarea',   placeholder: "Be honest — there's no wrong answer." },
+  { num: '14', section: 'Parent / Guardian', question: 'Parent / guardian name',                                field: 'guardian_name',       type: 'text',       placeholder: 'Full name' },
+  { num: '15', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '(416) 000-0000' },
+  { num: '16', section: 'Parent / Guardian', question: 'Their email address (optional)',                         field: 'guardian_email',      type: 'email',      placeholder: 'parent@email.com' },
+  { num: '17', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
+  { num: '18', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
 ];
 
-const TOTAL = QUESTIONS.length; // 19
+const TOTAL = QUESTIONS.length; // 18
 
 // ── Shared text style (PP Neue Montreal is the root font) ─────────────────────
 const text = (size: number, weight: number, color: string, extra?: React.CSSProperties): React.CSSProperties => ({
@@ -390,8 +388,7 @@ export default function ApplyPage() {
 
   // Escalating messages when field is empty
   const VALIDATION: Partial<Record<keyof FormData, string[]>> = {
-    first_name:          ["Name pls", "C'mon, what's your name?", "Give me your name!!"],
-    last_name:           ["Last name too", "We need your last name", "LAST NAME. GO."],
+    full_name:           ["Name pls", "First and last name", "FULL NAME. GO."],
     age:                 ["How old are you?", "Age. Just a number.", "YOUR AGE — TYPE IT."],
     city_state:          ["Where are you based?", "City and province/state please", "WHERE ARE YOU FROM?!"],
     email:               ["We'll need your email", "Email address please", "YOUR EMAIL — NOW."],
@@ -411,9 +408,8 @@ export default function ApplyPage() {
 
   // Escalating messages when content doesn't pass validation
   const VALIDATION_BAD: Partial<Record<keyof FormData, string[]>> = {
-    first_name:          ["That doesn't look like a name", "Letters only please", "REAL NAME."],
+    full_name:           ["Include first and last name", "e.g. Marcus Thompson", "FIRST AND LAST NAME."],
     city_state:          ["Needs to be 'City, Province' format", "e.g. Mississauga, Ontario", "CITY, PROVINCE. THAT'S IT."],
-    last_name:           ["That doesn't look like a last name", "Letters only please", "REAL LAST NAME."],
     age:                 ["Age must be between 10 and 25", "Enter a real age", "REAL AGE. 10–25."],
     email:               ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
     phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
@@ -449,8 +445,11 @@ export default function ApplyPage() {
     };
 
     switch (field) {
-      case 'first_name':
-      case 'last_name':
+      case 'full_name': {
+        const parts = v.trim().split(/\s+/);
+        if (parts.length < 2) return true;
+        return parts.some(p => p.length < 2 || !/^[a-zA-ZÀ-ÿ''\-]+$/.test(p) || isGibberishName(p));
+      }
       case 'guardian_name':
         return v.length < 2 || !/^[a-zA-ZÀ-ÿ\s''\-]+$/.test(v) || isGibberishName(v);
       case 'age': {
@@ -489,12 +488,14 @@ export default function ApplyPage() {
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
+    const [firstName, ...nameParts] = form.full_name.trim().split(/\s+/);
+    const lastName = nameParts.join(' ');
     const payload = {
-      athlete_name:  `${form.first_name} ${form.last_name}`.trim(),
+      athlete_name:  form.full_name.trim(),
       athlete_email: form.email,
       athlete_phone: form.phone,
-      first_name:    form.first_name,
-      last_name:     form.last_name,
+      first_name:    firstName || '',
+      last_name:     lastName || '',
       email:         form.email,
       phone:         form.phone,
       age:          form.age ? parseInt(form.age) : null,
