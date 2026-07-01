@@ -565,7 +565,7 @@ export default function ApplyPage() {
 
   // ── 0: Intro ──────────────────────────────────────────────────────────────
   if (screen === 0) return (
-    <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 25 }}>
+    <div style={{ minHeight: '100dvh', background: BG, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 25, padding: '60px 24px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
         @keyframes tdt-char-in {
@@ -576,24 +576,27 @@ export default function ApplyPage() {
           from { opacity: 1; transform: translateY(0px);   filter: blur(0px); }
           to   { opacity: 0; transform: translateY(-14px); filter: blur(8px); }
         }
+        @media (max-width: 639px) {
+          .tdt-intro-desc { font-size: 15px !important; line-height: 1.6 !important; }
+        }
       `}</style>
 
       <p style={{ ...text(16, 500, TERRA), ...fadeStyle }}>
         Think Different Training
       </p>
 
-      <div style={{ ...fadeStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15 }}>
-        <CyclingHeadline style={{ ...text(32, 500, '#000000'), margin: 0 }} />
-        <p style={{
+      <div style={{ ...fadeStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 15, width: '100%', maxWidth: 560 }}>
+        <CyclingHeadline style={{ ...text(32, 500, '#000000'), margin: 0, fontSize: 'clamp(24px, 7vw, 32px)' }} />
+        <p className="tdt-intro-desc" style={{
           ...text(18, 400, '#000000'),
           opacity: 0.4,
           maxWidth: 800,
           textAlign: 'center',
-          lineHeight: '18px',
+          lineHeight: 1.6,
         }}>
           This isn't a quick signup. The questions are real, the time commitment is real, and so is the $2,000. Answer honestly. Jaiden's deciding if this is the right fit, not just whether you're good enough.
         </p>
-        <CTAButton onClick={advance} className="h-[33px] px-[18px] text-[14px] font-normal mt-[10px]">
+        <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin
         </CTAButton>
       </div>
@@ -602,29 +605,35 @@ export default function ApplyPage() {
 
   // ── 20: Success ───────────────────────────────────────────────────────────
   if (screen === 20) return (
-    <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 100px' }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');`}</style>
+    <div style={{ minHeight: '100dvh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 80px' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
+        @media (max-width: 639px) {
+          .tdt-card { padding: 28px 16px !important; }
+          .tdt-card-inner { padding-left: 0 !important; padding-right: 0 !important; }
+        }
+      `}</style>
       <div style={{ ...fadeStyle, width: '100%', maxWidth: 700 }}>
 
-        {/* Section label — matches question screens exactly */}
-        <p style={{ ...text(18, 500, TERRA), textAlign: 'center', marginBottom: 25 }}>
+        {/* Section label */}
+        <p style={{ ...text(16, 500, TERRA), textAlign: 'center', marginBottom: 20 }}>
           You're in the queue.
         </p>
 
-        {/* Card — matches Frame 422 */}
-        <div style={{
+        {/* Card */}
+        <div className="tdt-card" style={{
           boxSizing: 'border-box',
           width: '100%',
           background: CARD,
           border: '1px solid rgba(0,0,0,0.05)',
-          borderRadius: 32,
-          padding: '50px 20px',
+          borderRadius: 28,
+          padding: '44px 20px',
         }}>
-          <div style={{ padding: '0px 60px', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
-            <p style={{ ...text(16, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
+          <div className="tdt-card-inner" style={{ padding: '0px 50px', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
+            <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
               Jaiden's going to read this himself. Not skim it, read it. Most people hear back within a few days. Either way you'll get a real answer, not silence.
             </p>
-            <p style={{ ...text(16, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
+            <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
               In the meantime, get back to work. The version of you that gets into Cohort 1 is the same version that doesn't wait around for a yes to start putting in the work.
             </p>
             <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, textAlign: 'center', margin: '8px 0 0' }}>
@@ -633,7 +642,7 @@ export default function ApplyPage() {
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 28 }}>
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
           <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
             ← Back to home
           </a>
@@ -702,6 +711,7 @@ export default function ApplyPage() {
               <button
                 key={opt}
                 type="button"
+                className="tdt-radio-btn"
                 onClick={() => { setForm(f => ({ ...f, [q.field]: opt })); setNudgeMsg(null); }}
                 style={{
                   display: 'flex',
@@ -756,6 +766,7 @@ export default function ApplyPage() {
                 <button
                   key={opt}
                   type="button"
+                  className="tdt-choice-btn"
                   onClick={() => {
                     setForm(f => ({ ...f, [q.field]: opt }));
                     if (q.field === 'guardian_aware') {
@@ -802,7 +813,7 @@ export default function ApplyPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: BG }}>
+    <div style={{ minHeight: '100dvh', background: BG }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
         input::-webkit-outer-spin-button,
@@ -823,6 +834,15 @@ export default function ApplyPage() {
           75%  { transform: translateX(4px); }
           87%  { transform: translateX(-2px); }
         }
+        @media (max-width: 639px) {
+          .tdt-card { padding: 28px 16px !important; border-radius: 20px !important; }
+          .tdt-card-inner { padding-left: 0 !important; padding-right: 0 !important; }
+          .tdt-question-text { font-size: 17px !important; line-height: 24px !important; }
+          .tdt-section-label { font-size: 15px !important; margin-bottom: 16px !important; }
+          .tdt-radio-btn { padding: 12px !important; font-size: 14px !important; gap: 10px !important; }
+          .tdt-choice-btn { padding: 16px 8px !important; font-size: 15px !important; }
+          .tdt-outer { padding: 70px 20px 80px !important; }
+        }
       `}</style>
 
       {/* Progress bar */}
@@ -836,11 +856,11 @@ export default function ApplyPage() {
       </a>
 
       {/* Question */}
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 100px' }}>
+      <div className="tdt-outer" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 100px' }}>
         <div style={{ ...fadeStyle, width: '100%', maxWidth: 700 }}>
 
-          {/* Section label — 18px / 500 / terracotta */}
-          <p style={{ ...text(18, 500, TERRA), textAlign: 'center', marginBottom: 25 }}>
+          {/* Section label */}
+          <p className="tdt-section-label" style={{ ...text(16, 500, TERRA), textAlign: 'center', marginBottom: 20 }}>
             {q.section}
           </p>
 
@@ -849,6 +869,7 @@ export default function ApplyPage() {
 
             {/* Frame 422 — the card */}
             <div
+              className="tdt-card"
               onAnimationEnd={() => setShaking(false)}
               style={{
                 boxSizing: 'border-box',
@@ -856,7 +877,7 @@ export default function ApplyPage() {
                 background: '#FFFFFF',
                 border: '1px solid rgba(0, 0, 0, 0.05)',
                 borderRadius: 32,
-                padding: '50px 20px',
+                padding: '44px 20px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
@@ -911,23 +932,23 @@ export default function ApplyPage() {
                 </span>
               </div>
 
-              {/* Frame 423 — question + input, padded 0px 60px */}
-              <div style={{
+              {/* Frame 423 — question + input */}
+              <div className="tdt-card-inner" style={{
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                padding: '0px 60px',
+                padding: '0px 50px',
                 gap: 20,
                 width: '100%',
                 boxSizing: 'border-box',
               }}>
-                <p style={{
+                <p className="tdt-question-text" style={{
                   width: '100%',
                   fontSize: 20,
                   fontWeight: 500,
                   letterSpacing: '-0.02em',
-                  lineHeight: '18px',
+                  lineHeight: '28px',
                   color: '#000000',
                   opacity: 0.5,
                   margin: 0,
