@@ -437,6 +437,15 @@ export default function ApplyPage() {
       /(.)\1{4,}/.test(s) ||                     // same char repeated 5+ times
       /^(.{1,4})\1{3,}/.test(s);                 // short pattern repeated (asdasdasd)
 
+    const isDisengaged = (s: string) => {
+      if (s.length > 100) return false; // long answers are fine
+      const lower = s.toLowerCase();
+      const bad = ['nothing', ' none', 'idk', 'no weakness', 'i am the best', 'best at everything',
+                   'no flaws', "don't have any", 'i have no weakness', 'n/a', 'no idea',
+                   'i have none', 'everything is fine', 'i\'m perfect', 'not applicable', 'good at everything'];
+      return bad.some(p => lower.includes(p));
+    };
+
     switch (field) {
       case 'first_name':
       case 'last_name':
@@ -465,9 +474,9 @@ export default function ApplyPage() {
       case 'biggest_weakness':
       case 'goal':
       case 'why_basketball':
-        return v.length < 20 || isGibberishText(v);
+        return v.length < 20 || isGibberishText(v) || isDisengaged(v);
       case 'why_this_program':
-        return v.length < 25 || isGibberishText(v);
+        return v.length < 25 || isGibberishText(v) || isDisengaged(v);
       default:
         return false;
     }
