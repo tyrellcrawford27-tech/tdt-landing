@@ -929,7 +929,7 @@ export default function Home() {
               Your Membership
             </h2>
 
-            <div className="relative w-full max-w-[996px] overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
+            <div className="relative w-full max-w-[996px] overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399', maxHeight: 440 }}>
               {/* @ts-ignore — spline-viewer is a custom element loaded via CDN */}
               <spline-viewer
                 url="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
