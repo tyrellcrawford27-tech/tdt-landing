@@ -448,7 +448,7 @@ export default function Home() {
           />
           {/* Video iframe — replace src with your video embed URL */}
           <iframe
-            src={heroPlaying ? 'about:blank' : ''}
+            src={heroPlaying ? 'about:blank' : undefined}
             className="absolute inset-0 w-full h-full transition-opacity duration-500"
             style={{ opacity: heroPlaying ? 1 : 0, pointerEvents: heroPlaying ? 'auto' : 'none', border: 'none' }}
             allow="autoplay; fullscreen"

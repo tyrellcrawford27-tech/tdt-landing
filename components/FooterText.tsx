@@ -101,22 +101,26 @@ export function FooterText() {
         </defs>
       </svg>
 
-      {/* Invisible ruler — always measures the longer hover string */}
-      <span
-        ref={measuringRef}
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          visibility: 'hidden',
-          whiteSpace: 'nowrap',
-          fontSize: `${MEASURE_SIZE}px`,
-          fontWeight: 800,
-          letterSpacing: '-0.02em',
-          lineHeight: 1,
-          pointerEvents: 'none',
-        }}
-      >
-        {MEASURE_TEXT}
+      {/* Invisible ruler — always measures the longer hover string.
+          Wrapped in a zero-size clipped box so the 1000px+ span never
+          extends the page's scrollable area (was causing horizontal
+          scroll on mobile). */}
+      <span aria-hidden="true" style={{ display: 'block', position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+        <span
+          ref={measuringRef}
+          style={{
+            position: 'absolute',
+            visibility: 'hidden',
+            whiteSpace: 'nowrap',
+            fontSize: `${MEASURE_SIZE}px`,
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            lineHeight: 1,
+            pointerEvents: 'none',
+          }}
+        >
+          {MEASURE_TEXT}
+        </span>
       </span>
 
       <div
