@@ -924,12 +924,12 @@ export default function Home() {
 
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1600px] flex-col items-center gap-[20px]">
+          <div className="flex w-full max-w-[1360px] flex-col items-center gap-[20px]">
             <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Your Membership
             </h2>
 
-            <div className="relative w-full max-w-[1600px] mt-[20px] overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
+            <div className="relative w-full max-w-[1360px] mt-[20px] overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
               {/* @ts-ignore — spline-viewer is a custom element loaded via CDN */}
               <spline-viewer
                 url="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
