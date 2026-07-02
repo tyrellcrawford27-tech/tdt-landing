@@ -5,6 +5,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Tactical Different Training",
   description: "Basketball development coaching with cohort-based training.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
