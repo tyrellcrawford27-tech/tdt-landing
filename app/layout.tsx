@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tactical Different Training",
+  title: "Think Different Training",
   description: "Basketball development coaching with cohort-based training.",
   icons: {
     icon: "/favicon2.png",
