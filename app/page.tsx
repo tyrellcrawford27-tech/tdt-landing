@@ -357,7 +357,7 @@ export default function Home() {
               : 'opacity 0.2s ease, transform 0.2s ease',
           }}
         >
-          <a href="#login" className="text-[14px] text-white/60">Log In</a>
+          <a href="https://app.thinkdifferenttraining.com/access" className="text-[14px] text-white/60">Log In</a>
           <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className="w-full h-[48px] text-[15px]">
             See it in action
           </CTAButton>
@@ -447,7 +447,7 @@ export default function Home() {
             <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
               {/* Log In fades out in compact mode */}
               <a
-                href="#login"
+                href="https://app.thinkdifferenttraining.com/access"
                 className={`transition-all duration-500 hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}
                 style={{ opacity: showCompact ? 0 : 1, pointerEvents: showCompact ? 'none' : 'auto', marginRight: showCompact ? '-60px' : '0' }}
               >
