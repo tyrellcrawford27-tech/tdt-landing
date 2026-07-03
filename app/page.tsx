@@ -295,36 +295,70 @@ export default function Home() {
 
       {/* ── Mobile full-screen menu overlay ── */}
       <div
-        className={`fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center lg:hidden transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-[100] flex flex-col lg:hidden transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{
+          backgroundColor: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+        }}
       >
-        <button
-          onClick={() => setMenuOpen(false)}
-          className="absolute top-5 right-6 flex h-11 w-11 cursor-pointer items-center justify-center text-white/60"
-          aria-label="Close menu"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M6 6L18 18M6 18L18 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
-        <nav className="flex flex-col items-center gap-8">
-          {NAV_LINKS.map(({ id, label }) => (
+        {/* Top bar — mirrors the header: logo left, close right */}
+        <div className="flex h-[64px] items-center justify-between px-6">
+          <div className="flex h-[38px] w-[34px] items-center justify-center">
+            <TDTLogo letterColor="rgb(255,255,255)" />
+          </div>
+          <button
+            onClick={() => setMenuOpen(false)}
+            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center text-white/70"
+            aria-label="Close menu"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6L18 18M6 18L18 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Links — numbered, staggered entrance */}
+        <nav className="flex flex-1 flex-col justify-center px-8">
+          {NAV_LINKS.map(({ id, label }, i) => (
             <a
               key={id}
               href={`#${id}`}
-              className="cursor-pointer text-[28px] font-medium text-white/80 tracking-[-0.02em]"
+              className="flex cursor-pointer items-baseline gap-[16px] border-b border-white/[0.08] py-[18px] last:border-b-0"
+              style={{
+                opacity: menuOpen ? 1 : 0,
+                transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
+                transition: menuOpen
+                  ? `opacity 0.45s cubic-bezier(0.16,1,0.3,1) ${120 + i * 70}ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) ${120 + i * 70}ms`
+                  : 'opacity 0.2s ease, transform 0.2s ease',
+              }}
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
                 setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' }); }, 150);
               }}
             >
-              {label}
+              <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                0{i + 1}
+              </span>
+              <span className="text-[30px] font-medium tracking-[-0.02em] text-white/90">{label}</span>
             </a>
           ))}
         </nav>
-        <div className="absolute bottom-10 flex flex-col items-center gap-4 w-full px-6">
-          <a href="#login" className="text-white/60 text-[14px]">Log In</a>
-          <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className="w-full h-[42px] text-[14px]">
+
+        {/* Bottom actions */}
+        <div
+          className="flex w-full flex-col items-center gap-[18px] px-6 pb-10"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
+            transition: menuOpen
+              ? 'opacity 0.45s cubic-bezier(0.16,1,0.3,1) 420ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) 420ms'
+              : 'opacity 0.2s ease, transform 0.2s ease',
+          }}
+        >
+          <a href="#login" className="text-[14px] text-white/60">Log In</a>
+          <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className="w-full h-[48px] text-[15px]">
             See it in action
           </CTAButton>
         </div>
@@ -409,7 +443,7 @@ export default function Home() {
           </div>
 
           {/* Right side — desktop actions + mobile hamburger */}
-          <div className="flex items-center justify-end">
+          <div className="col-start-3 flex items-center justify-end">
             <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
               {/* Log In fades out in compact mode */}
               <a
