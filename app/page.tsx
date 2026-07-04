@@ -962,11 +962,12 @@ export default function Home() {
                 scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
                 style={{ width: '100%', height: '100%', display: 'block' }}
               />
+              <p
+                className="absolute bottom-[6%] left-1/2 -translate-x-1/2 w-full max-w-[90%] text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60 pointer-events-none"
+              >
+                90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
+              </p>
             </div>
-
-            <p className="w-full text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60">
-              90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
-            </p>
 
             <CTAButton href="/apply" className="w-full md:w-auto h-[42px] px-8 text-[16px]">
               Claim your spot
