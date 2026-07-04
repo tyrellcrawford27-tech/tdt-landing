@@ -963,7 +963,7 @@ export default function Home() {
               Your Membership
             </h2>
 
-            <div className="relative w-full max-w-[916px] mx-auto rounded-[24px]" style={{ aspectRatio: '633/399', overflow: 'visible' }}>
+            <div className="relative w-full max-w-[916px] mx-auto rounded-[24px]" style={{ aspectRatio: '4/3', overflow: 'visible' }}>
               {/* @ts-ignore — spline-viewer is a custom element loaded via CDN */}
               <spline-viewer
                 url="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
