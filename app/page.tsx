@@ -963,11 +963,11 @@ export default function Home() {
               Your Membership
             </h2>
 
-            <div className="relative w-full max-w-[996px] overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399', maxHeight: 440 }}>
+            <div className="relative w-full max-w-[996px] overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
               {/* @ts-ignore — spline-viewer is a custom element loaded via CDN */}
               <spline-viewer
                 url="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                style={{ width: '100%', height: '100%', display: 'block', transform: 'scale(1.4)', transformOrigin: 'center center' }}
+                style={{ width: '100%', height: '100%', display: 'block' }}
               />
             </div>
 
