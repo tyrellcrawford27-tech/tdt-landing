@@ -952,22 +952,25 @@ export default function Home() {
 
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-0">
-            <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)] mb-[-110px] relative z-10">
+          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-[12px]">
+            <h2 className="relative z-10 text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Your Membership
             </h2>
 
-            <div className="relative w-full max-w-[1006px] mx-auto rounded-[24px]" style={{ aspectRatio: '633/399', overflow: 'visible' }}>
+            {/* The visible card only fills the middle of the Spline canvas — the rest is
+                transparent scene padding. Negative margins (as % so they scale with the
+                canvas) let that padding slide under the heading/subtext instead of pushing
+                them away, while the canvas stays full-size so rotation never clips. */}
+            <div className="relative -my-[11%] w-full max-w-[1006px] mx-auto" style={{ aspectRatio: '633/399' }}>
               <Spline
                 scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
                 style={{ width: '100%', height: '100%', display: 'block' }}
               />
-              <p
-                className="absolute bottom-[80px] left-1/2 -translate-x-1/2 w-full max-w-[90%] text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60 pointer-events-none"
-              >
-                90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
-              </p>
             </div>
+
+            <p className="relative z-10 w-full text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60">
+              90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
+            </p>
 
             <CTAButton href="/apply" className="w-full md:w-auto h-[42px] px-8 text-[16px]">
               Claim your spot
