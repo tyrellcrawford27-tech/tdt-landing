@@ -952,8 +952,8 @@ export default function Home() {
 
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-[12px]">
-            <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
+          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-[4px]">
+            <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)] mb-[-8px]">
               Your Membership
             </h2>
 
