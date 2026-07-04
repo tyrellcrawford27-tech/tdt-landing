@@ -6,6 +6,7 @@ import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
 import { LaunchReveal } from "@/components/LaunchReveal";
+import Spline from "@splinetool/react-spline";
 
 
 
@@ -215,13 +216,6 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (document.querySelector('script[src*="spline-viewer"]')) return;
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/@splinetool/viewer@1.12.97/build/spline-viewer.js';
-    s.type = 'module';
-    document.head.appendChild(s);
-  }, []);
 
   const handleHeroPlay = () => {
     // First click: morph icon, then start inline video
@@ -964,9 +958,8 @@ export default function Home() {
             </h2>
 
             <div className="relative w-full max-w-[916px] mx-auto rounded-[24px]" style={{ aspectRatio: '4/3', overflow: 'visible' }}>
-              {/* @ts-ignore — spline-viewer is a custom element loaded via CDN */}
-              <spline-viewer
-                url="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
+              <Spline
+                scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
                 style={{ width: '100%', height: '100%', display: 'block' }}
               />
             </div>
