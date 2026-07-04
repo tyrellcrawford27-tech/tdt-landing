@@ -952,8 +952,8 @@ export default function Home() {
 
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-[12px]">
-            <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
+          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-0">
+            <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)] mb-[-110px] relative z-10">
               Your Membership
             </h2>
 
@@ -963,7 +963,7 @@ export default function Home() {
                 style={{ width: '100%', height: '100%', display: 'block' }}
               />
               <p
-                className="absolute bottom-[12px] left-1/2 -translate-x-1/2 w-full max-w-[90%] text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60 pointer-events-none"
+                className="absolute bottom-[80px] left-1/2 -translate-x-1/2 w-full max-w-[90%] text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60 pointer-events-none"
               >
                 90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
               </p>
