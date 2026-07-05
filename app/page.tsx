@@ -574,7 +574,7 @@ export default function Home() {
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
               <div>
                 <p style={{ ...fadeUp(0), lineHeight: '20px' }} className="text-[18px] font-bold tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
-                  Seven years alongside some of the best this country has produced. I know the difference between someone who works hard and someone who{' '}
+                  Seven years, I trained alongside some of the best this country has produced. I know the difference between someone who works hard and someone who{' '}
                   <span className="text-white">actually gets better.</span>
                   {' '}It's knowing exactly what to fix. Every athlete here gets my{' '}
                   <span className="text-white">eyes on their specific game.</span>
