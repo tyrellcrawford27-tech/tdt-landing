@@ -495,7 +495,7 @@ export default function Home() {
           >
             <CountdownEyebrow onLaunch={() => setLaunched(true)} />
             <h1
-              className="text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-[1.2] lg:leading-[53px] tracking-[-0.02em] max-w-[808px] mb-[14px]"
+              className="text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-[1.2] lg:leading-[53px] tracking-[-0.02em] max-w-[900px] mb-[14px]"
               style={{
                 background: 'linear-gradient(90deg, #FFFFFF 0%, rgba(20,20,20,0.75) 135%)',
                 WebkitBackgroundClip: 'text',
