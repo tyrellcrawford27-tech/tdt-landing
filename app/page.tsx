@@ -506,7 +506,7 @@ export default function Home() {
               Senior year. No offer yet.<br className="hidden md:block" /> The clock doesn't care how talented you are.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              The player you know you can become is already in there. Find out exactly what's holding him back and prove how far he's come by day 100.
+              You already have the skill. What most players are missing is everything around it and almost nobody's training that. 100 days. We will.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
