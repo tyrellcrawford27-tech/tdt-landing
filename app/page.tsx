@@ -503,7 +503,7 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              Most of your development happens alone.<br className="hidden md:block" /> We make sure every rep counts.
+              Senior year. No offer yet.<br className="hidden md:block" /> The clock doesn't care how talented you are.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
               The player you know you can become is already in there. Find out exactly what's holding him back and prove how far he's come by day 100.
