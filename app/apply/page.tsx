@@ -597,7 +597,7 @@ export default function ApplyPage() {
           textAlign: 'center',
           lineHeight: 1.6,
         }}>
-          This isn't a quick signup. The questions are real, the time commitment is real, and so is the $2,000. Answer honestly. Jaiden's deciding if this is the right fit, not just whether you're good enough.
+          This isn't a quick signup. The questions are real, the time commitment is real, and so is the $1,000. Answer honestly. Jaiden's deciding if this is the right fit, not just whether you're good enough.
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin

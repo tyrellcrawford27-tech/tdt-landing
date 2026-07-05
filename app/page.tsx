@@ -1004,7 +1004,7 @@ export default function Home() {
                   answer: "Results depend on the athlete doing the work. What's guaranteed is Jaiden's full attention on your specific game. Every film reviewed, every session delivered, every score updated with a specific reason.",
                 },
                 {
-                  question: "What am I actually getting for $2,000?",
+                  question: "What am I actually getting for $1,000?",
                   answer: "Jaiden's eyes on your specific game for 100 days. Full diagnosis, honest scoring, prescribed drills, frame by frame film review, sessions, and documented proof of exactly how far you came. Not a course. Not content. Individual development built around what he finds in you specifically.",
                 },
               ].map((item, index) => {
