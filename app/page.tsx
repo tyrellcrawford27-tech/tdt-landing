@@ -361,7 +361,7 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="fixed top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none">
         <div
-          className="grid grid-cols-[1fr_auto_1fr] items-center border pointer-events-auto"
+          className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border pointer-events-auto"
           onMouseEnter={() => setNavHovered(true)}
           onMouseLeave={() => setNavHovered(false)}
           style={{
