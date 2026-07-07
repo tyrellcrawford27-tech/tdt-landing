@@ -480,7 +480,6 @@ export default function Home() {
             className="absolute inset-0 w-full h-full transition-opacity duration-500"
             style={{ opacity: heroPlaying ? 1 : 0, pointerEvents: heroPlaying ? 'auto' : 'none', border: 'none' }}
             allow="autoplay; fullscreen"
-            allowFullScreen
           />
           {/* Bottom gradient overlay */}
           <div
