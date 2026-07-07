@@ -762,27 +762,27 @@ export default function Home() {
           const ROWS = [
             {
               slug: 'stand',
-              topic: 'Knowing where you stand',
-              tdt: 'Honest scores across every dimension of your game before day one',
-              others: 'Guessing based on how practice felt',
+              topic: 'Is anyone being honest with me?',
+              tdt: "Jaiden watches your film like a recruiter. He tells you exactly what's standing between you and an offer, not just what makes you better for Friday's game.",
+              others: "Coaches focused on winning this week. Good coaches, but that's not the same thing as getting you recruited.",
             },
             {
               slug: 'alone',
-              topic: 'What to work on alone',
-              tdt: 'Drills prescribed to exactly what Jaiden finds in your game',
-              others: 'Generic content or whatever your coach mentioned last session',
+              topic: 'Am I working on the right thing?',
+              tdt: "Drills built off exactly what's holding you back from an offer. Nothing generic.",
+              others: 'Team practice, built for the team. Not built around your specific case to a recruiter.',
             },
             {
               slug: 'feedback',
-              topic: <>Feedback on <em>your</em> work</>,
-              tdt: "Jaiden watches every submission frame by frame and tells you what's changing",
-              others: 'No one watching. No one correcting.',
+              topic: 'Is someone actually tracking my case?',
+              tdt: "Every submission, every session. Someone whose only job is building your path to an offer.",
+              others: "Coaches juggling a full roster. Nobody with the time to focus on just you.",
             },
             {
               slug: 'proof',
-              topic: "Proof you're improving",
-              tdt: 'Tracked scores, annotated footage, documented from day one to graduation',
-              others: 'A feeling. Maybe a compliment.',
+              topic: 'Could I prove I got better?',
+              tdt: 'A real, tracked record. The exact kind of improvement that shows up on tape this season.',
+              others: "A feeling, maybe a compliment, from someone who's got 14 other guys to worry about too.",
             },
           ];
 
@@ -794,7 +794,7 @@ export default function Home() {
                   <span style={{ color: `rgba(179,73,41,${activeSection === 'difference' ? 1 : 0.6})`, transition: 'color 0.4s ease' }} className="italic">different</span>
                 </h3>
                 <h2 className="w-full max-w-[620px] text-center text-[22px] md:text-[26px] font-normal leading-[30px] md:leading-[34px] tracking-[-0.02em] text-white">
-                  Not your <strong className="italic">$29.99/month</strong> course. This is what it looks like when a coach actually watches your game.
+                  Not your <strong className="italic">$29.99/month</strong> course. This is what it looks like when someone's evaluation is actually built around getting you an offer.
                 </h2>
               </div>
 
