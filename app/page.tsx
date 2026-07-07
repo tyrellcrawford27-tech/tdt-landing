@@ -953,20 +953,10 @@ export default function Home() {
               Your Membership
             </h2>
 
-            {/* The visible card only fills ~62%×76% of the Spline canvas, offset to
-                center 57.75%/56.5%. We zoom into that region and re-center it with a
-                CSS transform, then clip the leftover empty canvas with overflow-hidden
-                so the card fills the box and the text hugs it. */}
-            <div className="relative w-full max-w-[900px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
+            <div className="relative w-full max-w-[1300px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
               <Spline
                 scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'block',
-                  transformOrigin: '57.75% 56.5%',
-                  transform: 'translate(-7.75%, -6.5%) scale(1.32)',
-                }}
+                style={{ width: '100%', height: '100%', display: 'block' }}
               />
             </div>
 
