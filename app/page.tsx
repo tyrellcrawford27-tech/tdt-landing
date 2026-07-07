@@ -493,9 +493,8 @@ export default function Home() {
             className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px] md:pb-[100px] transition-opacity duration-500 pointer-events-none"
             style={{ opacity: heroPlaying ? 0 : 1, pointerEvents: heroPlaying ? 'none' : 'auto' }}
           >
-            <CountdownEyebrow onLaunch={() => setLaunched(true)} />
             <h1
-              className="text-[28px] md:text-[36px] lg:text-[44px] font-bold leading-[1.2] lg:leading-[53px] tracking-[-0.02em] max-w-[900px] mb-[14px]"
+              className="text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[950px] mb-[11px]"
               style={{
                 background: 'linear-gradient(90deg, #FFFFFF 0%, rgba(20,20,20,0.75) 135%)',
                 WebkitBackgroundClip: 'text',
@@ -503,10 +502,10 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              Senior year. No offer yet.<br className="hidden md:block" /> The clock doesn't care how talented you are.
+              Senior year. No offer yet.<br className="hidden md:block" /> Time's not exactly on your side anymore.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              You already have the skill. What most players are missing is everything around it and almost nobody's training that. 100 days. We will.
+              You got yourself this far. What's next is a different game and almost nobody's shown you how to play it.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
@@ -952,15 +951,25 @@ export default function Home() {
 
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-[16px]">
+          <div className="flex w-full max-w-[1300px] mx-auto flex-col items-center gap-[12px]">
             <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
               Your Membership
             </h2>
 
-            <div className="relative w-full max-w-[1300px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
+            {/* The visible card only fills ~62%×76% of the Spline canvas, offset to
+                center 57.75%/56.5%. We zoom into that region and re-center it with a
+                CSS transform, then clip the leftover empty canvas with overflow-hidden
+                so the card fills the box and the text hugs it. */}
+            <div className="relative w-full max-w-[900px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
               <Spline
                 scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                style={{ width: '100%', height: '100%', display: 'block' }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'block',
+                  transformOrigin: '57.75% 56.5%',
+                  transform: 'translate(-7.75%, -6.5%) scale(1.32)',
+                }}
               />
             </div>
 
