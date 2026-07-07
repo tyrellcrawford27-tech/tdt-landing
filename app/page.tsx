@@ -610,11 +610,10 @@ export default function Home() {
         {/* ── Program ── */}
         {(() => {
           const STEPS = [
-            { slug: 'diagnosis',       label: 'Diagnosis',       num: '01', title: 'Before anything unlocks, Jaiden needs to see you.',       body: "Eight drills. One take. No retakes. Film yourself cold and submit. Jaiden watches everything before a single thing unlocks. This is the most honest look at your game you've ever had.",                                                                                                           image: 'diagnosis.png'       },
-            { slug: 'drill-library',   label: 'Drill Library',   num: '02', title: 'Your prescription. Built from your weaknesses.',           body: 'After Jaiden evaluates your game, your drill library is built around exactly what he finds. No generic workouts. Every rep targets something specific he identified in you.',                                                                          image: 'drill-library.png'   },
-            { slug: 'film-submission', label: 'Film Submission',  num: '03', title: 'Film it cold. Upload it raw.',                             body: 'No preparation needed. Film your drill in one take and upload it directly to Jaiden. Tell him what to focus on he handles everything from there and tells you exactly what needs to change.',                                                                    image: 'film-submission.png' },
-            { slug: 'film-study',      label: 'Film Study',       num: '04', title: 'Jaiden watches every second.',                             body: "Frame by frame, he marks exactly what needs to change and tells you precisely why so when you train alone, you know what you're actually fixing.",                                                                                                           image: 'film-study.png'      },
-            { slug: 'atlas',           label: 'Your Story',       num: '05', title: 'Your growth, documented and undeniable.',                  body: "Jaiden updates your ratings as you improve. By graduation you have documented proof of exactly what changed and how far you've come.",                               image: 'atlas.png'           },
+            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: 'Get assessed like a recruiter would.',       body: "Send your best film. Jaiden watches it like a scout, draws directly on it, tells you exactly what he sees and what to fix. No cold drills, no standardized test. Just your actual game, evaluated honestly.", image: 'diagnosis.png'   },
+            { slug: 'prescription', label: 'Prescription', num: '02', title: "Your weakness, not everyone else's workout.", body: "Every drill you get is pulled straight from what Jaiden saw in your film, the exact things standing between you and an offer.",                                                                                image: 'prescription.png' },
+            { slug: '100-days',     label: 'The 100 Days', num: '03', title: 'The work nobody sees.',                       body: "A 100-day plan built for one thing, turning you into the player who gets the offer. Surgical film review. In-depth calls about exactly what it takes to get to the next level.",                              image: '100-days.png'    },
+            { slug: 'proof',        label: 'The Proof',    num: '04', title: 'Now go get it.',                              body: "Walk away with the skills and the knowledge to get the offer you know you're capable of getting. Not someone's opinion of you, real improvement, in real games, that recruiters actually see.",              image: 'proof.png'       },
           ];
           const activeStep = Math.min(STEPS.length - 1, Math.max(0, Math.floor(programProgress)));
 
@@ -651,7 +650,7 @@ export default function Home() {
                   {/* Header row — counter pinned right */}
                   <div className="relative z-10 flex items-center justify-center pt-[36px] pb-[44px] flex-shrink-0">
                     <span className="absolute right-0 text-[12px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {STEPS[activeStep].num} <span className="text-white/12">/ 05</span>
+                      {STEPS[activeStep].num} <span className="text-white/12">/ 04</span>
                     </span>
                   </div>
 
@@ -671,7 +670,7 @@ export default function Home() {
                             pointerEvents: activeStep === i ? 'auto' : 'none',
                           }}
                         >
-                          <span className="text-[11px] font-semibold tracking-[0.14em] uppercase text-[rgba(179,73,41,0.85)]">
+                          <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
                             {s.label}
                           </span>
                           <h2 className="text-[28px] md:text-[34px] lg:text-[40px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
