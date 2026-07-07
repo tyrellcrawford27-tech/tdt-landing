@@ -823,12 +823,12 @@ export default function Home() {
               >
                 {/* Topics column — 300×480, aligned to bottom via parent align-items:flex-end */}
                 <div className="flex flex-col w-[300px] h-[480px]">
-                  {[
-                    { slug: 'stand',    topic: 'Knowing where you stand', bw: '1px 0px 1px 1px', br: '15px 0px 0px 0px' },
-                    { slug: 'alone',    topic: 'What to work on alone',    bw: '1px 0px 1px 1px', br: '0px' },
-                    { slug: 'feedback', topic: <>Feedback on <em>your</em> work</>,  bw: '0px 0px 1px 1px', br: '0px' },
-                    { slug: 'proof',    topic: "Proof you're improving",     bw: '0px 0px 1px 1px', br: '0px 0px 0px 14px' },
-                  ].map((row, i) => (
+                  {ROWS.map((row, i) => ({
+                    slug: row.slug,
+                    topic: row.topic,
+                    bw: `${i === 0 ? '1px' : '0px'} 0px 1px 1px`,
+                    br: i === 0 ? '15px 0px 0px 0px' : i === ROWS.length - 1 ? '0px 0px 0px 14px' : '0px',
+                  })).map((row, i) => (
                     <div
                       key={row.slug}
                       className="flex items-center justify-center p-[10px] w-[300px] h-[120px]"
@@ -872,12 +872,11 @@ export default function Home() {
                         Think Different Training
                       </span>
                     </div>
-                    {[
-                      { slug: 'stand',    text: 'Honest scores across every dimension of your game before day one', bw: '1px 1px 1px 1px' },
-                      { slug: 'alone',    text: 'Drills prescribed to exactly what Jaiden finds in your game',      bw: '0px 1px 1px 1px' },
-                      { slug: 'feedback', text: "Jaiden watches every submission frame by frame and tells you what's changing", bw: '0px 1px 1px 1px' },
-                      { slug: 'proof',    text: 'Tracked scores, annotated footage, documented from day one to graduation',    bw: '0px 1px 1px 1px', br: '0px 0px 0px 0px' },
-                    ].map((row, i) => (
+                    {ROWS.map((row, i) => ({
+                      slug: row.slug,
+                      text: row.tdt,
+                      bw: `${i === 0 ? '1px' : '0px'} 1px 1px 1px`,
+                    })).map((row, i) => (
                       <div
                         key={row.slug}
                         className="flex items-center w-[300px] h-[120px] px-[30px] bg-[#B34929]"
@@ -909,12 +908,12 @@ export default function Home() {
                         You're currently doing
                       </span>
                     </div>
-                    {[
-                      { slug: 'stand',    text: 'Guessing based on how practice felt',                           bw: '1px 1px 1px 0px' },
-                      { slug: 'alone',    text: 'Generic content or whatever your coach mentioned last session', bw: '0px 1px 1px 0px' },
-                      { slug: 'feedback', text: 'No one watching. No one correcting.',                           bw: '0px 1px 1px 0px' },
-                      { slug: 'proof',    text: 'A feeling. Maybe a compliment.',                                bw: '0px 1px 1px 0px', br: '0px 0px 14px 0px' },
-                    ].map((row, i) => (
+                    {ROWS.map((row, i) => ({
+                      slug: row.slug,
+                      text: row.others,
+                      bw: `${i === 0 ? '1px' : '0px'} 1px 1px 0px`,
+                      br: i === ROWS.length - 1 ? '0px 0px 14px 0px' : '0px',
+                    })).map((row, i) => (
                       <div
                         key={row.slug}
                         className="flex items-center justify-center w-[300px] h-[120px] px-[30px]"
