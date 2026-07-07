@@ -991,28 +991,28 @@ export default function Home() {
             <div className="flex w-full flex-col items-start">
               {[
                 {
-                  question: "Who is Jaiden and why should I trust him with my development?",
-                  answer: "7 years developing serious players. Trained alongside athletes who went on to play professionally. Trusted by Canada Basketball's National Training Centre, York University, and Brampton City Prep. He watches your footage specifically and tells you exactly what's holding you back.",
+                  question: "Is Jaiden actually qualified to tell me what recruiters want?",
+                  answer: "He's coached athletes who've gone on to play at the next level, and he evaluates film the way recruiters actually do, not the way a friend or a hype man does. This isn't a guess about what gets you seen. It's someone who's watched it happen before.",
                 },
                 {
-                  question: "How does this actually develop my game if I'm not training in person?",
-                  answer: "90% of your development happens alone. No one watching. No one correcting. This program changes that. Jaiden diagnoses exactly what's wrong, prescribes the specific work to fix it, and reviews your film to make sure every rep you take alone is actually making you better.",
+                  question: "I don't train with him in person. Does that actually matter?",
+                  answer: "Recruiters don't watch you in person either. They watch film. Learning to be evaluated on film, and get better based on that evaluation, is closer to the real recruiting process than another in person practice ever was.",
                 },
                 {
-                  question: "How much time does this require each week?",
-                  answer: "45 to 60 minutes of focused drill work daily on top of your existing training. Film submissions take 10 to 15 minutes. Reviews come back within 24 hours. Sessions are scheduled in advance. If you're serious about developing, it fits.",
+                  question: "What if my season's already started and I don't have time for another thing?",
+                  answer: "This is built to run alongside your season, not compete with it. Drills, film submissions, one call with Jaiden. It's built around the games you're actually playing right now, since those are the games that count.",
                 },
                 {
-                  question: "What if I'm not at the right level?",
-                  answer: "The program starts with a full diagnosis. Jaiden evaluates exactly where you are before anything begins. What's required isn't a certain level. It's that you show up and do the work.",
+                  question: "What if I'm not good enough yet for this to even make sense?",
+                  answer: "That's the exact question Diagnosis answers. Jaiden watches your actual game and tells you the truth about where you stand. Wherever that is, the next 100 days are built to close the distance from there to an offer.",
                 },
                 {
-                  question: "What if we invest and it doesn't work?",
-                  answer: "Results depend on the athlete doing the work. What's guaranteed is Jaiden's full attention on your specific game. Every film reviewed, every session delivered, every score updated with a specific reason.",
+                  question: "What if I do all of this and still don't get an offer?",
+                  answer: "Nobody can guarantee that, and anyone who does is lying to you. What you walk away with either way is real, tracked improvement and the exact knowledge of what recruiters actually look for. That's what gives you the best real shot, not a promise.",
                 },
                 {
-                  question: "What am I actually getting for $1,000?",
-                  answer: "Jaiden's eyes on your specific game for 100 days. Full diagnosis, honest scoring, prescribed drills, frame by frame film review, sessions, and documented proof of exactly how far you came. Not a course. Not content. Individual development built around what he finds in you specifically.",
+                  question: "What's the actual cost of finding out if you're good enough?",
+                  answer: "$1,000 for 100 days. Compare that to a year of chasing exposure with no idea if you're even doing the right things. This is the fastest, most honest way to find out where you actually stand, and fix it before the window closes.",
                 },
               ].map((item, index) => {
                 const isOpen = openFaq === index;
