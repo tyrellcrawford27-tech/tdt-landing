@@ -424,10 +424,10 @@ export default function Home() {
             </nav>
             {/* Section label — shown when in a section */}
             <span
-              className="absolute text-[14px] font-medium tracking-[-0.02em] whitespace-nowrap transition-all duration-500"
+              className="absolute left-1/2 text-[14px] font-medium tracking-[-0.02em] whitespace-nowrap transition-all duration-500"
               style={{
                 opacity: showCompact ? 1 : 0,
-                transform: showCompact ? 'translateY(0)' : 'translateY(5px)',
+                transform: showCompact ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(5px)',
                 color: isDark ? 'rgba(255,255,255,0.85)' : `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.85)`,
                 pointerEvents: 'none',
               }}
