@@ -763,26 +763,26 @@ export default function Home() {
             {
               slug: 'stand',
               topic: 'Is anyone being honest with me?',
-              tdt: "Jaiden watches your film like a recruiter. He tells you exactly what's standing between you and an offer, not just what makes you better for Friday's game.",
-              others: "Coaches focused on winning this week. Good coaches, but that's not the same thing as getting you recruited.",
+              tdt: "Jaiden watches your film like a recruiter, and tells you exactly what's standing between you and an offer.",
+              others: "Coaches focused on winning this week, not on getting you recruited.",
             },
             {
               slug: 'alone',
               topic: 'Am I working on the right thing?',
-              tdt: "Drills built off exactly what's holding you back from an offer. Nothing generic.",
-              others: 'Team practice, built for the team. Not built around your specific case to a recruiter.',
+              tdt: "Drills built off exactly what's holding you back from an offer.",
+              others: 'Team practice, built for the team, not your case to a recruiter.',
             },
             {
               slug: 'feedback',
               topic: 'Is someone actually tracking my case?',
-              tdt: "Every submission, every session. Someone whose only job is building your path to an offer.",
-              others: "Coaches juggling a full roster. Nobody with the time to focus on just you.",
+              tdt: "Every submission, every session. Someone whose only job is your path to an offer.",
+              others: "Coaches juggling a full roster, with no time to focus on just you.",
             },
             {
               slug: 'proof',
               topic: 'Could I prove I got better?',
-              tdt: 'A real, tracked record. The exact kind of improvement that shows up on tape this season.',
-              others: "A feeling, maybe a compliment, from someone who's got 14 other guys to worry about too.",
+              tdt: 'A real, tracked record of the improvement that shows up on tape this season.',
+              others: "A feeling, maybe a compliment, from someone with 14 other guys to worry about.",
             },
           ];
 
