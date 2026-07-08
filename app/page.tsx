@@ -953,10 +953,12 @@ export default function Home() {
               Your Membership
             </h2>
 
+            {/* pointer-events: none stops the scene's mouse-follow tilt so the card
+                always rests flat/centered instead of rotating in 3D perspective */}
             <div className="relative w-full max-w-[1066px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
               <Spline
                 scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                style={{ width: '100%', height: '100%', display: 'block' }}
+                style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }}
               />
             </div>
 
