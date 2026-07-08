@@ -989,17 +989,10 @@ export default function Home() {
               Your Membership
             </h2>
 
-            {/* pointer-events: none stops the scene's mouse-follow tilt so the card
-                always rests flat/centered instead of rotating in 3D perspective.
-                renderOnDemand defaults to true in @splinetool/react-spline (only
-                re-renders on interaction) - with pointer events blocked it would
-                otherwise freeze on the first frame, so it's explicitly disabled
-                here to keep the scene's idle animation running. */}
             <div className="relative w-full max-w-[1066px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
               <Spline
                 scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                renderOnDemand={false}
-                style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }}
+                style={{ width: '100%', height: '100%', display: 'block' }}
               />
             </div>
 
