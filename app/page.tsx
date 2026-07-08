@@ -489,7 +489,7 @@ export default function Home() {
 
           {/* Bottom-left content — hidden when video is playing */}
           <div
-            className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px] md:pb-[100px] transition-opacity duration-500 pointer-events-none"
+            className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px] transition-opacity duration-500 pointer-events-none"
             style={{ opacity: heroPlaying ? 0 : 1, pointerEvents: heroPlaying ? 'none' : 'auto' }}
           >
             <h1
