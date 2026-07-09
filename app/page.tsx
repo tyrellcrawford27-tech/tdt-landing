@@ -620,8 +620,9 @@ export default function Home() {
           return (
             <section id="program" className="relative w-full bg-[#000000]">
 
-              {/* Tall scroll container — one screen per step */}
-              <div style={{ height: `${STEPS.length * 100}svh` }}>
+              {/* Tall scroll container — one screen per step, plus a buffer at the
+                  end so the last step lingers before the sticky section releases */}
+              <div style={{ height: `${STEPS.length * 100 + 50}svh` }}>
 
                 <div ref={cardsStartRef} />
 
@@ -673,7 +674,7 @@ export default function Home() {
                           <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
                             {s.label}
                           </span>
-                          <h2 className="text-[28px] md:text-[34px] lg:text-[40px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
+                          <h2 className="text-[38px] md:text-[44px] lg:text-[50px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
                             {s.title}
                           </h2>
                           <p className="text-[14px] md:text-[15px] font-normal leading-[26px] text-white/50 max-w-[400px]">
