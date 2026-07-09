@@ -501,10 +501,10 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              Senior year. No offer yet.<br className="hidden md:block" /> Time's not exactly on your side anymore.
+              Chasing that offer?<br className="hidden md:block" /> This is your best shot.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              You got yourself this far. What's next is a different game and almost nobody's shown you how to play it.
+              Junior. Senior. Same problem. Nobody's showing you what's actually wrong with your game.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
@@ -985,7 +985,15 @@ export default function Home() {
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="flex w-full max-w-[1066px] mx-auto flex-col items-center gap-[12px]">
-            <h2 className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
+            <h2
+              className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
+              style={{
+                background: 'linear-gradient(105deg, #3D2418 0%, #B34929 55%, #E8A87C 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
               Your Membership
             </h2>
 
