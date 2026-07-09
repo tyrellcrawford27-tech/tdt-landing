@@ -989,10 +989,12 @@ export default function Home() {
             <h2
               className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
               style={{
-                background: 'linear-gradient(105deg, #3D2418 0%, #B34929 55%, #E8A87C 100%)',
+                background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
+                backgroundSize: '200% auto',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
+                animation: 'tdt-gradient-pan 5s linear infinite',
               }}
             >
               Your Membership

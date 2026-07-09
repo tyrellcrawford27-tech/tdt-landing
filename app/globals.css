@@ -34,3 +34,9 @@ body {
 section[id] {
   scroll-margin-top: 98px;
 }
+
+/* Panning shimmer for the gradient "Your Membership" heading */
+@keyframes tdt-gradient-pan {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: -200% 50%; }
+}
