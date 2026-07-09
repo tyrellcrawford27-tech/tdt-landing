@@ -316,15 +316,18 @@ export default function ApplyPage() {
   const [shaking, setShaking]       = useState(false);
   const inputRef   = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const advanceRef = useRef<() => void>(() => {});
+  const resumeScreenRef = useRef(1);
 
-  // Restore draft from localStorage on mount
+  // Restore draft from localStorage on mount — keep the intro screen visible
+  // and only jump to the saved progress once the user clicks "Let's Begin",
+  // instead of silently skipping straight past the intro on every revisit.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const { form: f, screen: s } = JSON.parse(saved);
         setForm(f);
-        if (s >= 1 && s <= TOTAL) setScreen(s);
+        if (s >= 1 && s <= TOTAL) resumeScreenRef.current = s;
       }
     } catch {}
   }, []);
@@ -535,7 +538,7 @@ export default function ApplyPage() {
   };
 
   const advance = () => {
-    if (screen === 0) { goTo(1); return; }
+    if (screen === 0) { goTo(resumeScreenRef.current); return; }
     if (screen === TOTAL) { handleSubmit(); return; }
     const q = QUESTIONS[screen - 1];
     const v = form[q.field].toString().trim();
