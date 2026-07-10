@@ -493,7 +493,7 @@ export default function Home() {
             style={{ opacity: heroPlaying ? 0 : 1, pointerEvents: heroPlaying ? 'none' : 'auto' }}
           >
             <h1
-              className="text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[950px] mb-[11px]"
+              className="text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]"
               style={{
                 background: 'linear-gradient(90deg, #FFFFFF 0%, rgba(20,20,20,0.75) 135%)',
                 WebkitBackgroundClip: 'text',
@@ -501,7 +501,7 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              Chasing that offer?<br className="hidden md:block" /> This is your best shot.
+              At this level, everyone's talented.<br className="hidden md:block" /> Nobody's told you what actually separates you.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
               Junior. Senior. Same problem. Nobody's showing you what's actually wrong with your game.
