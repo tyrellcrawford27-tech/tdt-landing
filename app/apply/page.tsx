@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { CTAButton } from '@/components/CTAButton';
+import { OSBA_SCHOOLS } from '@/lib/schools';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
 const BG    = '#FAF6F2';
@@ -44,6 +45,7 @@ type Q =
   | { num: string; section: string; question: string; field: keyof FormData; type: 'text' | 'email' | 'tel' | 'number'; placeholder: string }
   | { num: string; section: string; question: string; field: keyof FormData; type: 'textarea'; placeholder: string }
   | { num: string; section: string; question: string; field: keyof FormData; type: 'location' }
+  | { num: string; section: string; question: string; field: keyof FormData; type: 'school' }
   | { num: string; section: string; question: string; field: keyof FormData; type: 'radio-grid'; options: string[] }
   | { num: string; section: string; question: string; field: keyof FormData; type: 'choice'; options: string[] };
 
@@ -55,7 +57,7 @@ const QUESTIONS: Q[] = [
   { num: '05', section: 'Info',              question: "What's your phone number?",                             field: 'phone',               type: 'tel',        placeholder: '(416) 000-0000' },
   { num: '06', section: 'Your game',         question: 'What position do you play?',                            field: 'position',            type: 'radio-grid', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
   { num: '07', section: 'Your game',         question: 'Years playing competitively',                           field: 'years_playing',       type: 'radio-grid', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
-  { num: '08', section: 'Your game',         question: 'Current team or school?',                               field: 'current_team_school', type: 'text',       placeholder: 'St. Marcellinus senior boys' },
+  { num: '08', section: 'Your game',         question: 'Current team or school?',                               field: 'current_team_school', type: 'school' },
   { num: '09', section: 'Your game',         question: "What's your biggest weakness as a player right now?",   field: 'biggest_weakness',    type: 'textarea',   placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
   { num: '10', section: 'Your game',         question: "What's your goal?",                                     field: 'goal',                type: 'textarea',   placeholder: 'Play D1 and earn a scholarship' },
   { num: '11', section: 'Your commitment',   question: 'Why do you want to do this program specifically?',      field: 'why_this_program',    type: 'textarea',   placeholder: "What made you want to apply? What are you hoping changes after 100 days?" },
@@ -274,6 +276,139 @@ const LocationInput = forwardRef<HTMLInputElement, {
     </div>
   );
 });
+
+// ── School autocomplete (OSBA schools, with free-text fallback) ──────────────
+const SchoolInput = forwardRef<HTMLInputElement, {
+  value: string;
+  onChange: (v: string) => void;
+  baseStyle: React.CSSProperties;
+}>(function SchoolInput({ value, onChange, baseStyle }, ref) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
+
+  const matches = query.trim().length > 0
+    ? OSBA_SCHOOLS.filter(s => s.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8)
+    : [];
+
+  const commit = (v: string) => { setQuery(v); onChange(v); setOpen(false); setActiveIdx(-1); };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    onChange(e.target.value);
+    setOpen(true);
+    setActiveIdx(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!open || matches.length === 0) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); setActiveIdx(i => Math.min(i + 1, matches.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); setActiveIdx(i => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); e.stopPropagation(); commit(matches[activeIdx].name); }
+    else if (e.key === 'Escape') { setOpen(false); }
+  };
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <input
+        ref={ref}
+        type="text"
+        value={query}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => query.trim().length > 0 && setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="St. Marcellinus senior boys"
+        autoComplete="off"
+        style={baseStyle}
+      />
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 8px)',
+          left: 0,
+          right: 0,
+          background: '#ffffff',
+          borderRadius: 16,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+          border: '1px solid rgba(0,0,0,0.05)',
+          padding: 6,
+          zIndex: 200,
+        }}>
+          {matches.length > 0 ? matches.map((s, i) => (
+            <button
+              key={s.name}
+              type="button"
+              onMouseDown={() => commit(s.name)}
+              onMouseEnter={() => setActiveIdx(i)}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: '9px 12px',
+                border: 'none',
+                borderRadius: 10,
+                background: activeIdx === i ? BG : 'transparent',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 14,
+                color: '#000',
+                letterSpacing: '-0.02em',
+                boxSizing: 'border-box',
+              }}
+            >
+              {s.name}
+            </button>
+          )) : (
+            <p style={{ padding: '9px 12px', margin: 0, fontSize: 12, color: 'rgba(0,0,0,0.35)' }}>
+              Can&apos;t find your school? Type it in.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ── School logo strip (decorative, social proof) ─────────────────────────────
+function SchoolLogoStrip() {
+  const shown = OSBA_SCHOOLS.slice(0, 10);
+  const initials = (name: string) =>
+    name.split(' ').filter(w => /^[A-Z0-9]/.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase() || name.slice(0, 2).toUpperCase();
+
+  return (
+    <div style={{ width: '100%' }}>
+      <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)', letterSpacing: '-0.01em', margin: '0 0 8px' }}>
+        Trusted by athletes from:
+      </p>
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+        {shown.map(s => (
+          <div
+            key={s.name}
+            title={s.name}
+            style={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: 'rgba(0,0,0,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}
+          >
+            {s.logo ? (
+              <img src={s.logo} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.4)' }}>{initials(s.name)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Go back button (secondary) ────────────────────────────────────────────────
 function GoBackButton({ onClick }: { onClick: () => void }) {
@@ -705,6 +840,20 @@ export default function ApplyPage() {
           onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
           baseStyle={inputBoxStyle}
         />
+      );
+    }
+
+    if (q.type === 'school') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+          <SchoolInput
+            ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
+            value={val}
+            onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
+            baseStyle={inputBoxStyle}
+          />
+          <SchoolLogoStrip />
+        </div>
       );
     }
 
