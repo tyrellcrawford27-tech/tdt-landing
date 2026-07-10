@@ -310,6 +310,30 @@ const SchoolInput = forwardRef<HTMLInputElement, {
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
+      {/* Single placeholder logo badge — top-center, 10px inset, absolutely
+          positioned so it never changes the input box's own size */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 10,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 24,
+          height: 24,
+          borderRadius: '50%',
+          background: 'rgba(0,0,0,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3L2 8l10 5 10-5-10-5z" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d="M6 10.5V16c0 1 2.5 3 6 3s6-2 6-3v-5.5" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
       <input
         ref={ref}
         type="text"
@@ -369,46 +393,6 @@ const SchoolInput = forwardRef<HTMLInputElement, {
     </div>
   );
 });
-
-// ── School logo strip (decorative, social proof) ─────────────────────────────
-function SchoolLogoStrip() {
-  const shown = OSBA_SCHOOLS.slice(0, 10);
-  const initials = (name: string) =>
-    name.split(' ').filter(w => /^[A-Z0-9]/.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase() || name.slice(0, 2).toUpperCase();
-
-  return (
-    <div style={{ width: '100%' }}>
-      <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)', letterSpacing: '-0.01em', margin: '0 0 8px' }}>
-        Trusted by athletes from:
-      </p>
-      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-        {shown.map(s => (
-          <div
-            key={s.name}
-            title={s.name}
-            style={{
-              flexShrink: 0,
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'rgba(0,0,0,0.05)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}
-          >
-            {s.logo ? (
-              <img src={s.logo} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.4)' }}>{initials(s.name)}</span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ── Go back button (secondary) ────────────────────────────────────────────────
 function GoBackButton({ onClick }: { onClick: () => void }) {
@@ -845,15 +829,12 @@ export default function ApplyPage() {
 
     if (q.type === 'school') {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-          <SchoolInput
-            ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
-            value={val}
-            onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
-            baseStyle={inputBoxStyle}
-          />
-          <SchoolLogoStrip />
-        </div>
+        <SchoolInput
+          ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
+          value={val}
+          onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
+          baseStyle={inputBoxStyle}
+        />
       );
     }
 
