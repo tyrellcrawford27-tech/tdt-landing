@@ -504,7 +504,7 @@ export default function Home() {
               At this level, everyone's talented.<br className="hidden md:block" /> Nobody's told you what actually separates you.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              Junior. Senior. Same problem. Nobody's showing you what's actually wrong with your game.
+              You're at prep school. Every game's on film. Let's tear it apart and find out what separates you.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">

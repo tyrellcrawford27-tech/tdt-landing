@@ -342,7 +342,7 @@ const SchoolInput = forwardRef<HTMLInputElement, {
         onKeyDown={handleKeyDown}
         onFocus={() => query.trim().length > 0 && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="St. Marcellinus senior boys"
+        placeholder="Orangeville Prep"
         autoComplete="off"
         style={baseStyle}
       />
