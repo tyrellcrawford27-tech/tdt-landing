@@ -1102,10 +1102,23 @@ export default function Home() {
                   © 2026 Think Different Training. All rights reserved.
                 </span>
               </div>
-              <div className="flex-1 flex justify-center md:justify-end">
+              <div className="flex-1 flex items-center justify-center md:justify-end gap-[14px]">
                 <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)]">
                   thinkdifferenttraining2020@gmail.com
                 </span>
+                <a
+                  href="https://www.instagram.com/thinkdifferent_training/?hl=en"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Think Different Training on Instagram"
+                  className="flex-shrink-0 text-[rgba(0,0,0,0.6)] transition-opacity hover:opacity-70"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.8" />
+                    <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.8" />
+                    <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
+                  </svg>
+                </a>
               </div>
             </div>
           </div>
