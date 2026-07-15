@@ -310,30 +310,6 @@ const SchoolInput = forwardRef<HTMLInputElement, {
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      {/* Single placeholder logo badge — top-center, 10px inset, absolutely
-          positioned so it never changes the input box's own size */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 24,
-          height: 24,
-          borderRadius: '50%',
-          background: 'rgba(0,0,0,0.06)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3L2 8l10 5 10-5-10-5z" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinejoin="round" />
-          <path d="M6 10.5V16c0 1 2.5 3 6 3s6-2 6-3v-5.5" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
       <input
         ref={ref}
         type="text"
@@ -1021,6 +997,35 @@ export default function ApplyPage() {
                 position: 'relative',
                 animation: shaking ? 'tdt-shake 0.45s ease' : 'none',
               }}>
+              {/* Single placeholder logo badge — top-center of the card, overlapping
+                  the top edge. Only for the school question; swap for the selected
+                  school's real logo once assets exist. */}
+              {q.type === 'school' && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -20,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    background: '#FFFFFF',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3L2 8l10 5 10-5-10-5z" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinejoin="round" />
+                    <path d="M6 10.5V16c0 1 2.5 3 6 3s6-2 6-3v-5.5" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              )}
               {/* Validation / nudge pill — remounts on key change to replay animation */}
               {nudgeMsg && (
                 <div key={nudgeKey} style={{
