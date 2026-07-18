@@ -14,6 +14,7 @@ type App = {
   city: string | null;
   email: string;
   phone: string;
+  device_access: string | null;
   position: string | null;
   years_playing: number | null;
   current_team: string | null;
@@ -203,6 +204,7 @@ export default function Dashboard() {
                 ['Experience',       selected.years_playing != null ? `${selected.years_playing}+ yrs` : null],
                 ['Time/day',         selected.time_commitment],
                 ['School or team',   selected.current_team],
+                ['Device access',    selected.device_access],
               ] as [string, string | null][]).filter(([, v]) => v).map(([lbl, val]) => (
                 <div key={lbl} style={{ padding: '6px 14px', borderRadius: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
                   <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 500 }}>{lbl} </span>

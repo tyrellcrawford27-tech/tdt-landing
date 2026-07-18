@@ -16,6 +16,7 @@ type FormData = {
   city_state: string;
   email: string;
   phone: string;
+  device_access: string;
   position: string;
   years_playing: string;
   current_team_school: string;
@@ -34,7 +35,7 @@ type FormData = {
 
 const EMPTY: FormData = {
   full_name: '', age: '', city_state: '',
-  email: '', phone: '', position: '', years_playing: '',
+  email: '', phone: '', device_access: '', position: '', years_playing: '',
   current_team_school: '', biggest_weakness: '', goal: '', social_link: '',
   why_this_program: '', time_commitment: '', why_basketball: '',
   guardian_name: '', guardian_phone: '', guardian_email: '',
@@ -56,23 +57,24 @@ const QUESTIONS: Q[] = [
   { num: '03', section: 'Info',              question: 'City, State / Province',                                field: 'city_state',          type: 'location' },
   { num: '04', section: 'Info',              question: "What's your email?",                                    field: 'email',               type: 'email',      placeholder: 'you@email.com' },
   { num: '05', section: 'Info',              question: "What's your phone number?",                             field: 'phone',               type: 'tel',        placeholder: '(416) 000-0000' },
-  { num: '06', section: 'Your game',         question: 'What position do you play?',                            field: 'position',            type: 'radio-grid', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
-  { num: '07', section: 'Your game',         question: 'Years playing competitively',                           field: 'years_playing',       type: 'radio-grid', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
-  { num: '08', section: 'Your game',         question: 'Current team or school?',                               field: 'current_team_school', type: 'school' },
-  { num: '09', section: 'Your game',         question: "What's your biggest weakness as a player right now?",   field: 'biggest_weakness',    type: 'textarea',   placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
-  { num: '10', section: 'Your game',         question: "What's your goal?",                                     field: 'goal',                type: 'textarea',   placeholder: 'Play D1 and earn a scholarship' },
-  { num: '11', section: 'Your game',         question: "Drop your Instagram or Twitter (X)",                    field: 'social_link',         type: 'text',       placeholder: 'instagram.com/yourusername' },
-  { num: '12', section: 'Your commitment',   question: 'Why do you want to do this program specifically?',      field: 'why_this_program',    type: 'textarea',   placeholder: "What made you want to apply? What are you hoping changes after 100 days?" },
-  { num: '13', section: 'Your commitment',   question: 'How much time can you realistically commit per day?',   field: 'time_commitment',     type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
-  { num: '14', section: 'Your commitment',   question: "Why basketball? What are you actually chasing?",        field: 'why_basketball',      type: 'textarea',   placeholder: "Be honest — there's no wrong answer." },
-  { num: '15', section: 'Parent / Guardian', question: 'Parent / guardian name',                                field: 'guardian_name',       type: 'text',       placeholder: 'Full name' },
-  { num: '16', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '(416) 000-0000' },
-  { num: '17', section: 'Parent / Guardian', question: 'Their email address (optional)',                         field: 'guardian_email',      type: 'email',      placeholder: 'parent@email.com' },
-  { num: '18', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
-  { num: '19', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
+  { num: '06', section: 'Info',              question: 'Do you have consistent access to a laptop or computer?', field: 'device_access',       type: 'radio-grid', options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'] },
+  { num: '07', section: 'Your game',         question: 'What position do you play?',                            field: 'position',            type: 'radio-grid', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
+  { num: '08', section: 'Your game',         question: 'Years playing competitively',                           field: 'years_playing',       type: 'radio-grid', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
+  { num: '09', section: 'Your game',         question: 'Current team or school?',                               field: 'current_team_school', type: 'school' },
+  { num: '10', section: 'Your game',         question: "What's your biggest weakness as a player right now?",   field: 'biggest_weakness',    type: 'textarea',   placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
+  { num: '11', section: 'Your game',         question: "What's your goal?",                                     field: 'goal',                type: 'textarea',   placeholder: 'Play D1 and earn a scholarship' },
+  { num: '12', section: 'Your game',         question: "Drop your Instagram or Twitter (X)",                    field: 'social_link',         type: 'text',       placeholder: 'instagram.com/yourusername' },
+  { num: '13', section: 'Your commitment',   question: 'Why do you want to do this program specifically?',      field: 'why_this_program',    type: 'textarea',   placeholder: "What made you want to apply? What are you hoping changes after 100 days?" },
+  { num: '14', section: 'Your commitment',   question: 'How much time can you realistically commit per day?',   field: 'time_commitment',     type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
+  { num: '15', section: 'Your commitment',   question: "Why basketball? What are you actually chasing?",        field: 'why_basketball',      type: 'textarea',   placeholder: "Be honest — there's no wrong answer." },
+  { num: '16', section: 'Parent / Guardian', question: 'Parent / guardian name',                                field: 'guardian_name',       type: 'text',       placeholder: 'Full name' },
+  { num: '17', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '(416) 000-0000' },
+  { num: '18', section: 'Parent / Guardian', question: 'Their email address (optional)',                         field: 'guardian_email',      type: 'email',      placeholder: 'parent@email.com' },
+  { num: '19', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
+  { num: '20', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
 ];
 
-const TOTAL = QUESTIONS.length; // 19
+const TOTAL = QUESTIONS.length; // 20
 
 // ── Shared text style (PP Neue Montreal is the root font) ─────────────────────
 const text = (size: number, weight: number, color: string, extra?: React.CSSProperties): React.CSSProperties => ({
@@ -493,6 +495,7 @@ export default function ApplyPage() {
     city_state:          ["Where are you based?", "City and province/state please", "WHERE ARE YOU FROM?!"],
     email:               ["We'll need your email", "Email address please", "YOUR EMAIL — NOW."],
     phone:               ["Add a phone number", "Phone number, please", "PHONE NUMBER!!"],
+    device_access:       ["Do you have a laptop or computer?", "Pick one", "PICK ONE!!"],
     position:            ["Pick your position", "Choose one", "PICK. A. POSITION."],
     years_playing:       ["How long have you been playing?", "Pick one — be honest", "YEARS PLAYING. PICK ONE."],
     current_team_school: ["What team or school?", "Team or school name please", "TEAM. OR. SCHOOL."],
@@ -606,6 +609,7 @@ export default function ApplyPage() {
       last_name:     lastName || '',
       email:         form.email,
       phone:         form.phone,
+      device_access: form.device_access,
       age:          form.age ? parseInt(form.age) : null,
       city:         form.city_state,
       position:     form.position,
