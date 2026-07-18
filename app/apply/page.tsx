@@ -413,6 +413,7 @@ export default function ApplyPage() {
   const [nudgeKey, setNudgeKey]     = useState(0);
   const [attempts, setAttempts]     = useState(0);
   const [shaking, setShaking]       = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const inputRef   = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const advanceRef = useRef<() => void>(() => {});
   const resumeScreenRef = useRef(1);
@@ -647,9 +648,10 @@ export default function ApplyPage() {
     }
   };
 
-  const advance = () => {
+  const advance = async () => {
     if (screen === 0) { goTo(resumeScreenRef.current); return; }
     if (screen === TOTAL) { handleSubmit(); return; }
+    if (checkingEmail) return;
     const q = QUESTIONS[screen - 1];
     const v = form[q.field].toString().trim();
     if (!OPTIONAL.has(q.field) && !v) {
@@ -665,6 +667,22 @@ export default function ApplyPage() {
       setAttempts(a => a + 1);
       triggerShake();
       return;
+    }
+    // Block a repeat applicant right at the email step instead of after the
+    // whole form. Fail-open on network errors — the final submit still guards.
+    if (q.field === 'email') {
+      setCheckingEmail(true);
+      try {
+        const res = await fetch(`/api/apply/check-email?email=${encodeURIComponent(v)}`);
+        const json = await res.json();
+        if (json.exists) {
+          fireNudge("You've already applied with this email");
+          triggerShake();
+          setCheckingEmail(false);
+          return;
+        }
+      } catch { /* fail-open */ }
+      setCheckingEmail(false);
     }
     goTo(screen + 1);
   };
@@ -1133,7 +1151,7 @@ export default function ApplyPage() {
                 onClick={advance}
                 className={`h-[42px] text-[18px] font-normal tracking-[-0.02em] ${isFirst ? 'w-full' : 'flex-1'}`}
               >
-                {isLast ? (submitting ? 'Submitting…' : 'Submit') : 'Next'}
+                {isLast ? (submitting ? 'Submitting…' : 'Submit') : (checkingEmail ? 'Checking…' : 'Next')}
               </CTAButton>
             </div>
 
