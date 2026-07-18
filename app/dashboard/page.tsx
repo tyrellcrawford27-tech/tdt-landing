@@ -19,6 +19,7 @@ type App = {
   current_team: string | null;
   biggest_weakness: string | null;
   goal: string | null;
+  social_link: string | null;
   why_program: string | null;
   time_commitment: string | null;
   why_basketball: string | null;
@@ -212,6 +213,25 @@ export default function Dashboard() {
 
             {/* Q&A sections */}
             {selected.goal && <div style={{ marginBottom: 24 }}>{label("Goal")}{body(selected.goal)}</div>}
+            {selected.social_link && (
+              <div style={{ marginBottom: 24 }}>
+                {label("Instagram / Twitter")}
+                <a
+                  href={
+                    /^https?:\/\//i.test(selected.social_link)
+                      ? selected.social_link
+                      : selected.social_link.startsWith('@')
+                        ? `https://instagram.com/${selected.social_link.slice(1)}`
+                        : `https://${selected.social_link}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 15, color: TERRA, letterSpacing: '-0.02em', lineHeight: 1.65, textDecoration: 'none' }}
+                >
+                  {selected.social_link}
+                </a>
+              </div>
+            )}
             {selected.biggest_weakness && <div style={{ marginBottom: 24 }}>{label("Biggest weakness")}{body(selected.biggest_weakness)}</div>}
             {selected.why_program && <div style={{ marginBottom: 24 }}>{label("Why this program")}{body(selected.why_program)}</div>}
             {selected.why_basketball && <div style={{ marginBottom: 24 }}>{label("Why basketball")}{body(selected.why_basketball)}</div>}
