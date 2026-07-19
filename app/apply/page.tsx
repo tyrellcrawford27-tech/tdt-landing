@@ -676,7 +676,7 @@ export default function ApplyPage() {
         const res = await fetch(`/api/apply/check-email?email=${encodeURIComponent(v)}`);
         const json = await res.json();
         if (json.exists) {
-          fireNudge("You've already applied with this email");
+          fireNudge("Email in use");
           triggerShake();
           setCheckingEmail(false);
           return;
