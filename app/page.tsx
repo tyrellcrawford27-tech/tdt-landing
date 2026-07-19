@@ -610,7 +610,7 @@ export default function Home() {
         {/* ── Program ── */}
         {(() => {
           const STEPS = [
-            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: 'Get assessed like a recruiter would.',       body: "Send your best film. Jaiden watches it like a scout, draws directly on it, tells you exactly what he sees and what to fix. No cold drills, no standardized test. Just your actual game, evaluated honestly.", image: 'diagnosis.png'   },
+            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: 'Get assessed like a recruiter would.',       body: "Send your best film. Jaiden watches it like a scout, draws directly on it, tells you exactly what he sees and what to fix. No cold drills, no standardized test. Just your actual game, evaluated honestly.", image: 'diagnosis-landing.png' },
             { slug: 'prescription', label: 'Prescription', num: '02', title: "Your weakness, not everyone else's workout.", body: "Every drill you get is pulled straight from what Jaiden saw in your film, the exact things standing between you and an offer.",                                                                                image: 'prescription.png' },
             { slug: '100-days',     label: 'The 100 Days', num: '03', title: 'The work nobody sees.',                       body: "A 100-day plan built for one thing, turning you into the player who gets the offer. Surgical film review. In-depth calls about exactly what it takes to get to the next level.",                              image: '100-days.png'    },
             { slug: 'proof',        label: 'The Proof',    num: '04', title: 'Now go get it.',                              body: "Walk away with the skills and the knowledge to get the offer you know you're capable of getting. Not someone's opinion of you, real improvement, in real games, that recruiters actually see.",              image: 'proof.png'       },
@@ -701,17 +701,8 @@ export default function Home() {
                             boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 100px rgba(0,0,0,0.65), 0 8px 32px rgba(0,0,0,0.4)',
                           }}
                         >
-                          {/* Browser chrome */}
-                          <div className="h-[34px] flex items-center px-[14px] gap-[6px] flex-shrink-0" style={{ background: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div className="w-[9px] h-[9px] rounded-full bg-[rgba(255,255,255,0.09)]" />
-                            <div className="w-[9px] h-[9px] rounded-full bg-[rgba(255,255,255,0.06)]" />
-                            <div className="w-[9px] h-[9px] rounded-full bg-[rgba(255,255,255,0.06)]" />
-                            <div className="ml-[10px] flex-1 h-[18px] rounded-[4px] flex items-center px-[8px]" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                              <span className="text-[10px] text-white/18">thinkdifferenttraining.app</span>
-                            </div>
-                          </div>
                           {/* Screenshot layers */}
-                          <div className="relative" style={{ height: 'calc(100% - 34px)' }}>
+                          <div className="relative" style={{ height: '100%' }}>
                             {STEPS.map((s, i) => (
                               <div
                                 key={s.slug}
