@@ -717,7 +717,7 @@ export default function Home() {
                               />
                             ))}
                             {/* Bottom fade so screenshot bleeds into darkness */}
-                            <div className="absolute bottom-0 left-0 right-0 h-[30%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.8))' }} />
+                            <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
                           </div>
                         </div>
                       </div>
