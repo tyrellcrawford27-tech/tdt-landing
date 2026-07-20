@@ -677,7 +677,7 @@ export default function Home() {
                           <h2 className="text-[38px] md:text-[44px] lg:text-[50px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
                             {s.title}
                           </h2>
-                          <p className="text-[14px] md:text-[15px] font-normal leading-[26px] text-white/50 max-w-[400px]">
+                          <p className="text-[14px] md:text-[15px] font-normal leading-[19px] text-white/50 max-w-[400px]">
                             {s.body}
                           </p>
                         </div>
