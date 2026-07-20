@@ -641,7 +641,7 @@ export default function ApplyPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Submission failed');
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      goTo(20);
+      goTo(TOTAL + 1);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
       setSubmitting(false);
@@ -737,8 +737,8 @@ export default function ApplyPage() {
     </div>
   );
 
-  // ── 20: Success ───────────────────────────────────────────────────────────
-  if (screen === 20) return (
+  // ── Success ───────────────────────────────────────────────────────────
+  if (screen === TOTAL + 1) return (
     <div style={{ minHeight: '100dvh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 80px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
