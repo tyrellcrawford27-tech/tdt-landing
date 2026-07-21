@@ -615,14 +615,15 @@ export default function Home() {
             { slug: '100-days',     label: 'The 100 Days', num: '03', title: 'The work nobody sees.',                       body: "A 100-day plan built for one thing, turning you into the player who gets the offer. Surgical film review. In-depth calls about exactly what it takes to get to the next level.",                              image: '100-days.png'    },
             { slug: 'proof',        label: 'The Proof',    num: '04', title: 'Now go get it.',                              body: "Walk away with the skills and the knowledge to get the offer you know you're capable of getting. Not someone's opinion of you, real improvement, in real games, that recruiters actually see.",              image: 'proof.png'       },
           ];
-          const activeStep = Math.min(STEPS.length - 1, Math.max(0, Math.floor(programProgress)));
+          const STEP_VH = 55; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
+          const activeStep = Math.min(STEPS.length - 1, Math.max(0, Math.floor(programProgress * (100 / STEP_VH))));
 
           return (
             <section id="program" className="relative w-full bg-[#000000]">
 
               {/* Tall scroll container — one screen per step, plus a buffer at the
                   end so the last step lingers before the sticky section releases */}
-              <div style={{ height: `${STEPS.length * 100 + 50}svh` }}>
+              <div style={{ height: `${STEPS.length * STEP_VH + 50}svh` }}>
 
                 <div ref={cardsStartRef} />
 
