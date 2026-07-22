@@ -660,7 +660,7 @@ export default function Home() {
                   <div className="relative z-10 flex flex-col md:flex-row flex-1 items-center gap-[20px] md:gap-[60px] lg:gap-[80px] min-h-0">
 
                     {/* Left — animated text */}
-                    <div className="relative w-full md:w-[42%] lg:w-[38%] flex-shrink-0 h-[42%] md:h-full flex items-center">
+                    <div className="relative w-full md:w-[42%] lg:w-[38%] flex-shrink-0 h-[26%] md:h-full flex items-center">
                       {STEPS.map((s, i) => (
                         <div
                           key={s.slug}
@@ -686,7 +686,7 @@ export default function Home() {
                     </div>
 
                     {/* Right — persistent UI frame */}
-                    <div className="flex w-full flex-1 items-center justify-center md:justify-end h-[50%] md:h-full py-0 md:py-[16px]">
+                    <div className="flex w-full flex-1 items-center justify-center md:justify-end h-[66%] md:h-full py-0 md:py-[16px]">
                       {/* Ambient glow behind frame */}
                       <div className="relative w-full" style={{ maxHeight: '100%', aspectRatio: '16 / 10' }}>
                         <div
