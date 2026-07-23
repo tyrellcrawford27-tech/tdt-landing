@@ -656,14 +656,14 @@ export default function Home() {
                   </div>
 
                   {/* Main content */}
-                  <div className="relative z-10 flex flex-col md:flex-row flex-1 items-center gap-[20px] md:gap-[60px] lg:gap-[80px] min-h-0">
+                  <div className="relative z-10 flex flex-col md:flex-row flex-1 items-center gap-[8px] md:gap-[60px] lg:gap-[80px] min-h-0">
 
                     {/* Left — animated text */}
                     <div className="relative w-full md:w-[42%] lg:w-[38%] flex-shrink-0 h-[26%] md:h-full flex items-center">
                       {STEPS.map((s, i) => (
                         <div
                           key={s.slug}
-                          className="absolute inset-0 flex flex-col justify-center gap-[18px]"
+                          className="absolute inset-0 flex flex-col justify-end md:justify-center gap-[18px]"
                           style={{
                             opacity:   activeStep === i ? 1 : 0,
                             transform: `translateY(${activeStep === i ? 0 : activeStep > i ? -20 : 20}px)`,
@@ -806,45 +806,39 @@ export default function Home() {
                 </h2>
               </div>
 
-              {/* Mobile: stacked cards */}
-              <div className="flex lg:hidden w-full max-w-[540px] flex-col gap-4">
-                {ROWS.map((row, i) => (
+              {/* Mobile: clean comparison cards */}
+              <div className="flex lg:hidden w-full max-w-[540px] flex-col gap-3">
+                {ROWS.map((row) => (
                   <div
                     key={row.slug}
-                    className="overflow-hidden rounded-[18px] bg-[#0c0c0c] border border-white/[0.06]"
-                    style={{ boxShadow: '0 12px 32px rgba(0,0,0,0.4)' }}
+                    className="overflow-hidden rounded-[16px] bg-white/[0.03] border border-white/[0.07]"
                   >
-                    {/* Question */}
-                    <div className="flex items-center gap-[10px] px-5 pt-5 pb-4">
-                      <span className="flex h-[24px] w-[24px] flex-shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[11px] font-bold text-white/50">
-                        {i + 1}
-                      </span>
-                      <p className="text-[16px] font-semibold text-white leading-[21px]">{row.topic}</p>
+                    {/* Topic label */}
+                    <div className="flex items-center gap-[8px] px-5 pt-4 pb-3">
+                      <span className="h-[3px] w-[14px] flex-shrink-0 rounded-full" style={{ background: '#C25433' }} />
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-white/60">{row.topic}</p>
                     </div>
 
-                    {/* Think Different Training answer */}
-                    <div
-                      className="mx-3 mb-2 rounded-[12px] px-4 py-4"
-                      style={{ background: 'linear-gradient(135deg, #C25433 0%, #9A3D22 100%)' }}
-                    >
-                      <div className="flex items-center gap-[6px] mb-[8px]">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M12 3.5L5.25 10.5L2 7.25" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <p className="text-[10px] font-bold text-white/85 tracking-[0.08em] uppercase">Think Different Training</p>
+                    <div className="flex flex-col px-5 pb-4">
+                      {/* Think Different Training answer */}
+                      <div className="flex items-start gap-[10px] py-[10px] border-b border-white/[0.06]">
+                        <span className="mt-[1px] flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full" style={{ background: '#C25433' }}>
+                          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                            <path d="M12 3.5L5.25 10.5L2 7.25" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                        <p className="text-[14px] text-white leading-[20px]">{row.tdt}</p>
                       </div>
-                      <p className="text-[14px] text-white leading-[21px]">{row.tdt}</p>
-                    </div>
 
-                    {/* Status quo answer */}
-                    <div className="mx-3 mb-4 rounded-[12px] bg-white/[0.03] px-4 py-4">
-                      <div className="flex items-center gap-[6px] mb-[8px]">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M3 3L11 11M11 3L3 11" stroke="rgba(255,255,255,0.3)" strokeWidth="1.6" strokeLinecap="round" />
-                        </svg>
-                        <p className="text-[10px] font-semibold text-white/30 tracking-[0.08em] uppercase">Everyone else</p>
+                      {/* Status quo answer */}
+                      <div className="flex items-start gap-[10px] pt-[10px]">
+                        <span className="mt-[1px] flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06]">
+                          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                            <path d="M3 3L11 11M11 3L3 11" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                        </span>
+                        <p className="text-[14px] text-white/40 leading-[20px]">{row.others}</p>
                       </div>
-                      <p className="text-[14px] text-white/40 leading-[21px]">{row.others}</p>
                     </div>
                   </div>
                 ))}
