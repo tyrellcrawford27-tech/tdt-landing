@@ -33,43 +33,92 @@ const COACH_IMAGES = [
   { src: '/coach-5.jpg', position: 'top' },
 ];
 
+const COACH_INTERVAL = 4200;
+// Each photo gets a distinct slow drift so the rotation never feels static
+const KB_ANIMS = ['kb-a', 'kb-b', 'kb-c', 'kb-d', 'kb-e'];
+
 function CoachCarousel() {
   const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
 
+  // setTimeout keyed on `current` so clicking a dot cleanly resets the timer
   useEffect(() => {
-    const id = setInterval(() => setCurrent(i => (i + 1) % COACH_IMAGES.length), 3500);
-    return () => clearInterval(id);
-  }, []);
+    if (paused) return;
+    const id = setTimeout(() => setCurrent(i => (i + 1) % COACH_IMAGES.length), COACH_INTERVAL);
+    return () => clearTimeout(id);
+  }, [current, paused]);
 
   return (
-    <div className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end">
-      {/* Dot indicators */}
-      <div className="absolute left-0 top-0 hidden lg:flex h-full w-[12px] flex-col items-center justify-center gap-[10px]">
+    <div
+      className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <style>{`
+        @keyframes kb-a { from { transform: scale(1.05) translate(0, 0);        } to { transform: scale(1.16) translate(-2.2%, -1.6%); } }
+        @keyframes kb-b { from { transform: scale(1.14) translate(1.6%, 0);     } to { transform: scale(1.04) translate(-1.6%, 1.2%); } }
+        @keyframes kb-c { from { transform: scale(1.05) translate(0, 1.2%);     } to { transform: scale(1.15) translate(1.8%, -1.6%); } }
+        @keyframes kb-d { from { transform: scale(1.15) translate(-1.6%, -1%);  } to { transform: scale(1.05) translate(1.2%, 1.6%);  } }
+        @keyframes kb-e { from { transform: scale(1.06) translate(1.2%, -1.2%); } to { transform: scale(1.16) translate(-1.6%, 1.6%); } }
+        @keyframes coach-fill { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+      `}</style>
+
+      {/* Ambient accent glow behind the frame */}
+      <div
+        className="absolute right-0 hidden lg:block h-[434px] w-[543px] rounded-[40px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 50% 55%, rgba(179,73,41,0.16) 0%, transparent 68%)', filter: 'blur(22px)' }}
+      />
+
+      {/* Progress indicators — active one fills as its slide plays */}
+      <div className="absolute left-0 top-0 z-10 hidden lg:flex h-full w-[12px] flex-col items-center justify-center gap-[9px]">
         {COACH_IMAGES.map((_img, i) => (
           <button
             key={i}
             onClick={() => setCurrent(i)}
-            className="h-[12px] w-[12px] cursor-pointer rounded-full transition-all duration-300"
-            style={{ backgroundColor: current === i ? 'white' : 'rgba(255,255,255,0.2)' }}
+            className="relative cursor-pointer overflow-hidden rounded-full transition-all duration-500"
+            style={{
+              width: 3,
+              height: current === i ? 26 : 10,
+              backgroundColor: 'rgba(255,255,255,0.18)',
+            }}
             aria-label={`Go to image ${i + 1}`}
-          />
+          >
+            {current === i && (
+              <span
+                key={`${current}-${paused}`}
+                className="absolute inset-0 rounded-full bg-white"
+                style={
+                  paused
+                    ? undefined
+                    : { transformOrigin: 'top', animation: `coach-fill ${COACH_INTERVAL}ms linear forwards` }
+                }
+              />
+            )}
+          </button>
         ))}
       </div>
+
       {/* Frame */}
       <div className="relative w-full aspect-video lg:aspect-auto lg:h-[434px] lg:w-[543px] overflow-hidden rounded-[12px] border border-white/40 bg-[#111111]">
         {COACH_IMAGES.map((img, i) => (
           <div
             key={img.src}
-            className="absolute inset-0 bg-cover transition-opacity duration-700"
-            style={{
-              backgroundImage: `url(${img.src})`,
-              backgroundPosition: img.position,
-              opacity: current === i ? 1 : 0,
-            }}
-          />
+            className="absolute inset-0 overflow-hidden"
+            style={{ opacity: current === i ? 1 : 0, transition: 'opacity 0.9s cubic-bezier(0.4,0,0.2,1)' }}
+          >
+            <div
+              className="absolute inset-0 bg-cover"
+              style={{
+                backgroundImage: `url(${img.src})`,
+                backgroundPosition: img.position,
+                animation: `${KB_ANIMS[i % KB_ANIMS.length]} 9s ease-in-out infinite alternate`,
+                willChange: 'transform',
+              }}
+            />
+          </div>
         ))}
-        {/* Subtle bottom vignette */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_60%,rgba(0,0,0,0.45)_100%)] pointer-events-none" />
+        {/* Bottom vignette */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_55%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
       </div>
     </div>
   );
