@@ -177,7 +177,7 @@ function CountdownEyebrow({ onLaunch }: { onLaunch?: () => void }) {
           <span className="relative inline-flex h-[6px] w-[6px] rounded-full" style={{ backgroundColor: '#B34929' }} />
         </span>
         <span className="text-[11px] font-medium tracking-[-0.02em] whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          Cohort 1 · Aug 1
+          Cohort 1 · Sept 1
         </span>
       </div>
 
