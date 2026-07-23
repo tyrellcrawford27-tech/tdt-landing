@@ -685,7 +685,7 @@ export default function Home() {
                     </div>
 
                     {/* Right — persistent UI frame */}
-                    <div className="flex w-full flex-1 items-center justify-center md:justify-end h-[66%] md:h-full py-0 md:py-[16px]">
+                    <div className="flex w-full flex-1 items-start md:items-center justify-center md:justify-end h-[66%] md:h-full py-0 md:py-[16px]">
                       {/* Ambient glow behind frame */}
                       <div className="relative w-full" style={{ maxHeight: '100%', aspectRatio: '16 / 10' }}>
                         <div
@@ -807,38 +807,36 @@ export default function Home() {
               </div>
 
               {/* Mobile: clean comparison cards */}
-              <div className="flex lg:hidden w-full max-w-[540px] flex-col gap-3">
+              <div className="flex lg:hidden w-full max-w-[540px] flex-col gap-[10px]">
                 {ROWS.map((row) => (
                   <div
                     key={row.slug}
-                    className="overflow-hidden rounded-[16px] bg-white/[0.03] border border-white/[0.07]"
+                    className="overflow-hidden rounded-[12px] bg-white/[0.03] border border-white/[0.07] px-4 py-3"
                   >
                     {/* Topic label */}
-                    <div className="flex items-center gap-[8px] px-5 pt-4 pb-3">
-                      <span className="h-[3px] w-[14px] flex-shrink-0 rounded-full" style={{ background: '#C25433' }} />
-                      <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-white/60">{row.topic}</p>
+                    <div className="flex items-center gap-[6px] mb-[8px]">
+                      <span className="h-[3px] w-[10px] flex-shrink-0 rounded-full" style={{ background: '#C25433' }} />
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-white/60">{row.topic}</p>
                     </div>
 
-                    <div className="flex flex-col px-5 pb-4">
-                      {/* Think Different Training answer */}
-                      <div className="flex items-start gap-[10px] py-[10px] border-b border-white/[0.06]">
-                        <span className="mt-[1px] flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full" style={{ background: '#C25433' }}>
-                          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                            <path d="M12 3.5L5.25 10.5L2 7.25" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                        <p className="text-[14px] text-white leading-[20px]">{row.tdt}</p>
-                      </div>
+                    {/* Think Different Training answer */}
+                    <div className="flex items-start gap-[8px] pb-[6px]">
+                      <span className="mt-[3px] flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center rounded-full" style={{ background: '#C25433' }}>
+                        <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
+                          <path d="M12 3.5L5.25 10.5L2 7.25" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <p className="text-[13px] text-white leading-[18px]">{row.tdt}</p>
+                    </div>
 
-                      {/* Status quo answer */}
-                      <div className="flex items-start gap-[10px] pt-[10px]">
-                        <span className="mt-[1px] flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06]">
-                          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                            <path d="M3 3L11 11M11 3L3 11" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" />
-                          </svg>
-                        </span>
-                        <p className="text-[14px] text-white/40 leading-[20px]">{row.others}</p>
-                      </div>
+                    {/* Status quo answer */}
+                    <div className="flex items-start gap-[8px]">
+                      <span className="mt-[3px] flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06]">
+                        <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
+                          <path d="M3 3L11 11M11 3L3 11" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <p className="text-[13px] text-white/40 leading-[18px]">{row.others}</p>
                     </div>
                   </div>
                 ))}
