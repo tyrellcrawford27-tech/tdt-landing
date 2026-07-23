@@ -610,8 +610,8 @@ export default function Home() {
         {/* ── Program ── */}
         {(() => {
           const STEPS = [
-            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: 'First, Jaiden sees what a recruiter would see.', body: "The moment you join, Jaiden watches your film like a recruiter would draws directly on it, tells you exactly what he sees. No guessing where you stand. Just an honest read on your game before day one starts.", image: 'study-work.webp' },
-            { slug: 'prescription', label: 'Prescription', num: '02', title: "Diagnosed spaghetti handles. Prescribed the fix.", body: "Jaiden watched your film like a doctor reads an X-ray — spotted exactly what's broken, then prescribed the modules to fix it. Not a generic workout. Your diagnosis, your antidote.",                                                                                image: 'drill-true.webp' },
+            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout. Tells you exactly what's broken.", image: 'study-work.webp' },
+            { slug: 'prescription', label: 'Prescription', num: '02', title: "Train your weakness.", body: "Modules built around your weakest categories. No wasted reps just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
             { slug: '100-days',     label: 'The 100 Days', num: '03', title: "One review is not enough", body: "We tear your film apart, again and again, until you know what gets you noticed with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 45%' },
             { slug: 'proof',        label: 'The Proof',    num: '04', title: 'Now go get it.',                              body: "Walk away with the skills and the knowledge to get the offer you know you're capable of getting. Not someone's opinion of you, real improvement, in real games, that recruiters actually see.",              image: 'proof.png'       },
           ];
