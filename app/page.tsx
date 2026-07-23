@@ -612,7 +612,7 @@ export default function Home() {
           const STEPS = [
             { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: 'Get assessed like a recruiter would.',       body: "Send your best film. Jaiden watches it like a scout, draws directly on it, tells you exactly what he sees and what to fix. No cold drills, no standardized test. Just your actual game, evaluated honestly.", image: 'study-work.webp' },
             { slug: 'prescription', label: 'Prescription', num: '02', title: "Your weakness, not everyone else's workout.", body: "Every drill you get is pulled straight from what Jaiden saw in your film, the exact things standing between you and an offer.",                                                                                image: 'drill-true.webp' },
-            { slug: '100-days',     label: 'The 100 Days', num: '03', title: 'The work nobody sees.',                       body: "A 100-day plan built for one thing, turning you into the player who gets the offer. Surgical film review. In-depth calls about exactly what it takes to get to the next level.",                              image: '100-days.png'    },
+            { slug: '100-days',     label: 'The 100 Days', num: '03', title: 'The work nobody sees.',                       body: "A 100-day plan built for one thing, turning you into the player who gets the offer. Surgical film review. In-depth calls about exactly what it takes to get to the next level.",                              image: 'the-100-days.webp', imagePosition: 'center 45%' },
             { slug: 'proof',        label: 'The Proof',    num: '04', title: 'Now go get it.',                              body: "Walk away with the skills and the knowledge to get the offer you know you're capable of getting. Not someone's opinion of you, real improvement, in real games, that recruiters actually see.",              image: 'proof.png'       },
           ];
           const STEP_VH = 55; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
@@ -710,7 +710,7 @@ export default function Home() {
                                 className="absolute inset-0 bg-cover"
                                 style={{
                                   backgroundImage: `url(/${s.image})`,
-                                  backgroundPosition: 'top',
+                                  backgroundPosition: s.imagePosition ?? 'top',
                                   backgroundColor: 'rgba(255,255,255,0.025)',
                                   opacity:   activeStep === i ? 1 : 0,
                                   transform: `scale(${activeStep === i ? 1 : 1.025})`,
