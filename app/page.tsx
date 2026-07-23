@@ -678,25 +678,6 @@ export default function Home() {
                 {/* Single sticky viewport */}
                 <div className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
 
-                  {/* Watermark step number */}
-                  <div aria-hidden="true" className="pointer-events-none select-none absolute inset-0 flex items-center overflow-hidden">
-                    {STEPS.map((s, i) => (
-                      <span
-                        key={s.slug}
-                        className="absolute font-black leading-none text-white"
-                        style={{
-                          fontSize: 'clamp(160px, 26vw, 380px)',
-                          letterSpacing: '-0.04em',
-                          left: '-0.02em',
-                          opacity: activeStep === i ? 0.045 : 0,
-                          transition: 'opacity 0.6s ease',
-                        }}
-                      >
-                        {s.num}
-                      </span>
-                    ))}
-                  </div>
-
                   {/* Header row — counter pinned right */}
                   <div className="relative z-10 flex items-center justify-center pt-[36px] pb-[44px] flex-shrink-0">
                     <span className="absolute right-0 text-[12px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -775,22 +756,46 @@ export default function Home() {
 
                   </div>
 
-                  {/* Bottom — step progress */}
-                  <div className="relative z-10 flex items-center gap-[5px] pb-[36px] pt-[28px] flex-shrink-0">
-                    {STEPS.map((s, i) => (
-                      <div key={s.slug} className="flex items-center gap-[5px]" style={{ flex: activeStep === i ? 4 : 1, transition: 'flex 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
-                        <div
-                          className="h-[2px] w-full rounded-full"
+                  {/* Bottom — step progress stepper */}
+                  <div className="relative z-10 pb-[36px] pt-[28px] flex-shrink-0">
+                    {/* Step labels */}
+                    <div className="grid mb-[13px]" style={{ gridTemplateColumns: `repeat(${STEPS.length}, 1fr)` }}>
+                      {STEPS.map((s, i) => (
+                        <span
+                          key={s.slug}
+                          className="text-center text-[9px] md:text-[11px] font-semibold tracking-[0.06em] md:tracking-[0.1em] whitespace-nowrap"
                           style={{
-                            background: i < activeStep ? 'rgba(179,73,41,0.35)' : i === activeStep ? '#B34929' : 'rgba(255,255,255,0.08)',
-                            transition: 'background 0.4s ease',
+                            color: i === activeStep ? '#D9633B' : i < activeStep ? 'rgba(179,73,41,0.55)' : 'rgba(255,255,255,0.22)',
+                            transition: 'color 0.45s ease',
                           }}
-                        />
-                        {activeStep === i && (
-                          <span className="text-[10px] font-medium text-[rgba(179,73,41,0.7)] tracking-[0.08em] whitespace-nowrap">{s.label.toUpperCase()}</span>
-                        )}
-                      </div>
-                    ))}
+                        >
+                          {s.label.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                    {/* Track */}
+                    <div className="relative h-[2px] w-full rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                      {/* Filled portion */}
+                      <div
+                        className="absolute left-0 top-0 h-full rounded-full"
+                        style={{
+                          width: `${((activeStep + 0.5) / STEPS.length) * 100}%`,
+                          background: 'linear-gradient(90deg, rgba(179,73,41,0.45) 0%, #B34929 100%)',
+                          transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+                        }}
+                      />
+                      {/* Glowing marker */}
+                      <div
+                        className="absolute top-1/2 h-[10px] w-[10px] rounded-full"
+                        style={{
+                          left: `${((activeStep + 0.5) / STEPS.length) * 100}%`,
+                          transform: 'translate(-50%, -50%)',
+                          background: '#E06B3E',
+                          boxShadow: '0 0 0 4px rgba(179,73,41,0.18), 0 0 14px rgba(224,107,62,0.7)',
+                          transition: 'left 0.6s cubic-bezier(0.16,1,0.3,1)',
+                        }}
+                      />
+                    </div>
                   </div>
 
                 </div>
