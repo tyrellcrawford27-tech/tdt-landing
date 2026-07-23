@@ -754,28 +754,34 @@ export default function Home() {
         {(() => {
           const ROWS = [
             {
-              slug: 'stand',
-              topic: 'Is anyone being honest with me?',
-              tdt: "Jaiden watches your film like a recruiter, and tells you exactly what's standing between you and an offer.",
-              others: "Coaches focused on winning this week, not on getting you recruited.",
+              slug: 'focus',
+              topic: 'Focus',
+              tdt: "You and Jaiden. That's it",
+              others: "A roster full of names, coach's attention split",
             },
             {
-              slug: 'alone',
-              topic: 'Am I working on the right thing?',
-              tdt: "Drills built off exactly what's holding you back from an offer.",
-              others: 'Team practice, built for the team, not your case to a recruiter.',
+              slug: 'film',
+              topic: 'Film',
+              tdt: 'Broken down, every submission',
+              others: 'Rarely watched close, if at all',
             },
             {
               slug: 'feedback',
-              topic: 'Is someone actually tracking my case?',
-              tdt: "Every submission, every session. Someone whose only job is your path to an offer.",
-              others: "Coaches juggling a full roster, with no time to focus on just you.",
+              topic: 'Feedback',
+              tdt: 'Specific to your game',
+              others: 'General notes for the whole team',
             },
             {
-              slug: 'proof',
-              topic: 'Could I prove I got better?',
-              tdt: 'A real, tracked record of the improvement that shows up on tape this season.',
-              others: "A feeling, maybe a compliment, from someone with 14 other guys to worry about.",
+              slug: 'priority',
+              topic: 'Priority',
+              tdt: 'Getting you an offer',
+              others: "Winning this week's game",
+            },
+            {
+              slug: 'tracking',
+              topic: 'Tracking',
+              tdt: 'Your progress, logged every session',
+              others: 'No real record of what improved',
             },
           ];
 
@@ -847,11 +853,11 @@ export default function Home() {
               {/* Desktop: pixel-perfect Figma spec */}
               <div
                 ref={tableRef}
-                className="hidden lg:flex flex-row items-end w-[900px] h-[600px] overflow-hidden"
+                className="hidden lg:flex flex-row items-end w-[900px] h-[720px] overflow-hidden"
                 style={{ borderBottom: '1px solid #333333', borderRadius: '14px' }}
               >
                 {/* Topics column — 300×480, aligned to bottom via parent align-items:flex-end */}
-                <div className="flex flex-col w-[300px] h-[480px]">
+                <div className="flex flex-col w-[300px] h-[720px]">
                   {ROWS.map((row, i) => ({
                     slug: row.slug,
                     topic: row.topic,
@@ -887,11 +893,11 @@ export default function Home() {
 
                 {/* Differences container — TDT + Others, 600×600 */}
                 <div
-                  className="flex flex-row w-[600px] h-[600px]"
+                  className="flex flex-row w-[600px] h-[720px]"
                   style={{ border: '1px solid rgba(255,255,255,0.2)', borderRadius: '15px 0px 14px 14px' }}
                 >
                   {/* TDT column */}
-                  <div className="flex flex-col w-[300px] h-[600px]">
+                  <div className="flex flex-col w-[300px] h-[720px]">
                     <div
                       className="flex items-center w-[300px] h-[120px] px-[30px] gap-[10px] bg-[#B34929] flex-shrink-0"
                       style={{ borderRadius: '15px 0px 0px 0px' }}
@@ -928,7 +934,7 @@ export default function Home() {
                   </div>
 
                   {/* Others column */}
-                  <div className="flex flex-col w-[300px] h-[600px]">
+                  <div className="flex flex-col w-[300px] h-[720px]">
                     <div
                       className="flex items-center w-[300px] h-[120px] px-[30px] flex-shrink-0"
                       style={{ borderWidth: '1px 1px 0px 0px', borderStyle: 'solid', borderColor: '#333333', borderRadius: '0px 15px 0px 0px' }}
@@ -945,7 +951,7 @@ export default function Home() {
                     })).map((row, i) => (
                       <div
                         key={row.slug}
-                        className="flex items-center justify-center w-[300px] h-[120px] px-[30px]"
+                        className="flex items-center justify-start w-[300px] h-[120px] px-[30px]"
                         style={{
                           borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333',
                           borderRadius: (row as any).br ?? '0px',
@@ -958,7 +964,7 @@ export default function Home() {
                         onMouseEnter={() => setHoveredRow(row.slug)}
                         onMouseLeave={() => setHoveredRow(null)}
                       >
-                        <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/50 text-center">
+                        <span className="text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/50 text-left">
                           {row.text}
                         </span>
                       </div>
