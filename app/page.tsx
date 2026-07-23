@@ -75,8 +75,7 @@ function CoachCarousel() {
   );
 }
 
-// TESTING: 30s from load — change back to new Date('2026-08-01T00:00:00') for production
-const LAUNCH_DATE = new Date('2026-08-01T00:00:00');
+const LAUNCH_DATE = new Date('2026-09-01T00:00:00');
 
 function useCountdown() {
   function calc() {
@@ -353,7 +352,7 @@ export default function Home() {
         >
           <a href="https://app.thinkdifferenttraining.com/access" className="text-[14px] text-white/60">Log In</a>
           <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className="w-full h-[48px] text-[15px]">
-            See it in action
+            Demonstration
           </CTAButton>
         </div>
       </div>
@@ -448,7 +447,7 @@ export default function Home() {
                 Log In
               </a>
               <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
-                See it in action
+                Demonstration
               </CTAButton>
             </div>
             <button
@@ -492,6 +491,7 @@ export default function Home() {
             className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px] transition-opacity duration-500 pointer-events-none"
             style={{ opacity: heroPlaying ? 0 : 1, pointerEvents: heroPlaying ? 'none' : 'auto' }}
           >
+            <CountdownEyebrow />
             <h1
               className="text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]"
               style={{
@@ -610,7 +610,7 @@ export default function Home() {
         {/* ── Program ── */}
         {(() => {
           const STEPS = [
-            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout. Tells you exactly what's broken.", image: 'study-work.webp' },
+            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout. Tells you exactly what's weakest about your game", image: 'diagnosis-1.webp' },
             { slug: 'prescription', label: 'Prescription', num: '02', title: "Train your weakness.", body: "Modules built around your weakest categories. No wasted reps just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
             { slug: '100-days',     label: 'The 100 Days', num: '03', title: "One review is not enough", body: "We tear your film apart, again and again, until you know what gets you noticed with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 45%' },
           ];
@@ -856,8 +856,8 @@ export default function Home() {
                 className="hidden lg:flex flex-row items-end w-[900px] h-[720px] overflow-hidden"
                 style={{ borderBottom: '1px solid #333333', borderRadius: '14px' }}
               >
-                {/* Topics column — 300×480, aligned to bottom via parent align-items:flex-end */}
-                <div className="flex flex-col w-[300px] h-[720px]">
+                {/* Topics column — 300×600, aligned to bottom via parent align-items:flex-end */}
+                <div className="flex flex-col w-[300px] h-[600px]">
                   {ROWS.map((row, i) => ({
                     slug: row.slug,
                     topic: row.topic,
@@ -921,7 +921,7 @@ export default function Home() {
                           opacity: tableVisible ? 1 : 0,
                           transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
                           transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, background-color 0.2s ease`,
-                          backgroundColor: hoveredRow !== null && hoveredRow !== row.slug ? '#8C3820' : '#B34929',
+                          backgroundColor: hoveredRow === row.slug ? '#C2552F' : '#B34929',
                         }}
                         onMouseEnter={() => setHoveredRow(row.slug)}
                         onMouseLeave={() => setHoveredRow(null)}
@@ -1025,28 +1025,28 @@ export default function Home() {
             <div className="flex w-full flex-col items-start">
               {[
                 {
-                  question: "Is Jaiden actually qualified to tell me what recruiters want?",
-                  answer: "He's coached athletes who've gone on to play at the next level, and he evaluates film the way recruiters actually do, not the way a friend or a hype man does. This isn't a guess about what gets you seen. It's someone who's watched it happen before.",
+                  question: "Why should I trust one guy's opinion over what my coach already tells me?",
+                  answer: "Because your coach has a season to win and a full roster to manage. Getting you recruited isn't his job. It's the only thing Jaiden's doing here.",
                 },
                 {
-                  question: "I don't train with him in person. Does that actually matter?",
-                  answer: "Recruiters don't watch you in person either. They watch film. Learning to be evaluated on film, and get better based on that evaluation, is closer to the real recruiting process than another in person practice ever was.",
+                  question: "How is this different from just watching my own film back?",
+                  answer: "You already know what you think happened out there. The real question is what a recruiter sees, and that's usually not the same thing.",
                 },
                 {
-                  question: "What if my season's already started and I don't have time for another thing?",
-                  answer: "This is built to run alongside your season, not compete with it. Drills, film submissions, one call with Jaiden. It's built around the games you're actually playing right now, since those are the games that count.",
+                  question: "I already have a highlight tape. Isn't that enough?",
+                  answer: "Here's a little freebie: recruiters look past that. Your best plays don't win you an offer, your worst habits lose it. What actually gets evaluated is what happens in between the highlights, the reads, the hesitations, the stuff you don't put in the tape. That's what this program is built to find.",
                 },
                 {
-                  question: "What if I'm not good enough yet for this to even make sense?",
-                  answer: "That's the exact question Diagnosis answers. Jaiden watches your actual game and tells you the truth about where you stand. Wherever that is, the next 100 days are built to close the distance from there to an offer.",
+                  question: "What if my weaknesses are already too obvious to fix in time?",
+                  answer: "Good. Obvious means fixable. The dangerous ones are the habits nobody's pointed out yet. Those are what actually run out the clock on you.",
                 },
                 {
-                  question: "What if I do all of this and still don't get an offer?",
-                  answer: "Nobody can guarantee that, and anyone who does is lying to you. What you walk away with either way is real, tracked improvement and the exact knowledge of what recruiters actually look for. That's what gives you the best real shot, not a promise.",
+                  question: "Is this going to conflict with my school team or my current trainer?",
+                  answer: "Not even a little. Nobody's asking you to choose. This runs next to what you're already doing. It just makes sure those reps are aimed at something.",
                 },
                 {
-                  question: "What's the actual cost of finding out if you're good enough?",
-                  answer: "$1,000 for 100 days. Compare that to a year of chasing exposure with no idea if you're even doing the right things. This is the fastest, most honest way to find out where you actually stand, and fix it before the window closes.",
+                  question: "What if this doesn't lead to anything and we've wasted the money and the time?",
+                  answer: "No one can promise an offer. What you're paying for is a real, tracked record of improvement and an honest assessment most players never get. That's worth something on its own.",
                 },
               ].map((item, index) => {
                 const isOpen = openFaq === index;
