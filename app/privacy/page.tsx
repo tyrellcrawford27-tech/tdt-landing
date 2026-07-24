@@ -7,12 +7,6 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <LegalLayout title="Privacy Policy">
-      <p className="legal-flag">
-        <strong>Flagged for review:</strong> this is a draft. Double-check Section 4, which names specific vendors
-        (Supabase, Clerk, Stripe, Resend) — confirm each is actually in use, since I did not verify your current
-        stack against this list. Nothing else in the legal wording itself has been changed or invented.
-      </p>
-
       <p><em>Last updated: July 24, 2026</em></p>
 
       <p>
@@ -33,7 +27,8 @@ export default function PrivacyPage() {
         participation data.
       </p>
       <p>
-        <strong>From payment:</strong> Payment is processed by a third-party processor (Stripe). We do not store
+        <strong>From payment:</strong> Payment is processed by a third-party processor (
+        <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe</a>). We do not store
         your full card number. We retain records of payment status, amount, and date for our own accounting
         purposes.
       </p>
@@ -65,7 +60,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           Parents/guardians may request to review, update, or delete their child&apos;s information by contacting
-          us (see Section 8).
+          us (see <a href="#section-8">Section 8</a>).
         </li>
       </ul>
 
@@ -74,10 +69,15 @@ export default function PrivacyPage() {
       <ul>
         <li><strong>Coach (Jaiden Francais)</strong> — for the purpose of providing coaching and film review.</li>
         <li>
-          <strong>Service providers</strong> who help us operate the platform, such as our hosting provider
-          (Supabase), authentication provider (Clerk), payment processor (Stripe), and email delivery provider
-          (Resend). These providers are contractually limited to using your data only to provide their service to
-          us.
+          <strong>Service providers</strong> who help us operate the platform, such as our hosting provider (
+          <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Supabase</a>),
+          authentication provider (
+          <a href="https://clerk.com/privacy" target="_blank" rel="noopener noreferrer">Clerk</a>), payment
+          processor (
+          <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe</a>), and email
+          delivery provider (
+          <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Resend</a>).
+          These providers are contractually limited to using your data only to provide their service to us.
         </li>
         <li>
           <strong>Legal compliance</strong> — if required by law, subpoena, or to protect the safety of an
@@ -100,7 +100,8 @@ export default function PrivacyPage() {
       <p>
         We retain your information for as long as your account is active and for a reasonable period afterward for
         legitimate business or legal purposes (e.g. payment records, dispute resolution). You may request deletion
-        of your data as described in Section 8, subject to any legal retention requirements.
+        of your data as described in <a href="#section-8">Section 8</a>, subject to any legal retention
+        requirements.
       </p>
 
       <h2>7. Your Rights</h2>
@@ -112,16 +113,20 @@ export default function PrivacyPage() {
         <li>Withdraw consent (where applicable, e.g. for a minor&apos;s participation)</li>
       </ul>
 
-      <h2>8. Contact Us</h2>
+      <h2 id="section-8">8. Contact Us</h2>
       <p>
-        To exercise any of these rights or ask questions about this policy, contact us at
-        tyrell@thinkdifferenttraining.com.
+        To exercise any of these rights or ask questions about this policy, contact us at{' '}
+        <a href="mailto:tyrell@thinkdifferenttraining.com">tyrell@thinkdifferenttraining.com</a>.
       </p>
 
       <h2>9. Changes to This Policy</h2>
       <p>
         We may update this Privacy Policy from time to time. We will post the updated version with a new &quot;Last
         updated&quot; date.
+      </p>
+
+      <p>
+        See also our <a href="/terms">Terms of Service</a>.
       </p>
     </LegalLayout>
   );

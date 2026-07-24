@@ -7,12 +7,6 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <LegalLayout title="Terms of Service">
-      <p className="legal-flag">
-        <strong>Flagged for review:</strong> this is a draft. The entire Section 4 (Refund Policy) is still a
-        placeholder that needs your actual decision before this is published — see the inline note below. Nothing
-        in the legal wording itself has been changed or invented.
-      </p>
-
       <p><em>Last updated: July 24, 2026</em></p>
 
       <p>
@@ -49,21 +43,18 @@ export default function TermsPage() {
           change for future cohorts but will not change for an athlete already enrolled in a paid cohort.
         </li>
         <li>
-          Payment is processed through a third-party payment processor (currently Stripe). TDT does not store your
-          full payment card information.
+          Payment is processed through a third-party payment processor (currently{' '}
+          <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe</a>). TDT does not
+          store your full payment card information.
         </li>
       </ul>
 
       <h2>4. Refund Policy</h2>
-      <p className="legal-flag">
-        <span className="legal-placeholder">[PLACEHOLDER — define your actual policy, e.g.:]</span>
-      </p>
       <ul>
-        <li>Full refund if requested within <span className="legal-placeholder">[X]</span> days of payment, before the cohort begins.</li>
-        <li>No refund once the cohort has started and film review or coaching has begun, except at Coach&apos;s discretion.</li>
-        <li>No refund for failure to complete the program due to the athlete&apos;s own inaction (e.g. not submitting film, missing calls).</li>
+        <li>Full refund if requested within 3 days of payment, before the cohort begins and before any film review has started.</li>
+        <li>Once the cohort begins and Jaiden has started reviewing film or coaching, payments are non-refundable — the spot was reserved and coaching time allocated specifically for you, out of a cohort capped at 12.</li>
+        <li>If you&apos;re removed from the program for inactivity (not submitting film, missing scheduled calls without communicating), no refund is issued, since the coaching time was made available regardless of use.</li>
       </ul>
-      <p><em>(This section needs your specific decision — flagged for your review.)</em></p>
 
       <h2>5. Athlete and Parent/Guardian Responsibilities</h2>
       <ul>
@@ -131,7 +122,12 @@ export default function TermsPage() {
 
       <h2>13. Contact</h2>
       <p>
-        Questions about these Terms can be sent to tyrell@thinkdifferenttraining.com.
+        Questions about these Terms can be sent to{' '}
+        <a href="mailto:tyrell@thinkdifferenttraining.com">tyrell@thinkdifferenttraining.com</a>.
+      </p>
+
+      <p>
+        See also our <a href="/privacy">Privacy Policy</a>.
       </p>
     </LegalLayout>
   );
