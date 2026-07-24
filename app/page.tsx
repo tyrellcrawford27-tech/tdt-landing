@@ -661,7 +661,7 @@ export default function Home() {
           const STEPS = [
             { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout. Tells you exactly what's weakest about your game", image: 'diagnosis-1.webp' },
             { slug: 'prescription', label: 'Prescription', num: '02', title: "Train your weakness.", body: "Modules built around your weakest categories. No wasted reps just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
-            { slug: '100-days',     label: 'The 100 Days', num: '03', title: "One review is not enough", body: "We tear your film apart, again and again, until you know what gets you noticed with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 45%' },
+            { slug: '100-days',     label: 'The 100 Days', num: '03', title: "One review is not enough", body: "We tear your film apart, again and again, until you know what gets you noticed with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
           ];
           const STEP_VH = 42; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
           const activeStep = Math.min(STEPS.length - 1, Math.max(0, Math.floor(programProgress * (100 / STEP_VH))));
@@ -765,7 +765,7 @@ export default function Home() {
         {/* ── Quote ── */}
         <section className="relative flex w-full flex-col items-center px-6 md:px-12 lg:px-[100px] py-[100px] md:py-[130px] bg-[#000000]">
           <blockquote className="w-full max-w-[900px] text-center">
-            <p className="text-[22px] md:text-[32px] font-medium italic leading-[1.4] tracking-[-0.02em] text-white/90">
+            <p className="text-balance text-[17px] md:text-[22px] font-medium italic leading-[1.4] tracking-[-0.02em] text-white/90">
               &ldquo;The right sort of practice carried out over a sufficient period of time leads to improvement.
               Nothing else.&rdquo;
             </p>
