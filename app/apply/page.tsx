@@ -1162,6 +1162,19 @@ export default function ApplyPage() {
               </CTAButton>
             </div>
 
+            {isLast && (
+              <p style={{ fontSize: 12, lineHeight: '18px', color: 'rgba(0,0,0,0.4)', textAlign: 'center', margin: 0 }}>
+                By submitting, you agree to our{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(0,0,0,0.55)', textDecoration: 'underline' }}>
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(0,0,0,0.55)', textDecoration: 'underline' }}>
+                  Privacy Policy
+                </a>.
+              </p>
+            )}
+
           </div>
 
         </div>

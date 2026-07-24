@@ -40,3 +40,50 @@ section[id] {
   0%   { background-position: 0% 50%; }
   100% { background-position: -200% 50%; }
 }
+
+/* Legal page (Terms / Privacy) typography */
+.legal-content p {
+  margin: 0 0 20px;
+}
+.legal-content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  margin: 40px 0 14px;
+}
+.legal-content h2:first-child {
+  margin-top: 0;
+}
+.legal-content ul {
+  margin: 0 0 20px;
+  padding-left: 20px;
+  list-style: disc;
+}
+.legal-content li {
+  margin-bottom: 8px;
+}
+.legal-content strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+.legal-content a {
+  color: #E0703F;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-content .legal-flag {
+  display: block;
+  margin: 0 0 32px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(224, 112, 63, 0.1);
+  border: 1px solid rgba(224, 112, 63, 0.3);
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  line-height: 20px;
+}
+.legal-content .legal-placeholder {
+  color: #E0703F;
+  font-weight: 600;
+}

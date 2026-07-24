@@ -1141,10 +1141,18 @@ export default function Home() {
           <div className="w-full px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[40px]">
             <FooterText />
             <div className="flex flex-col md:flex-row items-center gap-3 md:gap-[10px] pt-[10px]">
-              <div className="flex-1 text-center md:text-left">
+              <div className="flex-1 flex flex-col md:flex-row items-center gap-2 md:gap-[16px] text-center md:text-left">
                 <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)]">
                   © 2026 Think Different Training. All rights reserved.
                 </span>
+                <div className="flex items-center gap-[14px]">
+                  <a href="/terms" className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)] hover:text-black transition-colors">
+                    Terms of Service
+                  </a>
+                  <a href="/privacy" className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)] hover:text-black transition-colors">
+                    Privacy Policy
+                  </a>
+                </div>
               </div>
               <div className="flex-1 flex items-center justify-center md:justify-end gap-[14px]">
                 <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)]">
