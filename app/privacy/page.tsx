@@ -8,14 +8,12 @@ export default function PrivacyPage() {
   return (
     <LegalLayout title="Privacy Policy">
       <p className="legal-flag">
-        <strong>Flagged for review:</strong> this is a draft. The <span className="legal-placeholder">[DATE]</span>{' '}
-        and <span className="legal-placeholder">[CONTACT EMAIL]</span> placeholders need your input before this is
-        published. Also double-check Section 4, which names specific vendors (Supabase, Clerk, Stripe, Resend) —
-        confirm each is actually in use, since I did not verify your current stack against this list. Nothing in
-        the legal wording itself has been changed or invented.
+        <strong>Flagged for review:</strong> this is a draft. Double-check Section 4, which names specific vendors
+        (Supabase, Clerk, Stripe, Resend) — confirm each is actually in use, since I did not verify your current
+        stack against this list. Nothing else in the legal wording itself has been changed or invented.
       </p>
 
-      <p><em>Last updated: <span className="legal-placeholder">[DATE]</span></em></p>
+      <p><em>Last updated: July 24, 2026</em></p>
 
       <p>
         Think Different Training (&quot;TDT,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) respects
@@ -116,8 +114,8 @@ export default function PrivacyPage() {
 
       <h2>8. Contact Us</h2>
       <p>
-        To exercise any of these rights or ask questions about this policy, contact us at{' '}
-        <span className="legal-placeholder">[CONTACT EMAIL]</span>.
+        To exercise any of these rights or ask questions about this policy, contact us at
+        tyrell@thinkdifferenttraining.com.
       </p>
 
       <h2>9. Changes to This Policy</h2>

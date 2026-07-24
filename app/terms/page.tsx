@@ -8,13 +8,12 @@ export default function TermsPage() {
   return (
     <LegalLayout title="Terms of Service">
       <p className="legal-flag">
-        <strong>Flagged for review:</strong> this is a draft. The <span className="legal-placeholder">[DATE]</span>,{' '}
-        <span className="legal-placeholder">[CONTACT EMAIL]</span>, and the entire Section 4 (Refund Policy) are
-        placeholders that need your actual decisions before this is published — see the inline notes below.
-        Nothing in the legal wording itself has been changed or invented.
+        <strong>Flagged for review:</strong> this is a draft. The entire Section 4 (Refund Policy) is still a
+        placeholder that needs your actual decision before this is published — see the inline note below. Nothing
+        in the legal wording itself has been changed or invented.
       </p>
 
-      <p><em>Last updated: <span className="legal-placeholder">[DATE]</span></em></p>
+      <p><em>Last updated: July 24, 2026</em></p>
 
       <p>
         Please read these Terms of Service (&quot;Terms&quot;) carefully before using Think Different Training
@@ -132,7 +131,7 @@ export default function TermsPage() {
 
       <h2>13. Contact</h2>
       <p>
-        Questions about these Terms can be sent to <span className="legal-placeholder">[CONTACT EMAIL]</span>.
+        Questions about these Terms can be sent to tyrell@thinkdifferenttraining.com.
       </p>
     </LegalLayout>
   );
