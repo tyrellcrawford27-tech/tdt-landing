@@ -762,19 +762,6 @@ export default function Home() {
           );
         })()}
 
-        {/* ── Quote ── */}
-        <section className="relative flex w-full flex-col items-center px-6 md:px-12 lg:px-[100px] py-[100px] md:py-[130px] bg-[#000000]">
-          <blockquote className="w-full max-w-[900px] text-center">
-            <p className="text-balance text-[17px] md:text-[22px] font-medium italic leading-[1.4] tracking-[-0.02em] text-white/90">
-              &ldquo;The right sort of practice carried out over a sufficient period of time leads to improvement.
-              Nothing else.&rdquo;
-            </p>
-            <footer className="mt-[24px] text-[13px] md:text-[14px] font-medium tracking-[0.04em] uppercase text-[rgba(179,73,41,0.85)]">
-              — Anders Ericsson
-            </footer>
-          </blockquote>
-        </section>
-
         {/* ── Difference ── */}
         {(() => {
           const ROWS = [
@@ -992,6 +979,19 @@ export default function Home() {
             </section>
           );
         })()}
+
+        {/* ── Quote ── */}
+        <section className="relative flex w-full flex-col items-center px-6 md:px-12 lg:px-[100px] py-[100px] md:py-[130px] bg-[#000000]">
+          <blockquote className="w-full max-w-[900px] text-center">
+            <p className="text-[22px] md:text-[32px] font-medium italic leading-[1.4] tracking-[-0.02em] text-white/90">
+              &ldquo;The right sort of practice carried out over a sufficient period of time leads to improvement.
+              Nothing else.&rdquo;
+            </p>
+            <footer className="mt-[24px] text-[13px] md:text-[14px] font-medium tracking-[0.04em] uppercase text-[rgba(179,73,41,0.85)]">
+              — Anders Ericsson
+            </footer>
+          </blockquote>
+        </section>
 
         {/* ── Transition zone ── */}
         <div ref={transitionZoneRef} className="relative w-full" style={{ height: '100vh' }}>
