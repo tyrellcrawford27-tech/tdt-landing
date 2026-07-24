@@ -1000,7 +1000,7 @@ export default function Home() {
 
         {/* ── Pricing ── */}
         <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1066px] mx-auto flex-col items-center gap-[6px]">
+          <div className="flex w-full max-w-[1066px] mx-auto flex-col items-center gap-[12px]">
             <h2
               className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
               style={{
@@ -1015,10 +1015,10 @@ export default function Home() {
               Your Membership
             </h2>
 
-            <div className="relative w-full max-w-[1066px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '2.8 / 1' }}>
+            <div className="relative w-full max-w-[1066px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
               <Spline
                 scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                style={{ width: '100%', height: '100%', display: 'block', transform: 'scale(1.4) translateX(3%)', transformOrigin: 'center center' }}
+                style={{ width: '100%', height: '100%', display: 'block' }}
               />
             </div>
 
