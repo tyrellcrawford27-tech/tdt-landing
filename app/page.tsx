@@ -1049,6 +1049,10 @@ export default function Home() {
                   answer: "Not even a little. Nobody's asking you to choose. This runs next to what you're already doing. It just makes sure those reps are aimed at something.",
                 },
                 {
+                  question: "What if I don't have film yet?",
+                  answer: "Not a dealbreaker. Even a phone recording of a scrimmage or open gym works to start. Jaiden's looking for real reads and habits, not production value.",
+                },
+                {
                   question: "What if this doesn't lead to anything and we've wasted the money and the time?",
                   answer: "No one can promise an offer. What you're paying for is a real, tracked record of improvement and an honest assessment most players never get. That's worth something on its own.",
                 },
@@ -1099,7 +1103,7 @@ export default function Home() {
           <div className="w-full px-6 md:px-12 lg:px-[100px] pt-[40px] pb-[40px]">
             <FooterText />
             <div className="flex flex-col md:flex-row items-center gap-3 md:gap-[10px] pt-[10px]">
-              <div className="flex-1 flex flex-col md:flex-row items-center gap-2 md:gap-[16px] text-center md:text-left">
+              <div className="flex-1 flex flex-col items-center md:items-start gap-1 text-center md:text-left">
                 <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)]">
                   © 2026 Think Different Training. All rights reserved.
                 </span>
