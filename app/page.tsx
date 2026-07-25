@@ -1026,6 +1026,15 @@ export default function Home() {
 
               {/* Right — heading, subtext, CTA */}
               <div className="flex w-full lg:w-[420px] flex-shrink-0 flex-col items-center lg:items-start gap-[16px] text-center lg:text-left">
+                <a
+                  href="https://cal.com/tyrell-crawford-2pjfa2/30min"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[14px] font-medium tracking-[-0.02em] w-fit"
+                  style={{ color: '#B34929' }}
+                >
+                  Questions about pricing?
+                </a>
                 <h2
                   className="text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
                   style={{
