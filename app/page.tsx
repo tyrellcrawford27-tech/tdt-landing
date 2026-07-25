@@ -827,48 +827,23 @@ export default function Home() {
                 </h2>
               </div>
 
-              {/* Mobile: clean comparison cards */}
-              <div className="flex lg:hidden w-full max-w-[540px] flex-col gap-[10px]">
-                {ROWS.map((row) => (
-                  <div
-                    key={row.slug}
-                    className="overflow-hidden rounded-[12px] bg-white/[0.03] border border-white/[0.07] px-4 py-3"
-                  >
-                    {/* Topic label */}
-                    <div className="flex items-center gap-[6px] mb-[8px]">
-                      <span className="h-[3px] w-[10px] flex-shrink-0 rounded-full" style={{ background: '#C25433' }} />
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-white/60">{row.topic}</p>
-                    </div>
-
-                    {/* Think Different Training answer */}
-                    <div className="flex items-start gap-[8px] pb-[6px]">
-                      <span className="mt-[3px] flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center rounded-full" style={{ background: '#C25433' }}>
-                        <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
-                          <path d="M12 3.5L5.25 10.5L2 7.25" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <p className="text-[13px] text-white leading-[18px]">{row.tdt}</p>
-                    </div>
-
-                    {/* Status quo answer */}
-                    <div className="flex items-start gap-[8px]">
-                      <span className="mt-[3px] flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06]">
-                        <svg width="8" height="8" viewBox="0 0 14 14" fill="none">
-                          <path d="M3 3L11 11M11 3L3 11" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                      </span>
-                      <p className="text-[13px] text-white/40 leading-[18px]">{row.others}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop: pixel-perfect Figma spec */}
-              <div
-                ref={tableRef}
-                className="hidden lg:flex flex-row items-end w-[900px] h-[720px] overflow-hidden"
-                style={{ borderBottom: '1px solid #333333', borderRadius: '14px' }}
-              >
+              {/* Same table on every breakpoint — scaled down on mobile, horizontal-scroll fallback if it still overflows */}
+              <style>{`
+                .diff-table-sizer { width: 558px; height: 446px; }
+                .diff-table-scaled { width: 900px; height: 720px; transform: scale(0.62); transform-origin: top left; }
+                @media (min-width: 1024px) {
+                  .diff-table-sizer { width: 900px; height: 720px; }
+                  .diff-table-scaled { transform: scale(1); }
+                }
+              `}</style>
+              <div className="w-full overflow-x-auto lg:overflow-visible">
+                <div className="mx-auto diff-table-sizer">
+                  <div className="diff-table-scaled">
+                    <div
+                      ref={tableRef}
+                      className="flex flex-row items-end w-[900px] h-[720px] overflow-hidden"
+                      style={{ borderBottom: '1px solid #333333', borderRadius: '14px' }}
+                    >
                 {/* Topics column — 300×600, aligned to bottom via parent align-items:flex-end */}
                 <div className="flex flex-col w-[300px] h-[600px]">
                   {ROWS.map((row, i) => ({
@@ -982,6 +957,9 @@ export default function Home() {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+              </div>
                   </div>
                 </div>
               </div>
