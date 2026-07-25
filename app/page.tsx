@@ -1100,6 +1100,10 @@ export default function Home() {
                   answer: "Jaiden is personally watching your film and holding your hand through every one of the 100 days. That's simply not possible past a certain number. 12 is the real limit for what one person can actually do right, not a marketing number.",
                 },
                 {
+                  question: "Who's this platform for?",
+                  answer: "Built primarily for prep school athletes, but really it's for anyone trying to gain an edge over their competition and stand out.",
+                },
+                {
                   question: "Is this going to conflict with my school team or my current trainer?",
                   answer: "Not even a little. Nobody's asking you to choose. This runs next to what you're already doing. It just makes sure those reps are aimed at something.",
                 },
