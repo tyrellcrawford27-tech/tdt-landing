@@ -410,7 +410,7 @@ export default function Home() {
         >
           <a href="https://app.thinkdifferenttraining.com/access" className="text-[14px] text-white/60">Log In</a>
           <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className="w-full h-[48px] text-[15px]">
-            Demonstration
+            Book call
           </CTAButton>
         </div>
       </div>
@@ -505,7 +505,7 @@ export default function Home() {
                 Log In
               </a>
               <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
-                Demonstration
+                Book call
               </CTAButton>
             </div>
             <button
