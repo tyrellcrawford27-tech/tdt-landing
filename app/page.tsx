@@ -1096,8 +1096,8 @@ export default function Home() {
                   answer: "Here's a little freebie: recruiters look past that. Your best plays don't win you an offer, your worst habits lose it. What actually gets evaluated is what happens in between the highlights, the reads, the hesitations, the stuff you don't put in the tape. That's what this program is built to find.",
                 },
                 {
-                  question: "What if my weaknesses are already too obvious to fix in time?",
-                  answer: "Good. Obvious means fixable. The dangerous ones are the habits nobody's pointed out yet. Those are what actually run out the clock on you.",
+                  question: "Why are you only accepting 12 athletes?",
+                  answer: "Jaiden is personally watching your film and holding your hand through every one of the 100 days. That's simply not possible past a certain number. 12 is the real limit for what one person can actually do right, not a marketing number.",
                 },
                 {
                   question: "Is this going to conflict with my school team or my current trainer?",
