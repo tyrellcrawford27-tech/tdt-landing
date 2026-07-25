@@ -231,7 +231,10 @@ export default function Home() {
       setScrolled(prev => window.scrollY > (prev ? 40 : 80));
       if (transitionZoneRef.current) {
         const r = transitionZoneRef.current.getBoundingClientRect();
-        setTp(Math.max(0, Math.min(1, -r.top / r.height)));
+        // Progress across only the pinned span (container height minus the sticky screen),
+        // so the black→white flip fully completes while the panel still covers the viewport.
+        const pinnable = Math.max(1, r.height - window.innerHeight);
+        setTp(Math.max(0, Math.min(1, -r.top / pinnable)));
       }
       if (cardsStartRef.current) {
         const r = cardsStartRef.current.getBoundingClientRect();
@@ -297,20 +300,26 @@ export default function Home() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  const isDark = tp < 0.5;
+  const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+  // Cinematic dark→light transition: hold true black, then a fast bright flip like stage lights snapping on.
+  const flip   = Math.min(1, Math.max(0, (tp - 0.18) / 0.32)); // short black hold, then a punchy flip
+  const tt     = flip * flip * (3 - 2 * flip);                 // eased colour progress (drives nav + panel together)
+  const flash  = Math.sin(flip * Math.PI);                     // white burst, peaks in the middle of the flip
+  const reveal = Math.min(1, Math.max(0, (tp - 0.42) / 0.28)); // card fades/scales in, revealed by the light
+  const revealEased = reveal * reveal * (3 - 2 * reveal);
+  const isDark = tt < 0.5;
   const isCompact = !!activeSection;
   const showCompact = isCompact && !navHovered;
-  const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
 
-  const panelBg = `rgb(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)})`;
-  const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tp)},${lerp(0,246,tp)},${lerp(0,242,tp)},${tp < 0.5 ? 0.96 : 0.92})` };
-  const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.12)` };
+  const panelBg = `rgb(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)})`;
+  const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)},${tt < 0.5 ? 0.96 : 0.92})` };
+  const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},0.12)` };
   const navTextStyle = {
-    color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${!scrolled && !showCompact ? 0.8 : 0.6})`,
+    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${!scrolled && !showCompact ? 0.8 : 0.6})`,
     textShadow: !scrolled && !showCompact ? '0 1px 6px rgba(0,0,0,0.5)' : 'none',
   };
   const navLinkStyle = (id: string) => ({
-    color: `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},${activeSection === id ? 1 : !scrolled && !showCompact ? 0.72 : 0.4})`,
+    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${activeSection === id ? 1 : !scrolled && !showCompact ? 0.72 : 0.4})`,
     transition: 'color 0.3s ease',
     fontWeight: activeSection === id ? '500' : '400',
     textShadow: !scrolled && !showCompact ? '0 1px 6px rgba(0,0,0,0.5)' : 'none',
@@ -377,7 +386,7 @@ export default function Home() {
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
-                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' }); }, 150);
+                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.48 : 0), behavior: 'smooth' }); }, 150);
               }}
             >
               <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -441,7 +450,7 @@ export default function Home() {
             className={`flex cursor-pointer items-center justify-center flex-shrink-0 overflow-hidden transition-all duration-500 ${showCompact ? 'h-[38px] w-[34px]' : scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}
             aria-label="Back to top"
           >
-            <TDTLogo letterColor={`rgb(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)})`} />
+            <TDTLogo letterColor={`rgb(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)})`} />
           </button>
 
           {/* Desktop center — crossfades between nav links and section label */}
@@ -463,7 +472,7 @@ export default function Home() {
                   style={navLinkStyle(id)}
                   onClick={(e) => {
                     e.preventDefault();
-                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
+                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.48 : 0), behavior: 'smooth' });
                   }}
                 >
                   {label}
@@ -476,7 +485,7 @@ export default function Home() {
               style={{
                 opacity: showCompact ? 1 : 0,
                 transform: showCompact ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(5px)',
-                color: isDark ? 'rgba(255,255,255,0.85)' : `rgba(${lerp(255,26,tp)},${lerp(255,15,tp)},${lerp(255,10,tp)},0.85)`,
+                color: isDark ? 'rgba(255,255,255,0.85)' : `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},0.85)`,
                 pointerEvents: 'none',
               }}
             >
@@ -993,42 +1002,75 @@ export default function Home() {
           </blockquote>
         </section>
 
-        {/* ── Transition zone ── */}
-        <div ref={transitionZoneRef} className="relative w-full" style={{ height: '100vh' }}>
-          <div className="sticky top-0 h-screen w-full" style={{ backgroundColor: panelBg }} />
-        </div>
-
-        {/* ── Pricing ── */}
-        <section id="pricing" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1066px] mx-auto flex-col items-center gap-[12px]">
-            <h2
-              className="text-center text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
+        {/* ── Pricing — the lights come up and the card is right there in the spotlight ── */}
+        <section id="pricing" ref={transitionZoneRef} className="relative w-full" style={{ height: '160vh' }}>
+          <div
+            className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
+            style={{ backgroundColor: panelBg, color: '#000' }}
+          >
+            {/* Expanding blade of light — thin at first, blooms as it opens across the frame */}
+            <div
+              className="absolute left-1/2 top-1/2 pointer-events-none z-0"
               style={{
-                background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
-                backgroundSize: '200% auto',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                animation: 'tdt-gradient-pan 5s linear infinite',
+                width: `${lerp(0, 165, flip)}%`,
+                height: lerp(1, 4, flash),
+                transform: 'translate(-50%, -50%)',
+                background: 'linear-gradient(90deg, transparent, #FFFFFF, transparent)',
+                boxShadow: `0 0 ${lerp(0, 120, flash)}px ${lerp(0, 34, flash)}px rgba(255,238,220,${flash})`,
+                opacity: flip > 0.001 && flip < 0.999 ? 1 : 0,
+              }}
+            />
+            {/* Full-frame white burst that blows out at the midpoint, then recedes into the light */}
+            <div
+              className="absolute inset-0 pointer-events-none z-0"
+              style={{
+                background: 'radial-gradient(ellipse 100% 75% at 50% 50%, #FFFFFF 0%, rgba(255,246,236,0.65) 38%, transparent 78%)',
+                opacity: Math.pow(flash, 1.25),
+                mixBlendMode: 'screen',
+              }}
+            />
+
+            {/* The card + text, revealed by the light */}
+            <div
+              className="relative z-10 flex w-full max-w-[1156px] mx-auto flex-col lg:flex-row items-center gap-[50px] lg:gap-[70px]"
+              style={{
+                opacity: revealEased,
+                transform: `translateY(${lerp(28, 0, revealEased)}px) scale(${(0.94 + 0.06 * revealEased).toFixed(4)})`,
               }}
             >
-              Your Membership
-            </h2>
+              {/* Left — card by itself */}
+              <div className="relative w-full flex-1 rounded-[24px]" style={{ aspectRatio: '633/399' }}>
+                <Spline
+                  scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
+                  style={{ width: '100%', height: '100%', display: 'block' }}
+                />
+              </div>
 
-            <div className="relative w-full max-w-[1066px] mx-auto overflow-hidden rounded-[24px]" style={{ aspectRatio: '633/399' }}>
-              <Spline
-                scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                style={{ width: '100%', height: '100%', display: 'block' }}
-              />
+              {/* Right — heading, subtext, CTA */}
+              <div className="flex w-full lg:w-[420px] flex-shrink-0 flex-col items-center lg:items-start gap-[16px] text-center lg:text-left">
+                <h2
+                  className="text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
+                  style={{
+                    background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
+                    backgroundSize: '200% auto',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    animation: 'tdt-gradient-pan 5s linear infinite',
+                  }}
+                >
+                  Your Membership
+                </h2>
+
+                <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
+                  90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
+                </p>
+
+                <CTAButton href="/apply" className="w-full lg:w-auto h-[42px] px-8 text-[16px]">
+                  Claim your spot
+                </CTAButton>
+              </div>
             </div>
-
-            <p className="w-full text-center text-[16px] font-normal leading-[20px] tracking-[-0.02em] text-black/60">
-              90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
-            </p>
-
-            <CTAButton href="/apply" className="w-full md:w-auto h-[42px] px-8 text-[16px]">
-              Claim your spot
-            </CTAButton>
           </div>
         </section>
 
