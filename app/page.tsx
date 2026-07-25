@@ -1003,7 +1003,7 @@ export default function Home() {
         </section>
 
         {/* ── Pricing — the lights come up and the card is right there in the spotlight ── */}
-        <section id="pricing" ref={transitionZoneRef} className="relative w-full" style={{ height: '240vh' }}>
+        <section id="pricing" ref={transitionZoneRef} className="relative w-full" style={{ height: '205vh' }}>
           <div
             className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
             style={{ backgroundColor: panelBg, color: '#000' }}
