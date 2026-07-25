@@ -562,7 +562,7 @@ export default function Home() {
               This is where it gets harder to stand out.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              Uncommon got you here. This makes you uncommon among the uncommon.
+              Your role isn't decided yet. Before your coach locks in the rotation, know exactly where you stand and exactly what to fix.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
