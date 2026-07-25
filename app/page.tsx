@@ -1063,7 +1063,7 @@ export default function Home() {
                 </h2>
 
                 <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                  90% of your reps happen when no one is watching. Jaiden makes sure they're the right ones.
+                  Film. Feedback. Fix it. Repeat.
                 </p>
 
                 <CTAButton href="/apply" className="w-full lg:w-auto h-[42px] px-8 text-[16px]">
