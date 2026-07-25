@@ -171,30 +171,30 @@ function CountdownEyebrow({ onLaunch }: { onLaunch?: () => void }) {
       }}
     >
       {/* Left — label with live dot */}
-      <div className="flex items-center gap-[8px] pl-[14px] pr-[12px] py-[9px]">
-        <span className="relative flex h-[6px] w-[6px] flex-shrink-0">
+      <div className="flex items-center gap-[7px] pl-[11px] pr-[9px] py-[6px]">
+        <span className="relative flex h-[5px] w-[5px] flex-shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: '#B34929' }} />
-          <span className="relative inline-flex h-[6px] w-[6px] rounded-full" style={{ backgroundColor: '#B34929' }} />
+          <span className="relative inline-flex h-[5px] w-[5px] rounded-full" style={{ backgroundColor: '#B34929' }} />
         </span>
-        <span className="text-[11px] font-medium tracking-[-0.02em] whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <span className="text-[9.5px] font-medium tracking-[-0.02em] whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Cohort 1 · Sept 1
         </span>
       </div>
 
       {/* Divider */}
-      <div className="w-px self-stretch" style={{ background: 'rgba(255,255,255,0.09)', margin: '6px 0' }} />
+      <div className="w-px self-stretch" style={{ background: 'rgba(255,255,255,0.09)', margin: '5px 0' }} />
 
       {/* Right — countdown units */}
-      <div className="flex items-center gap-[14px] pl-[14px] pr-[16px] py-[9px]">
-        {units.map(({ v, l }, i) => (
+      <div className="flex items-center gap-[11px] pl-[11px] pr-[13px] py-[6px]">
+        {units.map(({ v, l }) => (
           <div key={l} className="flex items-baseline gap-[2px]">
             <span
-              className="text-[15px] font-semibold leading-none text-white"
+              className="text-[12.5px] font-semibold leading-none text-white"
               style={{ fontVariantNumeric: 'tabular-nums', fontFeatureSettings: '"tnum"', letterSpacing: '-0.01em' }}
             >
               {String(v).padStart(2, '0')}
             </span>
-            <span className="text-[10px] font-medium leading-none" style={{ color: 'rgba(255,255,255,0.30)' }}>
+            <span className="text-[8.5px] font-medium leading-none" style={{ color: 'rgba(255,255,255,0.30)' }}>
               {l}
             </span>
           </div>
