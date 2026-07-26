@@ -1035,23 +1035,25 @@ export default function Home() {
                 >
                   Questions about pricing?
                 </a>
-                <h2
-                  className="text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
-                  style={{
-                    background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
-                    backgroundSize: '200% auto',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    animation: 'tdt-gradient-pan 5s linear infinite',
-                  }}
-                >
-                  Your Membership
-                </h2>
+                <div className="flex flex-col gap-[6px] items-center lg:items-start">
+                  <h2
+                    className="text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
+                    style={{
+                      background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
+                      backgroundSize: '200% auto',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      animation: 'tdt-gradient-pan 5s linear infinite',
+                    }}
+                  >
+                    Your Membership
+                  </h2>
 
-                <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                  100 days. Film it. Fix it. Earn your minutes.
-                </p>
+                  <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
+                    100 days. Film it. Fix it. Earn your minutes.
+                  </p>
+                </div>
 
                 <CTAButton href="/apply" className="w-full lg:w-auto h-[42px] px-8 text-[16px]">
                   Claim your spot
