@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 
 const LIQUID = '#EFE0D5'; // warm off-white — reads as a body of liquid against #FAF6F2
 
-// Early-bird accent. Forest green, deliberately off the page's terracotta so the
-// discount reads as its own thing.
-const ACCENT      = '#3A6B4A';
-const ACCENT_DEEP = '#2F5A3D';
+// Early-bird accent — deep burnt sienna, darker and earthier than the page's
+// terracotta so the discount still reads as its own thing.
+const ACCENT      = '#7A2E1D';
+const ACCENT_DEEP = '#5E2215';
 const INK         = '#454545'; // headline
 const MUTED       = '#737373'; // body copy
 
@@ -165,16 +165,16 @@ export function PricingPopover() {
           <div
             className="lg-glass relative overflow-hidden rounded-[12px]"
             style={{
-              background: 'linear-gradient(158deg, rgba(255,255,255,0.82) 0%, rgba(253,253,251,0.66) 52%, rgba(248,251,248,0.72) 100%)',
+              background: 'linear-gradient(158deg, rgba(255,255,255,0.82) 0%, rgba(255,252,250,0.66) 52%, rgba(255,248,245,0.72) 100%)',
               backdropFilter: 'blur(26px) saturate(185%)',
               WebkitBackdropFilter: 'blur(26px) saturate(185%)',
               boxShadow: [
                 'inset 0 1px 0 rgba(255,255,255,0.95)',
                 'inset 0 0 0 1px rgba(255,255,255,0.55)',
-                'inset 0 -14px 26px -18px rgba(58,107,74,0.20)',
-                '0 1px 1px rgba(30,45,35,0.04)',
-                '0 8px 18px -8px rgba(30,45,35,0.10)',
-                '0 26px 52px -14px rgba(30,45,35,0.18)',
+                'inset 0 -14px 26px -18px rgba(122,46,29,0.20)',
+                '0 1px 1px rgba(60,25,10,0.04)',
+                '0 8px 18px -8px rgba(60,25,10,0.10)',
+                '0 26px 52px -14px rgba(60,25,10,0.20)',
               ].join(', '),
             }}
           >
@@ -216,7 +216,7 @@ export function PricingPopover() {
                   className="lg-row inline-flex h-[28px] items-center justify-center rounded-[30px] px-[10px] text-[13px] font-normal leading-[16px] text-white transition-transform duration-200 hover:scale-[1.03] active:scale-[0.97]"
                   style={{
                     background: `linear-gradient(180deg, ${ACCENT} 0%, ${ACCENT_DEEP} 100%)`,
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px -4px rgba(47,90,61,0.45)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px -4px rgba(94,34,21,0.45)',
                     animationDelay: '0.37s',
                   }}
                 >
