@@ -1066,8 +1066,20 @@ export default function Home() {
                   {pricingOverlayOpen && (
                     <div
                       className="absolute left-0 top-[calc(100%+10px)] z-50 w-[300px] rounded-[16px] p-5 flex flex-col gap-3"
-                      style={{ background: '#FAF6F2', boxShadow: '0 8px 40px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)' }}
+                      style={{
+                        background: '#FAF6F2',
+                        boxShadow: '0 8px 40px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)',
+                        transformOrigin: 'top left',
+                        animation: 'popover-liquid 0.45s cubic-bezier(0.34, 1.52, 0.64, 1) forwards',
+                      }}
                     >
+                      <style>{`
+                        @keyframes popover-liquid {
+                          0%   { opacity: 0; transform: scale(0.72) translateY(-8px); filter: blur(4px); }
+                          60%  { opacity: 1; filter: blur(0px); }
+                          100% { opacity: 1; transform: scale(1) translateY(0px); filter: blur(0px); }
+                        }
+                      `}</style>
                       <span className="text-[10px] font-semibold tracking-[0.12em] uppercase" style={{ color: '#B34929' }}>Early Pricing</span>
                       <p className="text-[17px] font-bold leading-snug tracking-[-0.02em] text-[#1A0F00]">
                         The first four spots cost less.
