@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, forwardRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { OSBA_SCHOOLS } from '@/lib/schools';
 
@@ -69,8 +70,9 @@ const QUESTIONS: Q[] = [
   { num: '15', section: 'Your commitment',   question: "Why basketball? What are you actually chasing?",        field: 'why_basketball',      type: 'textarea',   placeholder: "Be honest — there's no wrong answer." },
   { num: '16', section: 'Parent / Guardian', question: 'Parent / guardian name',                                field: 'guardian_name',       type: 'text',       placeholder: 'Full name' },
   { num: '17', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '(416) 000-0000' },
-  { num: '18', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
-  { num: '19', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
+  { num: '18', section: 'Parent / Guardian', question: "Their email address",                                   field: 'guardian_email',      type: 'email',      placeholder: 'parent@email.com' },
+  { num: '19', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
+  { num: '20', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
 ];
 
 const TOTAL = QUESTIONS.length; // 20
@@ -401,7 +403,10 @@ function GoBackButton({ onClick }: { onClick: () => void }) {
 const STORAGE_KEY = 'tdt-apply-draft';
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function ApplyPage() {
+function ApplyPageInner() {
+  const searchParams = useSearchParams();
+  const earlyPricing = searchParams.get('early_pricing') === 'true';
+
   const [screen, setScreen]         = useState(0);
   const [form, setForm]             = useState<FormData>(EMPTY);
   const [visible, setVisible]       = useState(true);
@@ -594,7 +599,7 @@ export default function ApplyPage() {
     }
   };
 
-  const OPTIONAL = new Set<keyof FormData>(['guardian_email', 'anything_else']);
+  const OPTIONAL = new Set<keyof FormData>(['anything_else']);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -629,12 +634,13 @@ export default function ApplyPage() {
       guardian_name:       form.guardian_name,
       parent_phone:        form.guardian_phone,
       guardian_phone:      form.guardian_phone,
-      parent_email:        form.guardian_email || null,
-      guardian_email:      form.guardian_email || null,
+      parent_email:        form.guardian_email,
+      guardian_email:      form.guardian_email,
       parent_aware:        form.guardian_aware || null,
       guardian_aware:      form.guardian_aware || null,
       additional_notes:    form.anything_else || null,
       anything_else:       form.anything_else || null,
+      early_pricing:     earlyPricing || null,
       submitted_at:      new Date().toISOString(),
       status:            'pending',
     };
@@ -1179,5 +1185,13 @@ export default function ApplyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ApplyPage() {
+  return (
+    <Suspense>
+      <ApplyPageInner />
+    </Suspense>
   );
 }
