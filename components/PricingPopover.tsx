@@ -221,8 +221,7 @@ export function PricingPopover() {
                   The first four spots cost less.
                 </p>
                 <p className="lg-row text-[13px] font-normal leading-[16px]" style={{ color: MUTED, animationDelay: '0.29s' }}>
-                  Cohort 1 is $1,000, but the first four applicants approved get in for $800.
-                  Clicking this doesn&apos;t reserve your spot — applying and getting accepted does.
+                  $1,000 normally. The first four to lock in their spot pay $800 instead.
                 </p>
               </div>
 
