@@ -143,7 +143,7 @@ export function PricingPopover() {
         onClick={toggle}
         aria-expanded={open}
         className="text-[14px] font-medium tracking-[-0.02em] cursor-pointer transition-opacity duration-200 hover:opacity-70"
-        style={{ color: '#B34929', background: 'none', border: 'none', padding: 0 }}
+        style={{ color: ACCENT, background: 'none', border: 'none', padding: 0 }}
       >
         Questions about pricing?
       </button>
