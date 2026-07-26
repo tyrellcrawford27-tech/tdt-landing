@@ -1143,6 +1143,19 @@ export default function Home() {
                 );
               })}
             </div>
+
+            <a
+              href="/apply"
+              className="group self-start mt-[20px] inline-flex items-center gap-[4px] text-[14px] font-medium tracking-[-0.02em] underline underline-offset-4"
+              style={{ color: '#B34929' }}
+            >
+              Apply now
+              <span
+                className="inline-block transition-transform duration-300 ease-out group-hover:translate-x-[6px]"
+              >
+                →
+              </span>
+            </a>
           </div>
         </section>
 
