@@ -1050,7 +1050,7 @@ export default function Home() {
                 </h2>
 
                 <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                  Film. Feedback. Fix it. Repeat.
+                  100 days. Film it. Fix it. Earn your minutes.
                 </p>
 
                 <CTAButton href="/apply" className="w-full lg:w-auto h-[42px] px-8 text-[16px]">
