@@ -653,8 +653,25 @@ export default function Home() {
                       key={alt}
                       src={src}
                       alt={alt}
-                      style={{ height: h, width: 'auto', ...fadeUp(760 + i * 80) }}
-                      className="object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
+                      style={
+                        coachVisible
+                          ? {
+                              height: h,
+                              width: 'auto',
+                              // No inline opacity/transform here — leaving those to the
+                              // hover: classes below. Inline values would always win over
+                              // the stylesheet's :hover rules and silently disable them.
+                              transition: 'opacity 450ms cubic-bezier(0.16, 1, 0.3, 1), filter 450ms cubic-bezier(0.16, 1, 0.3, 1), transform 450ms cubic-bezier(0.16, 1, 0.3, 1)',
+                            }
+                          : {
+                              height: h,
+                              width: 'auto',
+                              opacity: 0,
+                              transform: 'translateY(18px)',
+                              transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${760 + i * 80}ms, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${760 + i * 80}ms`,
+                            }
+                      }
+                      className="object-contain opacity-80 brightness-[0.75] hover:opacity-100 hover:brightness-100 hover:scale-[1.05] hover:-translate-y-[3px]"
                     />
                   ))}
                 </div>
