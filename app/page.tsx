@@ -6,6 +6,7 @@ import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
 import { LaunchReveal } from "@/components/LaunchReveal";
+import { PricingPopover } from "@/components/PricingPopover";
 import Spline from "@splinetool/react-spline";
 
 
@@ -204,10 +205,12 @@ function CountdownEyebrow({ onLaunch }: { onLaunch?: () => void }) {
   );
 }
 
+// ── Early-pricing popover ─────────────────────────────────────────────────────
+// Liquid-glass card that morphs out of the "Questions about pricing?" link.
+// The goo layer (SVG alpha-threshold filter) makes the neck pinch off from the
+// button like a droplet; the glass card crossfades in on top of it.
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
-  const [pricingOverlayOpen, setPricingOverlayOpen] = useState(false);
-  const [earlySpots, setEarlySpots] = useState<number | null>(null);
   const [tp, setTp] = useState(0);
   const [programProgress, setProgramProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
@@ -1045,63 +1048,7 @@ export default function Home() {
 
               {/* Right — heading, subtext, CTA */}
               <div className="flex w-full lg:w-[420px] flex-shrink-0 flex-col items-center lg:items-start gap-[16px] text-center lg:text-left">
-                <div className="relative w-fit">
-                  <button
-                    onClick={() => {
-                      if (!pricingOverlayOpen) {
-                        fetch('/api/early-pricing-spots')
-                          .then(r => r.ok ? r.json() : null)
-                          .then(d => d && typeof d.remaining === 'number' && setEarlySpots(d.remaining))
-                          .catch(() => {});
-                      }
-                      setPricingOverlayOpen(o => !o);
-                    }}
-                    className="text-[14px] font-medium tracking-[-0.02em] cursor-pointer hover:opacity-70 transition-opacity duration-200"
-                    style={{ color: '#B34929', background: 'none', border: 'none', padding: 0 }}
-                  >
-                    Questions about pricing?
-                  </button>
-
-                  {/* Inline popover */}
-                  {pricingOverlayOpen && (
-                    <div
-                      className="absolute left-0 top-[calc(100%+10px)] z-50 w-[300px] rounded-[16px] p-5 flex flex-col gap-3"
-                      style={{
-                        background: '#FAF6F2',
-                        boxShadow: '0 8px 40px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)',
-                        transformOrigin: 'top left',
-                        animation: 'popover-liquid 0.45s cubic-bezier(0.34, 1.52, 0.64, 1) forwards',
-                      }}
-                    >
-                      <style>{`
-                        @keyframes popover-liquid {
-                          0%   { opacity: 0; transform: scale(0.72) translateY(-8px); filter: blur(4px); }
-                          60%  { opacity: 1; filter: blur(0px); }
-                          100% { opacity: 1; transform: scale(1) translateY(0px); filter: blur(0px); }
-                        }
-                      `}</style>
-                      <span className="text-[10px] font-semibold tracking-[0.12em] uppercase" style={{ color: '#B34929' }}>Early Pricing</span>
-                      <p className="text-[17px] font-bold leading-snug tracking-[-0.02em] text-[#1A0F00]">
-                        The first four spots cost less.
-                      </p>
-                      <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-black/55">
-                        Cohort 1 is $1,000, but the first four applicants approved get in for $800. Applying and getting accepted reserves your spot — not clicking this.
-                      </p>
-                      {earlySpots !== null && (
-                        <p className="text-[12px] font-semibold tracking-[-0.01em]" style={{ color: '#B34929' }}>
-                          {earlySpots} of 4 early spot{earlySpots !== 1 ? 's' : ''} remaining
-                        </p>
-                      )}
-                      <a
-                        href="/apply?early_pricing=true"
-                        className="mt-1 inline-flex items-center justify-center rounded-full text-[13px] font-semibold tracking-[-0.01em] text-white transition-opacity hover:opacity-85"
-                        style={{ background: '#B34929', height: '40px', padding: '0 20px' }}
-                      >
-                        Apply now
-                      </a>
-                    </div>
-                  )}
-                </div>
+                <PricingPopover />
                 <div className="flex flex-col gap-[6px] items-center lg:items-start">
                   <h2
                     className="text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
