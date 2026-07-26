@@ -1146,7 +1146,7 @@ export default function Home() {
 
             <a
               href="/apply"
-              className="group self-start mt-[20px] inline-flex items-center gap-[4px] text-[14px] font-medium tracking-[-0.02em] underline underline-offset-4"
+              className="group self-start mt-[20px] inline-flex items-center gap-[4px] text-[14px] font-medium tracking-[-0.02em]"
               style={{ color: '#B34929' }}
             >
               Apply now
