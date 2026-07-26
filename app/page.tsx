@@ -386,7 +386,7 @@ export default function Home() {
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
-                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.48 : 0), behavior: 'smooth' }); }, 150);
+                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.9 : 0), behavior: 'smooth' }); }, 150);
               }}
             >
               <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -472,7 +472,7 @@ export default function Home() {
                   style={navLinkStyle(id)}
                   onClick={(e) => {
                     e.preventDefault();
-                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.48 : 0), behavior: 'smooth' });
+                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.9 : 0), behavior: 'smooth' });
                   }}
                 >
                   {label}
