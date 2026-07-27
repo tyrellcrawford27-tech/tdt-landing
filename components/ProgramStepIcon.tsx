@@ -73,19 +73,17 @@ export function ProgramStepIcon({
           <path d="M17 5.3v4.2c0 2.7-2.2 4.9-5 4.9" />
           <path d="M12 14.4v2.2c0 1.9 1.5 3.4 3.4 3.4" />
           <g className="pi-part pi-chest" style={{ transformOrigin: '17.8px 20px' }}>
-            <circle cx="17.8" cy="20" r="2.4" />
-            <circle cx="17.8" cy="20" r="0.9" />
+            <circle cx="17.8" cy="20" r="2.6" />
           </g>
         </>
       )}
 
       {name === 'pillbottle' && (
         <g className="pi-part pi-bottle" style={{ transformOrigin: '12px 21px' }}>
-          <rect x="8.6" y="2.4" width="6.8" height="3" rx="0.9" />
-          <path d="M10.3 3.1v1.6M12 3.1v1.6M13.7 3.1v1.6" />
-          <rect x="6.6" y="5.4" width="10.8" height="15.6" rx="2.4" />
-          <rect x="8.6" y="11" width="5" height="2.4" rx="1.2" transform="rotate(-22 11.1 12.2)" />
-          <rect x="11" y="15.4" width="5" height="2.4" rx="1.2" transform="rotate(18 13.5 16.6)" />
+          <rect x="8.4" y="2.2" width="7.2" height="3.2" rx="1" />
+          <rect x="6.4" y="5.4" width="11.2" height="15.8" rx="2.4" />
+          <rect x="8.4" y="10.6" width="6.4" height="3" rx="1.5" transform="rotate(-22 11.6 12.1)" />
+          <rect x="10.2" y="15.4" width="6.4" height="3" rx="1.5" transform="rotate(18 13.4 16.9)" />
         </g>
       )}
 

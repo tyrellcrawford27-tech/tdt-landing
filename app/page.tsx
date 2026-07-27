@@ -713,7 +713,7 @@ export default function Home() {
           const STEPS = [
             { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope' as const, title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout, and tells you exactly what's weakest about your game.", image: 'diagnosis-1.webp' },
             { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle'  as const, title: "Then, he prescribes the fix.", body: "Modules built around exactly what he found, no wasted reps, just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
-            { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat'       as const, title: "Then it repeats.", body: "Because one review was never enough, we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
+            { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat'       as const, title: "Then it repeats.", body: "One review isn't enough, so we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
           ];
           const STEP_VH = PROGRAM_STEP_VH; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
           const activeStep = programActiveStep;
@@ -774,13 +774,12 @@ export default function Home() {
                             pointerEvents: activeStep === i ? 'auto' : 'none',
                           }}
                         >
-                          {/* Icon sits beside the label on mobile (where the text
-                              block is height-constrained) and above it from md up. */}
-                          <div className="flex flex-row md:flex-col items-center md:items-start gap-[10px] md:gap-[16px] text-[#C2552F]">
+                          {/* Icon sits inline with the label at every breakpoint */}
+                          <div className="flex flex-row items-center gap-[8px] text-[#C2552F]">
                             <ProgramStepIcon
                               name={s.icon}
                               active={activeStep === i}
-                              className="h-[22px] w-[22px] flex-shrink-0 md:h-[30px] md:w-[30px]"
+                              className="h-[16px] w-[16px] flex-shrink-0 md:h-[18px] md:w-[18px]"
                             />
                             <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
                               {s.label}
