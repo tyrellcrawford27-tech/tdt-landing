@@ -177,7 +177,7 @@ export function PricingPopover() {
 
       {mounted && (
         <div
-          className="lg-pop absolute left-0 top-full z-50 w-[305px]"
+          className="lg-pop absolute left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 top-full z-50 w-[305px] max-w-[calc(100vw-40px)]"
           style={{ paddingTop: 16 }}
           data-state={open ? 'in' : 'out'}
         >
@@ -211,7 +211,7 @@ export function PricingPopover() {
             <div className="lg-sheen pointer-events-none absolute inset-y-0 -left-1/3 w-1/3" aria-hidden
               style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)' }} />
 
-            <div className="lg-body relative flex flex-col items-start gap-[15px] p-5">
+            <div className="lg-body relative flex flex-col items-start gap-[15px] p-5 text-left">
               <span className="lg-row text-[13px] font-normal leading-[16px]" style={{ color: ACCENT, animationDelay: '0.21s' }}>
                 Early bird pricing
               </span>
