@@ -1241,7 +1241,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <CTAButton href="/apply" className="w-full lg:w-auto h-[42px] px-8 text-[16px]">
+                <CTAButton href="/apply" className="h-[42px] px-8 text-[16px]">
                   Claim your spot
                 </CTAButton>
               </div>
