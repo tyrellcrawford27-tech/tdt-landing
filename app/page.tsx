@@ -7,6 +7,13 @@ import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
 import { LaunchReveal } from "@/components/LaunchReveal";
 import { PricingPopover } from "@/components/PricingPopover";
+import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon";
+
+// Program section scroll tuning — one step per PROGRAM_STEP_VH of scroll.
+// Shared between the step index, the progress rail and the container height so
+// they can't drift apart.
+const PROGRAM_STEP_VH = 42;
+const PROGRAM_STEP_COUNT = 3;
 import Spline from "@splinetool/react-spline";
 
 
@@ -224,6 +231,15 @@ export default function Home() {
   const [heroPlaying, setHeroPlaying] = useState(false);
   const [launched, setLaunched] = useState(false);
 
+  // Derived from the scroll-linked programProgress. NaN-safe so a bad reading
+  // can never index STEPS out of bounds.
+  const programStepSpan = (PROGRAM_STEP_COUNT * PROGRAM_STEP_VH) / 100;
+  const programFill = Math.min(1, Math.max(0, (programProgress || 0) / programStepSpan));
+  const programActiveStep = Math.min(
+    PROGRAM_STEP_COUNT - 1,
+    Math.max(0, Math.floor((programProgress || 0) * (100 / PROGRAM_STEP_VH))) || 0,
+  );
+
   const transitionZoneRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const cardsStartRef = useRef<HTMLDivElement>(null);
@@ -243,7 +259,11 @@ export default function Home() {
       }
       if (cardsStartRef.current) {
         const r = cardsStartRef.current.getBoundingClientRect();
-        setProgramProgress(Math.max(0, -r.top) / window.innerHeight);
+        // Guard innerHeight: a collapsed or hidden viewport reports 0, and 0/0
+        // yields NaN, which propagates into the step index and indexes STEPS
+        // out of bounds.
+        const vh = window.innerHeight || 1;
+        setProgramProgress(Math.max(0, -r.top) / vh);
       }
       const mid = window.innerHeight * 0.45;
       let active = '';
@@ -258,6 +278,7 @@ export default function Home() {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
 
 
 
@@ -690,15 +711,16 @@ export default function Home() {
         {/* ── Program ── */}
         {(() => {
           const STEPS = [
-            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout, and tells you exactly what's weakest about your game.", image: 'diagnosis-1.webp' },
-            { slug: 'prescription', label: 'Prescription', num: '02', title: "Then, he prescribes the fix.", body: "Modules built around exactly what he found, no wasted reps, just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
-            { slug: '100-days',     label: 'The 100 Days', num: '03', title: "Then it repeats.", body: "Because one review was never enough, we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
+            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope' as const, title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout, and tells you exactly what's weakest about your game.", image: 'diagnosis-1.webp' },
+            { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle'  as const, title: "Then, he prescribes the fix.", body: "Modules built around exactly what he found, no wasted reps, just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
+            { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat'       as const, title: "Then it repeats.", body: "Because one review was never enough, we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
           ];
-          const STEP_VH = 42; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
-          const activeStep = Math.min(STEPS.length - 1, Math.max(0, Math.floor(programProgress * (100 / STEP_VH))));
+          const STEP_VH = PROGRAM_STEP_VH; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
+          const activeStep = programActiveStep;
 
           return (
             <section id="program" className="relative w-full bg-[#000000]">
+              <ProgramIconStyles />
 
               {/* Tall scroll container — one screen per step, plus a buffer at the
                   end so the last step lingers before the sticky section releases */}
@@ -708,6 +730,26 @@ export default function Home() {
 
                 {/* Single sticky viewport */}
                 <div className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
+
+                  {/* Scroll-linked progress rail. The fill is driven by transform
+                      rather than height so it stays on the compositor — no layout
+                      work per scroll frame, which is what keeps it smooth on mobile. */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute left-[10px] md:left-[22px] lg:left-[48px] top-[40px] bottom-[40px] w-[2px] overflow-hidden rounded-full"
+                    style={{ background: 'rgba(255,255,255,0.08)' }}
+                  >
+                    <div
+                      className="h-full w-full rounded-full"
+                      style={{
+                        transform: `scaleY(${programFill})`,
+                        transformOrigin: 'top',
+                        transition: 'transform 120ms linear',
+                        willChange: 'transform',
+                        background: 'linear-gradient(180deg, rgba(194,85,47,0.45) 0%, #C2552F 100%)',
+                      }}
+                    />
+                  </div>
 
                   {/* Header row — counter pinned right */}
                   <div className="relative z-10 flex items-center justify-center pt-[36px] pb-[44px] flex-shrink-0">
@@ -724,7 +766,7 @@ export default function Home() {
                       {STEPS.map((s, i) => (
                         <div
                           key={s.slug}
-                          className="absolute inset-0 flex flex-col justify-end md:justify-center gap-[18px]"
+                          className="absolute inset-0 flex flex-col justify-end md:justify-center gap-[12px] md:gap-[18px]"
                           style={{
                             opacity:   activeStep === i ? 1 : 0,
                             transform: `translateY(${activeStep === i ? 0 : activeStep > i ? -20 : 20}px)`,
@@ -732,9 +774,18 @@ export default function Home() {
                             pointerEvents: activeStep === i ? 'auto' : 'none',
                           }}
                         >
-                          <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
-                            {s.label}
-                          </span>
+                          {/* Icon sits beside the label on mobile (where the text
+                              block is height-constrained) and above it from md up. */}
+                          <div className="flex flex-row md:flex-col items-center md:items-start gap-[10px] md:gap-[16px] text-[#C2552F]">
+                            <ProgramStepIcon
+                              name={s.icon}
+                              active={activeStep === i}
+                              className="h-[22px] w-[22px] flex-shrink-0 md:h-[30px] md:w-[30px]"
+                            />
+                            <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
+                              {s.label}
+                            </span>
+                          </div>
                           <h2 className="text-[38px] md:text-[44px] lg:text-[50px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
                             {s.title}
                           </h2>
