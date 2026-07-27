@@ -690,9 +690,9 @@ export default function Home() {
         {/* ── Program ── */}
         {(() => {
           const STEPS = [
-            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout. Tells you exactly what's weakest about your game", image: 'diagnosis-1.webp' },
-            { slug: 'prescription', label: 'Prescription', num: '02', title: "Train your weakness.", body: "Modules built around your weakest categories. No wasted reps just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
-            { slug: '100-days',     label: 'The 100 Days', num: '03', title: "One review is not enough", body: "We tear your film apart, again and again, until you know what gets you noticed with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
+            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout, and tells you exactly what's weakest about your game.", image: 'diagnosis-1.webp' },
+            { slug: 'prescription', label: 'Prescription', num: '02', title: "Then, he prescribes the fix.", body: "Modules built around exactly what he found, no wasted reps, just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
+            { slug: '100-days',     label: 'The 100 Days', num: '03', title: "Then it repeats.", body: "Because one review was never enough, we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
           ];
           const STEP_VH = 42; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
           const activeStep = Math.min(STEPS.length - 1, Math.max(0, Math.floor(programProgress * (100 / STEP_VH))));
