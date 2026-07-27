@@ -795,14 +795,17 @@ export default function Home() {
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
               <div>
                 <p style={{ ...fadeUp(0), lineHeight: '20px' }} className="text-[18px] font-bold tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
-                  Seven years, I trained alongside some of the best this country has produced. I know the difference between someone who works hard and someone who{' '}
-                  <span className="text-white">actually gets better.</span>
-                  {' '}It's knowing exactly what to fix. Every athlete here gets my{' '}
-                  <span className="text-white">eyes on their specific game.</span>
-                  {' '}Not generic feedback. The truth about what's holding you back.
+                  Seven years alongside some of the best players this country has produced taught me something most athletes never realize: effort isn't what separates the players who make it.
+                  {' '}It's{' '}
+                  <span className="text-white">knowing exactly what to improve next.</span>
+                  {' '}Every athlete here gets{' '}
+                  <span className="text-white">feedback tailored to their game</span>
+                  {'—not generic advice or recycled drills. My job is to identify '}
+                  <span className="text-white">what's actually holding you back</span>
+                  {' so every session moves you closer to the next level.'}
                 </p>
                 <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
-                  -Jaiden Francais
+                  Jaiden Francais
                 </p>
               </div>
               <div style={fadeUp(700)} className="flex flex-col gap-[12px] text-left">

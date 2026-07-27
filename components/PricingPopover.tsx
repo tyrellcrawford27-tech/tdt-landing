@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { EarlyBirdIcon } from './EarlyBirdIcon';
 
 const LIQUID = '#EFE0D5'; // warm off-white — reads as a body of liquid against #FAF6F2
 
@@ -98,20 +99,6 @@ export function PricingPopover() {
           100% { transform: translateX(230%)  skewX(-18deg); opacity: 0;    }
         }
         @keyframes lg-dot { 0%,100% { opacity: 0.25; } 50% { opacity: 0.9; } }
-        /* trigger bird — two quick pecks, then a long rest so it reads as a
-           live detail rather than a spinner */
-        @keyframes lg-bob {
-          0%, 70%, 100% { transform: translate(0, 0)      rotate(0deg);  }
-          76%           { transform: translate(-0.3px, 1.7px) rotate(15deg); }
-          82%           { transform: translate(0, 0)      rotate(0deg);  }
-          88%           { transform: translate(-0.2px, 1.3px) rotate(11deg); }
-          94%           { transform: translate(0, 0)      rotate(0deg);  }
-        }
-        .lg-bird-head {
-          transform-box: view-box;
-          transform-origin: 13.6px 10.4px;
-          animation: lg-bob 3.2s ease-in-out infinite;
-        }
 
         .lg-goo   { filter: url(#lg-goo); will-change: transform, opacity; }
         .lg-blob  { transform-origin: 44px 0; will-change: transform; }
@@ -139,7 +126,6 @@ export function PricingPopover() {
           .lg-pop[data-state='in']  .lg-glass,
           .lg-pop[data-state='in']  .lg-row { animation: lg-fade-in 0.2s both; animation-delay: 0s !important; }
           .lg-pop .lg-neck, .lg-pop .lg-anchor, .lg-pop .lg-sheen { display: none; }
-          .lg-bird-head { animation: none; }
         }
       `}</style>
 
@@ -160,18 +146,7 @@ export function PricingPopover() {
         className="inline-flex items-center gap-[7px] text-[14px] font-medium tracking-[-0.02em] cursor-pointer transition-opacity duration-200 hover:opacity-70"
         style={{ color: ACCENT, background: 'none', border: 'none', padding: 0 }}
       >
-        <svg
-          width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden
-        >
-          <path d="M13.2 10.4C9 11.6 5.6 14.8 5.6 18.2c0 1.5 1.2 2.5 2.8 2.5H12c3.2 0 5.6-2.5 5.6-5.7v-4.3" />
-          <path d="M5.7 17.6 1.8 19.6" />
-          <path d="M9.2 14.6c1.7 1.9 3.8 2.9 6 3" />
-          <g className="lg-bird-head">
-            <circle cx="15.5" cy="8" r="2.8" />
-            <path d="m18.3 7.5 3.3 1.2-3.3 1.2" />
-          </g>
-        </svg>
+        <EarlyBirdIcon size={15} color="currentColor" />
         Early bird pricing
       </button>
 

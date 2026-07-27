@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, forwardRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
+import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
 import { OSBA_SCHOOLS } from '@/lib/schools';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
@@ -726,6 +727,12 @@ function ApplyPageInner() {
           .tdt-intro-desc { font-size: 15px !important; line-height: 1.6 !important; }
         }
       `}</style>
+
+      {earlyPricing && (
+        <div style={{ opacity: 0.55, ...fadeStyle }}>
+          <EarlyBirdIcon size={20} color={TERRA} />
+        </div>
+      )}
 
       <p style={{ ...text(16, 500, TERRA), ...fadeStyle }}>
         Think Different Training
