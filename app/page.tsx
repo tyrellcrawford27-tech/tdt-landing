@@ -8,13 +8,138 @@ import { CTAButton } from "@/components/CTAButton";
 import { LaunchReveal } from "@/components/LaunchReveal";
 import { PricingPopover } from "@/components/PricingPopover";
 import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon";
+import Spline from "@splinetool/react-spline";
 
 // Program section scroll tuning — one step per PROGRAM_STEP_VH of scroll.
-// Shared between the step index, the progress rail and the container height so
-// they can't drift apart.
-const PROGRAM_STEP_VH = 42;
+// Shared between the step index and the container height so they can't drift
+// apart. Desktop/tablet pin each stage's card via position: sticky for
+// roughly PROGRAM_STEP_VH of scroll; mobile skips pinning entirely (see
+// ProgramMobile below) and just reveals each stage as it scrolls into view.
+const PROGRAM_STEP_VH = 42;       // scroll distance (% of viewport) per stage — lower = less scroll friction
+const PROGRAM_END_BUFFER_VH = 90; // tail so the last stage lingers before release
 const PROGRAM_STEP_COUNT = 3;
-import Spline from "@splinetool/react-spline";
+
+type ProgramStep = {
+  slug: string;
+  label: string;
+  num: string;
+  icon: import('@/components/ProgramStepIcon').ProgramIconName;
+  title: string;
+  body: string;
+  image: string;
+  imagePosition?: string;
+};
+
+const PROGRAM_STEPS: ProgramStep[] = [
+  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout, and tells you exactly what's weakest about your game.", image: 'diagnosis-1.webp' },
+  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "Then, he prescribes the fix.", body: "Modules built around exactly what he found, no wasted reps, just what's actually holding you back.", image: 'drill-true.webp' },
+  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: "One review isn't enough, so we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.", image: 'the-100-days.webp', imagePosition: 'center 52%' },
+];
+
+// Mobile Program section — a self-contained vertical snap-scroller, one
+// stage per screen, the same mechanic as a TikTok/Reels feed: swipe up,
+// the next stage snaps fully into place, no in-between resting position.
+// This is a nested scroller (its own overflow-y, not the page's), which is
+// what makes hard snapping possible without fighting the page's own scroll —
+// the tradeoff is it "traps" scroll until the user reaches either end, same
+// as any embedded reel. Each stage's icon animates while snapped fully into
+// view and stops otherwise, via IntersectionObserver at a high threshold.
+function ProgramMobileStage({ step, active }: { step: ProgramStep; active: boolean }) {
+  return (
+    <div className="relative h-[100dvh] w-full snap-start snap-always flex flex-col justify-center px-6 py-[80px]" style={{ scrollSnapStop: 'always' }}>
+      <div
+        style={{
+          opacity: active ? 1 : 0,
+          transform: `translateY(${active ? 0 : 14}px)`,
+          transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
+        }}
+      >
+        <div className="flex flex-row items-center gap-[8px] text-[#C2552F] mb-[12px]">
+          <ProgramStepIcon name={step.icon} active={active} className="h-[16px] w-[16px] flex-shrink-0" />
+          <span className="text-[11px] font-semibold uppercase text-[rgba(179,73,41,0.85)]">{step.label}</span>
+        </div>
+        <h2 className="text-[30px] font-bold leading-[1.12] tracking-[-0.025em] text-white mb-[12px]">
+          {step.title}
+        </h2>
+        <p className="text-[14px] font-normal leading-[19px] text-white/50 max-w-[400px]">
+          {step.body}
+        </p>
+      </div>
+
+      <div
+        className="relative w-full rounded-[16px] overflow-hidden mt-[20px]"
+        style={{
+          aspectRatio: '4 / 3',
+          background: '#0c0c0c',
+          border: '1px solid rgba(255,255,255,0.07)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          opacity: active ? 1 : 0,
+          transform: `translateY(${active ? 0 : 14}px) scale(${active ? 1 : 0.98})`,
+          transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1) 0.06s, transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.06s',
+        }}
+      >
+        <div
+          className="absolute inset-0 bg-cover"
+          style={{ backgroundImage: `url(/${step.image})`, backgroundPosition: step.imagePosition ?? 'top' }}
+        />
+        <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
+      </div>
+
+      {/* Dot rail — same read as a reel's progress dots */}
+      <div className="absolute bottom-[28px] left-1/2 -translate-x-1/2 flex gap-[6px]">
+        {PROGRAM_STEPS.map((s, i) => (
+          <span
+            key={s.slug}
+            className="h-[5px] rounded-full transition-all duration-300"
+            style={{
+              width: s.slug === step.slug ? 18 : 5,
+              background: s.slug === step.slug ? '#C2552F' : 'rgba(255,255,255,0.2)',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProgramMobile() {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const stages = Array.from(scroller.children) as HTMLElement[];
+    const io = new IntersectionObserver(
+      entries => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const i = stages.indexOf(entry.target as HTMLElement);
+            if (i !== -1) setActiveIndex(i);
+          }
+        }
+      },
+      { root: scroller, threshold: 0.6 },
+    );
+    stages.forEach(s => io.observe(s));
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div className="md:hidden">
+      <div
+        ref={scrollerRef}
+        className="no-scrollbar h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+        {PROGRAM_STEPS.map((step, i) => (
+          <ProgramMobileStage key={step.slug} step={step} active={activeIndex === i} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 
 
@@ -233,8 +358,6 @@ export default function Home() {
 
   // Derived from the scroll-linked programProgress. NaN-safe so a bad reading
   // can never index STEPS out of bounds.
-  const programStepSpan = (PROGRAM_STEP_COUNT * PROGRAM_STEP_VH) / 100;
-  const programFill = Math.min(1, Math.max(0, (programProgress || 0) / programStepSpan));
   const programActiveStep = Math.min(
     PROGRAM_STEP_COUNT - 1,
     Math.max(0, Math.floor((programProgress || 0) * (100 / PROGRAM_STEP_VH))) || 0,
@@ -710,11 +833,7 @@ export default function Home() {
 
         {/* ── Program ── */}
         {(() => {
-          const STEPS = [
-            { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope' as const, title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout, and tells you exactly what's weakest about your game.", image: 'diagnosis-1.webp' },
-            { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle'  as const, title: "Then, he prescribes the fix.", body: "Modules built around exactly what he found, no wasted reps, just what's actually holding you back.",                                                                                image: 'drill-true.webp' },
-            { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat'       as const, title: "Then it repeats.", body: "One review isn't enough, so we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.",                              image: 'the-100-days.webp', imagePosition: 'center 52%' },
-          ];
+          const STEPS = PROGRAM_STEPS;
           const STEP_VH = PROGRAM_STEP_VH; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
           const activeStep = programActiveStep;
 
@@ -722,34 +841,18 @@ export default function Home() {
             <section id="program" className="relative w-full bg-[#000000]">
               <ProgramIconStyles />
 
-              {/* Tall scroll container — one screen per step, plus a buffer at the
-                  end so the last step lingers before the sticky section releases */}
-              <div style={{ height: `${STEPS.length * STEP_VH + 90}svh` }}>
+              {/* Mobile: no pinning — see ProgramMobile for why. */}
+              <ProgramMobile />
+
+              {/* Desktop/tablet: sticky pin-and-release. Tall scroll container —
+                  one screen per step, plus a short buffer at the end so the last
+                  step lingers before the sticky section releases. */}
+              <div className="hidden md:block" style={{ height: `${STEPS.length * STEP_VH + PROGRAM_END_BUFFER_VH}svh` }}>
 
                 <div ref={cardsStartRef} />
 
                 {/* Single sticky viewport */}
                 <div className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
-
-                  {/* Scroll-linked progress rail. The fill is driven by transform
-                      rather than height so it stays on the compositor — no layout
-                      work per scroll frame, which is what keeps it smooth on mobile. */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute left-[10px] md:left-[22px] lg:left-[48px] top-[40px] bottom-[40px] w-[2px] overflow-hidden rounded-full"
-                    style={{ background: 'rgba(255,255,255,0.08)' }}
-                  >
-                    <div
-                      className="h-full w-full rounded-full"
-                      style={{
-                        transform: `scaleY(${programFill})`,
-                        transformOrigin: 'top',
-                        transition: 'transform 120ms linear',
-                        willChange: 'transform',
-                        background: 'linear-gradient(180deg, rgba(194,85,47,0.45) 0%, #C2552F 100%)',
-                      }}
-                    />
-                  </div>
 
                   {/* Header row — counter pinned right */}
                   <div className="relative z-10 flex items-center justify-center pt-[36px] pb-[44px] flex-shrink-0">
