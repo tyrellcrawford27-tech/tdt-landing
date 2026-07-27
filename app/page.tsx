@@ -36,96 +36,122 @@ const PROGRAM_STEPS: ProgramStep[] = [
   { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: "One review isn't enough, so we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.", image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
 
-// Mobile Program section — a self-contained vertical snap-scroller, one stage
-// per screen: the TikTok/Reels mechanic. Swipe up, the next stage snaps fully
-// into place, with no in-between resting position.
+// Mobile Program section — pinned, one stage per swipe.
 //
-// Deliberately zero JS state. The first version gated each stage's opacity on
-// a JS-tracked "active index" (first via IntersectionObserver, then via a
-// scroll listener) and animated stages in as they became active. Both failed
-// the same way: when the tracking didn't update — a stray <style> node threw
-// the observed indices off by one, and observers/scroll events are suppressed
-// outright for backgrounded documents — every stage stayed at opacity 0 and
-// the section rendered as a black screen with nothing but the dots.
+// This was originally a nested snap-scroller (its own overflow-y). That could
+// not hold the user in the section: it only occupied one viewport of *page*
+// height, so a swipe that the page picked up instead of the scroller carried
+// straight past all three stages. A nested scroller can never prevent that —
+// the page is free to scroll regardless of what the inner element does.
 //
-// The snapping, the layout and the dots are all things CSS can do on its own,
-// so none of them route through React state anymore. There is no failure mode
-// where content is present in the DOM but invisible. The icon idle-loops run
-// unconditionally; only one stage is ever on screen, and offscreen CSS
-// animations are throttled by the browser, so gating them bought nothing.
-function ProgramMobileStage({ step, index }: { step: ProgramStep; index: number }) {
-  return (
-    <div
-      className="relative h-full w-full snap-start flex flex-col justify-center px-6 pt-[104px] pb-[76px]"
-      style={{ scrollSnapStop: 'always' }}
-    >
-      <div className="flex-shrink-0">
-        <div className="flex flex-row items-center gap-[8px] text-[#C2552F] mb-[12px]">
-          <ProgramStepIcon name={step.icon} active className="h-[16px] w-[16px] flex-shrink-0" />
-          <span className="text-[11px] font-semibold uppercase text-[rgba(179,73,41,0.85)]">{step.label}</span>
-        </div>
-        <h2 className="text-[30px] font-bold leading-[1.12] tracking-[-0.025em] text-white mb-[10px]">
-          {step.title}
-        </h2>
-        <p className="text-[14px] font-normal leading-[19px] text-white/50">
-          {step.body}
-        </p>
-      </div>
-
-      {/* 16/10 matches the source screenshots, so `cover` fills the frame with
-          no side-cropping — a square-ish frame was eating the left and right
-          of the product UI. min-h-0 + shrink still lets it give up height on
-          short viewports rather than overflowing the stage. */}
-      <div
-        className="relative w-full min-h-0 shrink rounded-[16px] overflow-hidden mt-[20px]"
-        style={{
-          aspectRatio: '16 / 10',
-          maxHeight: '46dvh',
-          background: '#0c0c0c',
-          border: '1px solid rgba(255,255,255,0.07)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-        }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(/${step.image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: step.imagePosition ?? 'top',
-          }}
-        />
-        <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
-      </div>
-
-      {/* Dot rail — each stage renders its own, so the active dot is correct
-          by construction rather than by tracked state */}
-      <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 flex gap-[6px]">
-        {PROGRAM_STEPS.map((s, i) => (
-          <span
-            key={s.slug}
-            className="h-[5px] rounded-full"
-            style={{
-              width: i === index ? 18 : 5,
-              background: i === index ? '#C2552F' : 'rgba(255,255,255,0.2)',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+// So mobile now uses the same mechanic as desktop: the section reserves real
+// page height (one screen of scroll per stage) and pins a single viewport with
+// position: sticky. Scrolling past requires actually scrolling through every
+// stage, and the pinned screen is what produces the "freeze, then advance"
+// feel. Stages crossfade in place.
+//
+// Failure mode is deliberately soft: step defaults to 0, so if the scroll
+// handler never runs the first stage is still fully rendered rather than the
+// section going black — which is what the earlier opacity-gated version did.
+const PROGRAM_MOBILE_STAGE_VH = 85; // page scroll (% of viewport) per stage
 
 function ProgramMobile() {
+  const startRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const el = startRef.current;
+      if (!el) return;
+      // Guard innerHeight — a collapsed viewport reports 0, and 0/0 is NaN,
+      // which would index PROGRAM_STEPS out of bounds.
+      const vh = window.innerHeight || 1;
+      const passed = Math.max(0, -el.getBoundingClientRect().top) / vh;
+      const i = Math.min(
+        PROGRAM_STEPS.length - 1,
+        Math.max(0, Math.floor(passed * (100 / PROGRAM_MOBILE_STAGE_VH))) || 0,
+      );
+      setStep(i);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <div className="md:hidden">
-      <style>{`.tdt-reel::-webkit-scrollbar { display: none; }`}</style>
-      <div
-        className="tdt-reel h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory"
-        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-      >
-        {PROGRAM_STEPS.map((step, i) => (
-          <ProgramMobileStage key={step.slug} step={step} index={i} />
+    <div
+      className="md:hidden relative"
+      style={{ height: `${PROGRAM_STEPS.length * PROGRAM_MOBILE_STAGE_VH + 100}svh` }}
+    >
+      <div ref={startRef} />
+
+      <div className="sticky top-0 h-[100svh] overflow-hidden">
+        {PROGRAM_STEPS.map((s, i) => (
+          <div
+            key={s.slug}
+            // pt clears the fixed nav, pb clears the dot rail — justify-center
+            // then centres the content in what's actually left, so it lands in
+            // the middle of the readable area rather than the raw viewport.
+            className="absolute inset-0 flex flex-col justify-center px-6 pt-[92px] pb-[64px]"
+            style={{
+              opacity: step === i ? 1 : 0,
+              transform: `translateY(${step === i ? 0 : step > i ? -18 : 18}px)`,
+              transition: 'opacity 0.45s cubic-bezier(0.16,1,0.3,1), transform 0.45s cubic-bezier(0.16,1,0.3,1)',
+              pointerEvents: step === i ? 'auto' : 'none',
+            }}
+          >
+            <div className="flex-shrink-0">
+              <div className="flex flex-row items-center gap-[8px] text-[#C2552F] mb-[12px]">
+                <ProgramStepIcon name={s.icon} active={step === i} className="h-[16px] w-[16px] flex-shrink-0" />
+                <span className="text-[11px] font-semibold uppercase text-[rgba(179,73,41,0.85)]">{s.label}</span>
+              </div>
+              <h2 className="text-[30px] font-bold leading-[1.12] tracking-[-0.025em] text-white mb-[10px]">
+                {s.title}
+              </h2>
+              <p className="text-[14px] font-normal leading-[19px] text-white/50">
+                {s.body}
+              </p>
+            </div>
+
+            {/* 16/10 matches the source screenshots so `cover` fills the frame
+                with no side-cropping; min-h-0 lets it yield height on short
+                screens instead of overflowing. */}
+            <div
+              className="relative w-full min-h-0 shrink rounded-[16px] overflow-hidden mt-[20px]"
+              style={{
+                aspectRatio: '16 / 10',
+                maxHeight: '44svh',
+                background: '#0c0c0c',
+                border: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(/${s.image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: s.imagePosition ?? 'top',
+                }}
+              />
+              <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
+            </div>
+          </div>
         ))}
+
+        {/* Dot rail sits outside the stages so it never fades with them */}
+        <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 flex gap-[6px]">
+          {PROGRAM_STEPS.map((s, i) => (
+            <span
+              key={s.slug}
+              className="h-[5px] rounded-full transition-all duration-300"
+              style={{
+                width: i === step ? 18 : 5,
+                background: i === step ? '#C2552F' : 'rgba(255,255,255,0.2)',
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
