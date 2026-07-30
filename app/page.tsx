@@ -53,7 +53,12 @@ const PROGRAM_STEPS: ProgramStep[] = [
 // Failure mode is deliberately soft: step defaults to 0, so if the scroll
 // handler never runs the first stage is still fully rendered rather than the
 // section going black — which is what the earlier opacity-gated version did.
-const PROGRAM_MOBILE_STAGE_VH = 85; // page scroll (% of viewport) per stage
+const PROGRAM_MOBILE_STAGE_VH = 50; // page scroll (% of viewport) per stage
+// The pinned pane is a full screen tall, so the container needs a screen of tail
+// past the last stage — without it the section releases the moment stage 03
+// appears. At exactly 100 every stage gets the same time on screen, so tune
+// PROGRAM_MOBILE_STAGE_VH (not this) to change how long the section holds.
+const PROGRAM_MOBILE_TAIL_VH = 100;
 
 function ProgramMobile() {
   const startRef = useRef<HTMLDivElement>(null);
@@ -81,7 +86,7 @@ function ProgramMobile() {
   return (
     <div
       className="md:hidden relative"
-      style={{ height: `${PROGRAM_STEPS.length * PROGRAM_MOBILE_STAGE_VH + 100}svh` }}
+      style={{ height: `${PROGRAM_STEPS.length * PROGRAM_MOBILE_STAGE_VH + PROGRAM_MOBILE_TAIL_VH}svh` }}
     >
       <div ref={startRef} />
 
@@ -1295,7 +1300,7 @@ export default function Home() {
         {/* ── FAQ ── */}
         <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[10px]">
-            <h2 className="w-full max-w-[634px] text-center text-[28px] md:text-[40px] lg:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.75)]">
+            <h2 className="w-full max-w-[634px] text-center text-[28px] md:text-[40px] lg:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[#1A0F0A]">
               Everything you need to know before applying.
             </h2>
 
