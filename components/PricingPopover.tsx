@@ -17,7 +17,31 @@ export function PricingPopover() {
   const [mounted, setMounted]     = useState(false);
   const [spots, setSpots]         = useState<number | null>(null);
   const [spotsLoading, setSpots_] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef  = useRef<HTMLDivElement>(null);
+  const glassRef = useRef<HTMLDivElement>(null);
+  const rafRef   = useRef<number | null>(null);
+
+  // Pointer-tracked specular. Written straight to CSS custom properties on the
+  // element rather than through state — a re-render per pointermove would both
+  // stutter and get clobbered by unrelated re-renders higher up the page.
+  const onPointerMove = (e: React.PointerEvent) => {
+    const el = glassRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.height) * 100;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      el.style.setProperty('--mx', `${x}%`);
+      el.style.setProperty('--my', `${y}%`);
+      el.style.setProperty('--mo', '1');
+    });
+  };
+  const onPointerLeave = () => {
+    glassRef.current?.style.setProperty('--mo', '0');
+  };
+
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
   const toggle = () => {
     if (open) { setOpen(false); return; }
@@ -92,12 +116,32 @@ export function PricingPopover() {
           from { opacity: 0; transform: translateY(8px); filter: blur(3px); }
           to   { opacity: 1; transform: translateY(0);   filter: blur(0);   }
         }
-        /* ── one-shot specular sweep ── */
+        /* ── specular sweep — wide and soft, so it reads as light travelling
+              across a surface rather than a bar wiping over it. Runs on a 5s
+              cycle: the sweep itself occupies the first ~26% (1.3s) and the
+              rest of the cycle is idle, so it re-catches the eye periodically
+              without ever reading as a loading shimmer. ── */
         @keyframes lg-sheen {
-          0%   { transform: translateX(-130%) skewX(-18deg); opacity: 0;    }
-          28%  { opacity: 0.75; }
-          100% { transform: translateX(230%)  skewX(-18deg); opacity: 0;    }
+          0%   { transform: translateX(-115%) skewX(-14deg); opacity: 0;
+                 animation-timing-function: cubic-bezier(0.4, 0.06, 0.4, 0.94); }
+          4%   { opacity: 0.95; }
+          20%  { opacity: 0.80; }
+          26%  { transform: translateX(285%)  skewX(-14deg); opacity: 0;
+                 animation-timing-function: linear; }
+          100% { transform: translateX(285%)  skewX(-14deg); opacity: 0;    }
         }
+        /* glass resolves with a slight settle rather than a flat fade */
+        @keyframes lg-glass-in {
+          0%   { opacity: 0; transform: scale(0.972); }
+          62%  { opacity: 1; transform: scale(1.006); }
+          100% { opacity: 1; transform: scale(1);     }
+        }
+        @keyframes lg-glass-out {
+          from { opacity: 1; transform: scale(1);     }
+          to   { opacity: 0; transform: scale(0.986); }
+        }
+        /* brief inner bloom as the light "fills" the glass */
+        @keyframes lg-bloom { 0% { opacity: 0; } 30% { opacity: 0.85; } 100% { opacity: 0; } }
         @keyframes lg-dot { 0%,100% { opacity: 0.25; } 50% { opacity: 0.9; } }
 
         .lg-goo   { filter: url(#lg-goo); will-change: transform, opacity; }
@@ -108,8 +152,9 @@ export function PricingPopover() {
         .lg-pop[data-state='in']  .lg-neck   { animation: lg-neck-in  0.52s cubic-bezier(0.4, 0, 0.2, 1) both; }
         .lg-pop[data-state='in']  .lg-anchor { animation: lg-anchor   0.52s linear both; }
         .lg-pop[data-state='in']  .lg-goo    { animation: lg-veil-in  0.62s cubic-bezier(0.4,0,0.2,1) both; }
-        .lg-pop[data-state='in']  .lg-glass  { animation: lg-fade-in  0.34s cubic-bezier(0.4,0,0.2,1) 0.16s both; }
-        .lg-pop[data-state='in']  .lg-sheen  { animation: lg-sheen    0.95s cubic-bezier(0.3,0,0.2,1) 0.20s both; }
+        .lg-pop[data-state='in']  .lg-glass  { animation: lg-glass-in 0.52s cubic-bezier(0.22,1,0.36,1) 0.14s both; }
+        .lg-pop[data-state='in']  .lg-sheen  { animation: lg-sheen    5s linear 0.18s infinite; }
+        .lg-pop[data-state='in']  .lg-bloom  { animation: lg-bloom    0.85s cubic-bezier(0.4,0,0.2,1) 0.16s both; }
         /* leaf rows stagger individually — delays are set inline per row */
         .lg-pop[data-state='in']  .lg-row { animation: lg-content 0.5s cubic-bezier(0.16,1,0.3,1) both; }
         .lg-pop[data-state='out'] .lg-row { animation: none; }
@@ -117,15 +162,15 @@ export function PricingPopover() {
         .lg-pop[data-state='out'] .lg-blob   { animation: lg-blob-out 0.28s cubic-bezier(0.5, 0, 0.75, 0) both; }
         .lg-pop[data-state='out'] .lg-neck   { animation: lg-neck-out 0.24s cubic-bezier(0.5, 0, 0.75, 0) both; }
         .lg-pop[data-state='out'] .lg-goo    { animation: lg-veil-out 0.28s ease-out both; }
-        .lg-pop[data-state='out'] .lg-glass  { animation: lg-fade-out 0.18s ease-out both; }
-        .lg-pop[data-state='out'] .lg-body   { animation: lg-fade-out 0.12s ease-out both; }
+        .lg-pop[data-state='out'] .lg-glass  { animation: lg-glass-out 0.24s cubic-bezier(0.4,0,1,1) both; }
+        .lg-pop[data-state='out'] .lg-body   { animation: lg-fade-out  0.14s ease-out both; }
         .lg-pop[data-state='out'] { pointer-events: none; }
 
         @media (prefers-reduced-motion: reduce) {
           .lg-pop[data-state='in']  .lg-blob,
           .lg-pop[data-state='in']  .lg-glass,
           .lg-pop[data-state='in']  .lg-row { animation: lg-fade-in 0.2s both; animation-delay: 0s !important; }
-          .lg-pop .lg-neck, .lg-pop .lg-anchor, .lg-pop .lg-sheen { display: none; }
+          .lg-pop .lg-neck, .lg-pop .lg-anchor, .lg-pop .lg-sheen, .lg-pop .lg-bloom { display: none; }
         }
       `}</style>
 
@@ -163,28 +208,95 @@ export function PricingPopover() {
             <div className="lg-blob   absolute rounded-[12px]" style={{ left: 0, top: 16, right: 0, bottom: 0, background: LIQUID }} />
           </div>
 
-          {/* Glass card */}
+          {/* Glass card. Heavier blur with a slightly thinner fill than before:
+              the fill is what was making this read as a cream card rather than
+              glass, but it can't go too sheer or the gradient "Membership"
+              heading behind it starts showing through the body copy. Pushing
+              blur up while easing fill down buys transparency without costing
+              legibility. */}
           <div
+            ref={glassRef}
+            onPointerMove={onPointerMove}
+            onPointerLeave={onPointerLeave}
             className="lg-glass relative overflow-hidden rounded-[12px]"
             style={{
-              background: 'linear-gradient(158deg, rgba(255,255,255,0.82) 0%, rgba(255,252,250,0.66) 52%, rgba(255,248,245,0.72) 100%)',
-              backdropFilter: 'blur(26px) saturate(185%)',
-              WebkitBackdropFilter: 'blur(26px) saturate(185%)',
+              background: 'linear-gradient(156deg, rgba(255,255,255,0.74) 0%, rgba(255,253,251,0.56) 46%, rgba(255,249,246,0.64) 100%)',
+              backdropFilter: 'blur(40px) saturate(200%) brightness(1.04)',
+              WebkitBackdropFilter: 'blur(40px) saturate(200%) brightness(1.04)',
               boxShadow: [
-                'inset 0 1px 0 rgba(255,255,255,0.95)',
-                'inset 0 0 0 1px rgba(255,255,255,0.55)',
-                'inset 0 -14px 26px -18px rgba(122,46,29,0.20)',
-                '0 1px 1px rgba(60,25,10,0.04)',
-                '0 8px 18px -8px rgba(60,25,10,0.10)',
-                '0 26px 52px -14px rgba(60,25,10,0.20)',
+                // rim + interior modelling
+                'inset 0 1px 0 rgba(255,255,255,0.98)',
+                'inset 0 -1px 0 rgba(255,255,255,0.40)',
+                'inset 0 18px 34px -22px rgba(255,255,255,0.85)',
+                'inset 0 -16px 30px -20px rgba(122,46,29,0.16)',
+                // contact → ambient → cast, so it sits on the page instead of floating
+                '0 0.5px 0.5px rgba(60,25,10,0.05)',
+                '0 2px 4px -1px rgba(60,25,10,0.06)',
+                '0 12px 24px -8px rgba(60,25,10,0.12)',
+                '0 34px 64px -18px rgba(60,25,10,0.22)',
               ].join(', '),
             }}
           >
-            {/* specular corner + travelling sheen */}
+            {/* Refractive rim — a gradient hairline that catches light bright at
+                the top-left and falls to a warm shadow bottom-right. Gradient
+                borders aren't a thing in CSS, so this is a 1px inset padding box
+                masked out of its own fill. */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-[12px]"
+              aria-hidden
+              style={{
+                padding: 1,
+                background: 'linear-gradient(150deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.30) 34%, rgba(255,255,255,0.05) 56%, rgba(122,46,29,0.13) 100%)',
+                WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                WebkitMaskComposite: 'xor',
+                mask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                maskComposite: 'exclude',
+              }}
+            />
+
+            {/* Fixed specular corner */}
             <div className="pointer-events-none absolute inset-0" aria-hidden
-              style={{ background: 'linear-gradient(140deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.18) 24%, rgba(255,255,255,0) 46%)' }} />
-            <div className="lg-sheen pointer-events-none absolute inset-y-0 -left-1/3 w-1/3" aria-hidden
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)' }} />
+              style={{ background: 'linear-gradient(142deg, rgba(255,255,255,0.80) 0%, rgba(255,255,255,0.14) 26%, rgba(255,255,255,0) 48%)' }} />
+
+            {/* Pointer-tracked specular — the highlight follows the cursor
+                across the surface, which is what sells it as a lit material
+                rather than a printed gradient. */}
+            <div
+              className="pointer-events-none absolute inset-0"
+              aria-hidden
+              style={{
+                background: 'radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.16) 34%, transparent 62%)',
+                opacity: 'var(--mo, 0)' as unknown as number,
+                transition: 'opacity 420ms cubic-bezier(0.4,0,0.2,1)',
+              }}
+            />
+
+            {/* Inner bloom on open */}
+            <div className="lg-bloom pointer-events-none absolute inset-0" aria-hidden
+              style={{ background: 'radial-gradient(120% 80% at 30% 0%, rgba(255,255,255,0.75) 0%, transparent 58%)' }} />
+
+            {/* Travelling sheen. A pure-white band is invisible on this card —
+                the glass already sits around #FCFAF8, so white has barely a few
+                levels of headroom above it. What makes a glint read on a light
+                surface is contrast, not brightness: the band carries faint warm
+                shadow on both flanks, so the white core has something to read
+                against. Nested backdrop-filter was tried first and doesn't
+                composite inside a parent that already has one. */}
+            <div className="lg-sheen pointer-events-none absolute inset-y-[-20%] left-0 w-[55%]" aria-hidden
+              style={{
+                background: [
+                  'linear-gradient(90deg,',
+                  'rgba(122,46,29,0) 0%,',
+                  'rgba(122,46,29,0.13) 26%,',
+                  'rgba(255,255,255,0.55) 42%,',
+                  'rgba(255,255,255,1) 49%,',
+                  'rgba(255,255,255,1) 51%,',
+                  'rgba(255,255,255,0.55) 58%,',
+                  'rgba(122,46,29,0.13) 74%,',
+                  'rgba(122,46,29,0) 100%)',
+                ].join(' '),
+                filter: 'blur(3px)',
+              }} />
 
             <div className="lg-body relative flex flex-col items-start gap-[15px] p-5 text-left">
               <span className="lg-row text-[13px] font-normal leading-[16px]" style={{ color: ACCENT, animationDelay: '0.21s' }}>
