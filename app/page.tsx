@@ -31,9 +31,9 @@ type ProgramStep = {
 };
 
 const PROGRAM_STEPS: ProgramStep[] = [
-  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout, and tells you exactly what's weakest about your game.", image: 'diagnosis-1.webp' },
-  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "Then, he prescribes the fix.", body: "Modules built around exactly what he found, no wasted reps, just what's actually holding you back.", image: 'drill-true.webp' },
-  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: "One review isn't enough, so we tear your film apart again and again, until you know what gets you noticed, with a plan to get there before time runs out.", image: 'the-100-days.webp', imagePosition: 'center 52%' },
+  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout would. Then he tells you the thing that must change the next time you step on the court.", image: 'diagnosis-1.webp' },
+  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: "Then comes your module, every drill built around the one thing standing between you and your next game.", image: 'drill-true.webp' },
+  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: "Again and again, until there's nothing left to fix. So when the right people watch, they've got no reason to pass and every reason to call.", image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
 
 // Mobile Program section — pinned, one stage per swipe.
@@ -467,7 +467,7 @@ export default function Home() {
 
   const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
   // Cinematic dark→light transition: hold true black, then a fast bright flip like stage lights snapping on.
-  const flip   = Math.min(1, Math.max(0, (tp - 0.18) / 0.32)); // short black hold, then a punchy flip
+  const flip   = Math.min(1, Math.max(0, (tp - 0.08) / 0.32)); // short black hold, then a punchy flip
   const tt     = flip * flip * (3 - 2 * flip);                 // eased colour progress (drives nav + panel together)
   const flash  = Math.sin(flip * Math.PI);                     // white burst, peaks in the middle of the flip
   const reveal = Math.min(1, Math.max(0, (tp - 0.42) / 0.28)); // card fades/scales in, revealed by the light
@@ -496,10 +496,24 @@ export default function Home() {
     transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
   });
 
+  // Coach copy lands one line at a time: each paragraph rises and resolves out of
+  // a soft blur, so the statement reads like it's being spoken rather than
+  // appearing all at once. Delays cascade into the signature, then the logos.
+  const revealLine = (delay: number): React.CSSProperties => ({
+    opacity: coachVisible ? 1 : 0,
+    transform: coachVisible ? 'translateY(0px)' : 'translateY(14px)',
+    filter: coachVisible ? 'blur(0px)' : 'blur(7px)',
+    transition: [
+      `opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+      `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+      `filter 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+    ].join(', '),
+  });
+
   const signatureReveal: React.CSSProperties = {
     opacity: coachVisible ? 1 : 0,
     clipPath: coachVisible ? 'inset(0 0% 0 0)' : 'inset(0 102% 0 0)',
-    transition: 'opacity 0.4s ease 580ms, clip-path 1.2s cubic-bezier(0.4, 0, 0.15, 1) 520ms',
+    transition: 'opacity 0.4s ease 900ms, clip-path 1.1s cubic-bezier(0.4, 0, 0.15, 1) 850ms',
   };
 
   return (
@@ -724,24 +738,32 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              This is where it gets harder to stand out.
+              You made the roster.
+              <br />
+              Now you need someone to notice.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              Your role isn't decided yet. Before your coach locks in the rotation, know exactly where you stand and exactly what to fix.
+              The best player on the floor doesn't get recruited. The one they saw does.
             </p>
             <div className="flex items-center gap-[16px]">
-              <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
-                Claim your spot
-              </CTAButton>
-              <span
-                className="text-[14px] italic font-normal leading-[17px] tracking-[-0.02em] text-white/70 cursor-pointer"
+              <CTAButton
                 onClick={() => {
                   const el = document.getElementById('program');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
+                className="h-[37px] px-[20px] text-[14px]"
               >
-                See how it works
-              </span>
+                See the program
+              </CTAButton>
+              <a
+                href="/apply"
+                className="group inline-flex items-center text-[14px] font-normal tracking-[-0.02em] text-white/80 transition-colors duration-200 ease-out hover:text-white"
+              >
+                <span className="underline underline-offset-4 decoration-white/40 transition-colors duration-200 ease-out group-hover:decoration-white/70">
+                  Claim your spot
+                </span>
+                <span className="inline-block ml-[6px] transition-transform duration-300 ease-out group-hover:translate-x-[4px]">→</span>
+              </a>
             </div>
           </div>
 
@@ -791,24 +813,32 @@ export default function Home() {
 
         {/* ── Coach ── */}
         <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
-          <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center gap-[50px] lg:gap-[100px]">
+          <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center lg:items-start gap-[50px] lg:gap-[100px]">
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
               <div>
-                <p style={{ ...fadeUp(0), lineHeight: '20px' }} className="text-[18px] font-bold tracking-[-0.02em] text-[rgba(255,255,255,0.6)]">
-                  Seven years alongside some of the best players this country has produced taught me something most athletes never realize: effort isn't what separates the players who make it.
-                  {' '}It's{' '}
-                  <span className="text-white">knowing exactly what to improve next.</span>
-                  {' '}Every athlete here gets{' '}
-                  <span className="text-white">feedback tailored to their game</span>
-                  {'—not generic advice or recycled drills. My job is to identify '}
-                  <span className="text-white">what's actually holding you back</span>
-                  {' so every session moves you closer to the next level.'}
-                </p>
+                <div className="flex flex-col gap-[18px]">
+                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
+                    I've spent seven years next to some of the best players this country's ever made.
+                  </p>
+                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.45)]" style={{ lineHeight: '26px', ...revealLine(150) }}>
+                    Here's what I learned watching them.
+                  </p>
+                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(300) }}>
+                    The ones who get recruited aren't the ones who work hardest. They're the ones who knew exactly what was holding them back, and fixed it before anyone was watching.
+                  </p>
+                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.45)]" style={{ lineHeight: '26px', ...revealLine(450) }}>
+                    That's the whole job.
+                  </p>
+                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(600) }}>
+                    Not generic drills. Not recycled advice. I find the one thing keeping you off the floor. Then we put it on film, and we fix it, so when the right people finally watch,{' '}
+                    <span className="font-bold text-white">there's nothing left to pass on.</span>
+                  </p>
+                </div>
                 <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
                   Jaiden Francais
                 </p>
               </div>
-              <div style={fadeUp(700)} className="flex flex-col gap-[12px] text-left">
+              <div style={fadeUp(1150)} className="flex flex-col gap-[12px] text-left">
                 <span className="text-[12px] font-normal leading-[14px] tracking-[-0.02em] text-[rgba(255,255,255,0.5)]">ATHLETES TRAINED FROM</span>
                 <div className="flex items-center gap-[24px]">
                   {[
@@ -836,7 +866,7 @@ export default function Home() {
                               width: 'auto',
                               opacity: 0,
                               transform: 'translateY(18px)',
-                              transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${760 + i * 80}ms, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${760 + i * 80}ms`,
+                              transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${1220 + i * 80}ms, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${1220 + i * 80}ms`,
                             }
                       }
                       className="object-contain opacity-80 brightness-[0.75] hover:opacity-100 hover:brightness-100 hover:scale-[1.05] hover:-translate-y-[3px]"
@@ -870,12 +900,23 @@ export default function Home() {
 
                 <div ref={cardsStartRef} />
 
+                {/* "The Method" sticky header — scoped to stages 01–02 only. This
+                    wrapper is absolutely positioned over just the first two stages'
+                    worth of scroll (2 * STEP_VH), so the sticky child inside it runs
+                    out of room — and releases — right as stage 03 begins, instead of
+                    riding the page's full sticky span like the content viewport below. */}
                 {/* Single sticky viewport */}
                 <div className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
 
-                  {/* Header row — counter pinned right */}
-                  <div className="relative z-10 flex items-center justify-center pt-[36px] pb-[44px] flex-shrink-0">
-                    <span className="absolute right-0 text-[12px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {/* Header lives inside the pinned viewport rather than in its own
+                      sticky scope, so it enters, holds, and releases as one piece with
+                      the stage content — a separate scope drifts out of sync because a
+                      sticky element's release also depends on its own height. */}
+                  <div className="relative z-10 flex flex-col items-end justify-center gap-[3px] pt-[18px] pb-[26px] flex-shrink-0 text-right">
+                    <h2 className="text-[19px] md:text-[22px] font-bold tracking-[-0.025em] text-white">
+                      Make them rewind.
+                    </h2>
+                    <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                       {STEPS[activeStep].num} <span className="text-white/12">/ {String(STEPS.length).padStart(2, '0')}</span>
                     </span>
                   </div>
@@ -969,6 +1010,12 @@ export default function Home() {
         {(() => {
           const ROWS = [
             {
+              slug: 'priority',
+              topic: 'Priority',
+              tdt: 'Getting you an offer',
+              others: "Winning this week's game",
+            },
+            {
               slug: 'focus',
               topic: 'Focus',
               tdt: "You and Jaiden. That's it",
@@ -985,12 +1032,6 @@ export default function Home() {
               topic: 'Feedback',
               tdt: 'Specific to your game',
               others: 'General notes for the whole team',
-            },
-            {
-              slug: 'priority',
-              topic: 'Priority',
-              tdt: 'Getting you an offer',
-              others: "Winning this week's game",
             },
             {
               slug: 'tracking',
@@ -1017,7 +1058,9 @@ export default function Home() {
                   </span>
                 </h3>
                 <h2 className="w-full max-w-[620px] text-center text-[22px] md:text-[26px] font-normal leading-[30px] md:leading-[34px] tracking-[-0.02em] text-white">
-                  Not your <strong className="italic">$29.99/month</strong> course. This is what it looks like when someone's evaluation is actually built around getting you an offer.
+                  Not your <strong className="italic">$29.99/month</strong> course.
+                  <br />
+                  This is training built around one thing, getting you an offer.
                 </h2>
               </div>
 
@@ -1122,7 +1165,7 @@ export default function Home() {
                       style={{ borderWidth: '1px 1px 0px 0px', borderStyle: 'solid', borderColor: '#333333', borderRadius: '0px 15px 0px 0px' }}
                     >
                       <span className="text-[18px] font-medium leading-[22px] tracking-[-0.02em] text-white/50">
-                        You're currently doing
+                        Everywhere else
                       </span>
                     </div>
                     {ROWS.map((row, i) => ({
@@ -1175,7 +1218,7 @@ export default function Home() {
         </section>
 
         {/* ── Pricing — the lights come up and the card is right there in the spotlight ── */}
-        <section id="pricing" ref={transitionZoneRef} className="relative w-full" style={{ height: '205vh' }}>
+        <section id="pricing" ref={transitionZoneRef} className="relative w-full" style={{ height: '175vh' }}>
           <div
             className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
             style={{ backgroundColor: panelBg, color: '#000' }}
@@ -1237,7 +1280,7 @@ export default function Home() {
                   </h2>
 
                   <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                    100 days. Film it. Fix it. Earn your minutes.
+                    100 days to build the film they can't pass on.
                   </p>
                 </div>
 
@@ -1252,7 +1295,7 @@ export default function Home() {
         {/* ── FAQ ── */}
         <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
           <div className="flex w-full max-w-[1156px] flex-col items-center gap-[10px]">
-            <h2 className="w-full max-w-[634px] text-center text-[28px] md:text-[40px] lg:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.35)]">
+            <h2 className="w-full max-w-[634px] text-center text-[28px] md:text-[40px] lg:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[rgba(0,0,0,0.75)]">
               Everything you need to know before applying.
             </h2>
 
@@ -1260,7 +1303,7 @@ export default function Home() {
               {[
                 {
                   question: "Why should I trust one guy's opinion over what my coach already tells me?",
-                  answer: "Because your coach has a season to win and a full roster to manage. Getting you recruited isn't his job. It's the only thing Jaiden's doing here.",
+                  answer: "Because your coach has a season to win and a full roster to manage. Getting you recruited isn't his job. Making you impossible to overlook is the only thing Jaiden's doing here.",
                 },
                 {
                   question: "How is this different from just watching my own film back?",
@@ -1273,10 +1316,6 @@ export default function Home() {
                 {
                   question: "Why are you only accepting 12 athletes?",
                   answer: "Jaiden is personally watching your film and holding your hand through every one of the 100 days. That's simply not possible past a certain number. 12 is the real limit for what one person can actually do right, not a marketing number.",
-                },
-                {
-                  question: "Who's this platform for?",
-                  answer: "Built primarily for prep school athletes, but really it's for anyone trying to gain an edge over their competition and stand out.",
                 },
                 {
                   question: "Is this going to conflict with my school team or my current trainer?",
