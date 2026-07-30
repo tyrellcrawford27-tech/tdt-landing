@@ -25,15 +25,19 @@ type ProgramStep = {
   num: string;
   icon: import('@/components/ProgramStepIcon').ProgramIconName;
   title: string;
-  body: string;
+  body: React.ReactNode; // ReactNode, not string, so copy can carry inline emphasis
   image: string;
   imagePosition?: string;
 };
 
+// Second-person address is italicised across the Program copy, so every stage
+// reads as spoken to the athlete rather than about them.
+const You = ({ children }: { children: React.ReactNode }) => <em className="italic">{children}</em>;
+
 const PROGRAM_STEPS: ProgramStep[] = [
-  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: "Jaiden watches your film like a scout would. Then he tells you the thing that must change the next time you step on the court.", image: 'diagnosis-1.webp' },
-  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: "Then comes your module, every drill built around the one thing standing between you and your next game.", image: 'drill-true.webp' },
-  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: "Again and again, until there's nothing left to fix. So when the right people watch, they've got no reason to pass and every reason to call.", image: 'the-100-days.webp', imagePosition: 'center 52%' },
+  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: <>Jaiden watches <You>your</You> film like a scout would. Then he tells <You>you</You> the thing that must change the next time <You>you</You> step on the court.</>, image: 'diagnosis-1.webp' },
+  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Then comes <You>your</You> module, every drill built around the one thing standing between <You>you</You> and <You>your</You> next game.</>, image: 'drill-true.webp' },
+  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A plan built for <You>you</You> to be sharper on the court and harder to overlook.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
 
 // Mobile Program section — pinned, one stage per swipe.
@@ -748,7 +752,7 @@ export default function Home() {
               Now you need someone to notice.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              The best player on the floor doesn't get recruited. The one they saw does.
+              Being seen isn't luck. It's performing on the court and having the film to prove it.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton
