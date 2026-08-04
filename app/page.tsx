@@ -36,7 +36,7 @@ const You = ({ children }: { children: React.ReactNode }) => <em className="ital
 
 const PROGRAM_STEPS: ProgramStep[] = [
   { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: <>Jaiden watches <You>your</You> film like a scout would. Then he tells <You>you</You> the thing that must change the next time <You>you</You> step on the court.</>, image: 'diagnosis-1.webp' },
-  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Then comes <You>your</You> module, every drill built around the one thing standing between <You>you</You> and <You>your</You> next game.</>, image: 'drill-true.webp' },
+  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Then comes <You>your</You> module. Pulled straight from what Jaiden saw in <You>your</You> film.</>, image: 'drill-true.webp' },
   { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A plan built for <You>you</You> to be sharper on the court and harder to overlook.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
 
@@ -167,6 +167,14 @@ function ProgramMobile() {
 }
 
 
+
+// How far past #pricing's top counts as "in" the pricing section, in viewports.
+// The panel holds on black and only resolves the card partway through its scroll,
+// so both the nav jump target and the active-label check measure from here.
+// Must land inside [0.525, 0.75]: the card reveal completes at 0.525 and the
+// sticky panel unpins at 0.75 — within that span the card sits flex-centered
+// in the viewport; past it the whole stage rides up and off-center.
+const PRICING_NAV_OFFSET_VH = 0.7;
 
 const NAV_LINKS = [
   { id: 'coach', label: 'The Coach' },
@@ -418,7 +426,12 @@ export default function Home() {
       for (const id of SECTIONS) {
         const el = document.getElementById(id);
         if (!el) continue;
-        if (el.getBoundingClientRect().top <= mid) active = id;
+        // Pricing opens on a screen of held black before the light flips and the
+        // card resolves, so measuring from its top would light the label while the
+        // panel still reads as the quote above it. Same offset the nav link scrolls
+        // to, so the label and the jump target can't disagree.
+        const enterAt = id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0;
+        if (el.getBoundingClientRect().top + enterAt <= mid) active = id;
       }
       setActiveSection(active);
     };
@@ -574,7 +587,7 @@ export default function Home() {
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
-                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.9 : 0), behavior: 'smooth' }); }, 150);
+                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: 'smooth' }); }, 150);
               }}
             >
               <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -660,7 +673,7 @@ export default function Home() {
                   style={navLinkStyle(id)}
                   onClick={(e) => {
                     e.preventDefault();
-                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * 0.9 : 0), behavior: 'smooth' });
+                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: 'smooth' });
                   }}
                 >
                   {label}
@@ -922,7 +935,7 @@ export default function Home() {
                       the stage content — a separate scope drifts out of sync because a
                       sticky element's release also depends on its own height. */}
                   <div className="relative z-10 flex flex-col items-end justify-center gap-[3px] pt-[18px] pb-[26px] flex-shrink-0 text-right">
-                    <h2 className="text-[19px] md:text-[22px] font-bold tracking-[-0.025em] text-white">
+                    <h2 className="text-[17px] md:text-[19px] font-bold tracking-[-0.025em] text-white/55">
                       Make them rewind.
                     </h2>
                     <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
