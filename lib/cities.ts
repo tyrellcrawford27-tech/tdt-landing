@@ -61,8 +61,8 @@ export function norm(s: string): string {
 
 // Same transform, but records which source character produced each output
 // character, so a match range in normalized space can be mapped back onto the
-// accented display string for highlighting.
-function normWithMap(s: string): { text: string; map: number[] } {
+// accented display string for highlighting. Shared with the school index.
+export function normWithMap(s: string): { text: string; map: number[] } {
   let text = '';
   const map: number[] = [];
   let pendingSpace = false;
@@ -222,7 +222,7 @@ const EQUIV: [string, string][] = [
   ['st', 'saint'], ['ste', 'sainte'], ['mt', 'mount'], ['ft', 'fort'],
 ];
 
-function variantsOf(q: string): string[] {
+export function variantsOf(q: string): string[] {
   const sp = q.indexOf(' ');
   if (sp <= 0) return [q];
   const head = q.slice(0, sp), tail = q.slice(sp);
@@ -394,7 +394,7 @@ function expandHead(key: string): string {
   return key;
 }
 
-function boundedDistance(a: string, b: string, max: number): number {
+export function boundedDistance(a: string, b: string, max: number): number {
   const al = a.length, bl = b.length;
   if (Math.abs(al - bl) > max) return max + 1;
   let prev = new Array(bl + 1), cur = new Array(bl + 1);

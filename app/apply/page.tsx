@@ -5,8 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
 import { LocationInput } from '@/components/LocationInput';
-import { OSBA_SCHOOLS } from '@/lib/schools';
+import { SchoolInput } from '@/components/SchoolInput';
 import { preloadCities } from '@/lib/cities';
+import { preloadSchools } from '@/lib/schoolsIndex';
 import { loadGeoHint } from '@/lib/geo';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
@@ -173,99 +174,6 @@ function CyclingHeadline({ style }: { style?: React.CSSProperties }) {
   );
 }
 
-// ── School autocomplete (OSBA schools, with free-text fallback) ──────────────
-const SchoolInput = forwardRef<HTMLInputElement, {
-  value: string;
-  onChange: (v: string) => void;
-  baseStyle: React.CSSProperties;
-}>(function SchoolInput({ value, onChange, baseStyle }, ref) {
-  const [query, setQuery] = useState(value);
-  const [open, setOpen] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(-1);
-
-  const matches = query.trim().length > 0
-    ? OSBA_SCHOOLS.filter(s => s.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8)
-    : [];
-
-  const commit = (v: string) => { setQuery(v); onChange(v); setOpen(false); setActiveIdx(-1); };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    onChange(e.target.value);
-    setOpen(true);
-    setActiveIdx(-1);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!open || matches.length === 0) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); setActiveIdx(i => Math.min(i + 1, matches.length - 1)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); setActiveIdx(i => Math.max(i - 1, 0)); }
-    else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); e.stopPropagation(); commit(matches[activeIdx].name); }
-    // Also clear the highlight, or a later Enter commits a row nobody can see.
-    else if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); setActiveIdx(-1); }
-  };
-
-  return (
-    <div style={{ position: 'relative', width: '100%' }}>
-      <input
-        ref={ref}
-        type="text"
-        value={query}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => query.trim().length > 0 && setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Orangeville Prep"
-        autoComplete="off"
-        style={baseStyle}
-      />
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 8px)',
-          left: 0,
-          right: 0,
-          background: '#ffffff',
-          borderRadius: 16,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-          border: '1px solid rgba(0,0,0,0.05)',
-          padding: 6,
-          zIndex: 200,
-        }}>
-          {matches.length > 0 ? matches.map((s, i) => (
-            <button
-              key={s.name}
-              type="button"
-              onMouseDown={() => commit(s.name)}
-              onMouseEnter={() => setActiveIdx(i)}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '9px 12px',
-                border: 'none',
-                borderRadius: 10,
-                background: activeIdx === i ? BG : 'transparent',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 14,
-                color: '#000',
-                letterSpacing: '-0.02em',
-                boxSizing: 'border-box',
-              }}
-            >
-              {s.name}
-            </button>
-          )) : (
-            <p style={{ padding: '9px 12px', margin: 0, fontSize: 12, color: 'rgba(0,0,0,0.35)' }}>
-              Can&apos;t find your school? Type it in.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-});
 
 // ── Go back button (secondary) ────────────────────────────────────────────────
 function GoBackButton({ onClick }: { onClick: () => void }) {
@@ -321,7 +229,7 @@ function ApplyPageInner() {
   // 03 is instant even on a slow connection. Both calls are idempotent.
   useEffect(() => {
     const ric = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 200));
-    ric(() => { preloadCities(); loadGeoHint(); });
+    ric(() => { preloadCities(); preloadSchools(); loadGeoHint(); });
   }, []);
 
   // Restore draft from localStorage on mount — keep the intro screen visible
