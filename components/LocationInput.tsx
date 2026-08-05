@@ -24,6 +24,10 @@ const SR_ONLY: React.CSSProperties = {
   overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0,
 };
 
+// Panel padding (6 top + 6 bottom) plus its 1px borders — the difference
+// between the measured content height and the panel's border-box height.
+const PANEL_CHROME = 14;
+
 const HINT_ROW: React.CSSProperties = {
   padding: '9px 12px', margin: 0, fontSize: 12, color: 'rgba(0,0,0,0.35)',
   letterSpacing: '-0.02em', lineHeight: '18px',
@@ -40,8 +44,11 @@ export const LocationInput = forwardRef<HTMLInputElement, Props>(
     const [slowLoad, setSlowLoad]   = useState(false);
     const [placement, setPlacement] = useState<'below' | 'above'>('below');
     const [live, setLive]           = useState('');
+    const [panelH, setPanelH]       = useState<number | null>(null);
 
     const wrapRef        = useRef<HTMLDivElement>(null);
+    const contentRef     = useRef<HTMLDivElement>(null);
+    const heightReady    = useRef(false);
     const inputRef       = useRef<HTMLInputElement>(null);
     const rowRefs        = useRef<(HTMLLIElement | null)[]>([]);
     const pointerInside  = useRef(false);
@@ -99,6 +106,9 @@ export const LocationInput = forwardRef<HTMLInputElement, Props>(
         setOpen(false);
       }
     }, [value]);
+
+    const showPanel = open && (rows.length > 0 || slowLoad || status === 'failed' ||
+      (status === 'ready' && query.trim() !== ''));
 
     const close = useCallback(() => { setOpen(false); setActiveIdx(-1); }, []);
 
@@ -215,6 +225,22 @@ export const LocationInput = forwardRef<HTMLInputElement, Props>(
       };
     }, [open, rows.length]);
 
+    // Animate the panel's height as the result count changes, so a list going
+    // 6 → 2 rows collapses rather than snapping. Measured from the content and
+    // driven as an explicit pixel height, because height:auto can't transition.
+    // Measured on every commit that can change the content, NOT from a
+    // ResizeObserver alone: RO callbacks are delivered per rendering frame, and
+    // a throttled or backgrounded tab produces none — which would freeze the
+    // panel at a stale height. A layout effect always runs.
+    useLayoutEffect(() => {
+      const el = contentRef.current;
+      if (!el) { heightReady.current = false; setPanelH(null); return; }
+      setPanelH(el.offsetHeight + PANEL_CHROME);
+      // The first measurement lands as auto → px, which CSS can't interpolate,
+      // so the panel opens at its true height and only later changes animate.
+      heightReady.current = true;
+    }, [showPanel, rows, slowLoad, status, query]);
+
     useEffect(() => {
       if (!open || activeIdx < 0) return;
       rowRefs.current[activeIdx]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -227,9 +253,6 @@ export const LocationInput = forwardRef<HTMLInputElement, Props>(
       document.addEventListener('pointerup', up, true);
       return () => document.removeEventListener('pointerup', up, true);
     }, [open]);
-
-    const showPanel = open && (rows.length > 0 || slowLoad || status === 'failed' ||
-      (status === 'ready' && query.trim() !== ''));
 
     // The panel overhangs the Go back / Next row, which lives outside the card.
     // Lifting the whole wrapper — not just the panel — keeps it on top even
@@ -294,14 +317,19 @@ export const LocationInput = forwardRef<HTMLInputElement, Props>(
               zIndex: 200,
               boxSizing: 'border-box',
               contain: 'layout paint',
+              height: panelH ?? 'auto',
               maxHeight: 'min(46dvh, 276px)',
               overflowY: 'auto',
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-y',
               animation: 'tdt-pop-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) both',
+              transition: heightReady.current
+                ? 'height 0.19s cubic-bezier(0.16, 1, 0.3, 1)'
+                : undefined,
             }}
           >
+            <div ref={contentRef}>
             <ul id={listId} role="listbox" aria-label="City suggestions"
                 style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {rows.map((row, i) => (
@@ -328,6 +356,11 @@ export const LocationInput = forwardRef<HTMLInputElement, Props>(
                     boxSizing: 'border-box',
                     listStyle: 'none',
                     userSelect: 'none',
+                    // Keyed by row.id, so a row that survives the next keystroke
+                    // keeps its DOM node and does NOT replay this — only newly
+                    // arrived cities animate in. That's what stops a fast typist
+                    // from seeing the whole list strobe on every character.
+                    animationDelay: `${Math.min(i, 5) * 22}ms`,
                   }}
                 >
                   <span style={{
@@ -358,6 +391,7 @@ export const LocationInput = forwardRef<HTMLInputElement, Props>(
             {rows.length === 0 && status === 'ready' && query.trim() !== '' && (
               <p style={HINT_ROW}>Can&apos;t find your city? Type it as City, Province.</p>
             )}
+            </div>
           </div>
         )}
       </div>

@@ -61,7 +61,7 @@ const QUESTIONS: Q[] = [
   { num: '02', section: 'Info',              question: 'How old are you?',                                      field: 'age',                 type: 'number',     placeholder: '17' },
   { num: '03', section: 'Info',              question: 'City, State / Province',                                field: 'city_state',          type: 'location' },
   { num: '04', section: 'Info',              question: "What's your email?",                                    field: 'email',               type: 'email',      placeholder: 'you@email.com' },
-  { num: '05', section: 'Info',              question: "What's your phone number?",                             field: 'phone',               type: 'tel',        placeholder: '(416) 000-0000' },
+  { num: '05', section: 'Info',              question: "What's your phone number?",                             field: 'phone',               type: 'tel',        placeholder: '416-605-2033' },
   { num: '06', section: 'Info',              question: 'Do you have consistent access to a laptop or computer?', field: 'device_access',       type: 'radio-grid', options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'] },
   { num: '07', section: 'Your game',         question: 'What position do you play?',                            field: 'position',            type: 'radio-grid', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
   { num: '08', section: 'Your game',         question: 'Years playing competitively',                           field: 'years_playing',       type: 'radio-grid', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
@@ -73,13 +73,30 @@ const QUESTIONS: Q[] = [
   { num: '14', section: 'Your commitment',   question: 'How much time can you realistically commit per day?',   field: 'time_commitment',     type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
   { num: '15', section: 'Your commitment',   question: "Why basketball? What are you actually chasing?",        field: 'why_basketball',      type: 'textarea',   placeholder: "Be honest — there's no wrong answer." },
   { num: '16', section: 'Parent / Guardian', question: 'Parent / guardian name',                                field: 'guardian_name',       type: 'text',       placeholder: 'Full name' },
-  { num: '17', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '(416) 000-0000' },
+  { num: '17', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '416-605-2033' },
   { num: '18', section: 'Parent / Guardian', question: "Their email address",                                   field: 'guardian_email',      type: 'email',      placeholder: 'parent@email.com' },
   { num: '19', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
   { num: '20', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
 ];
 
 const TOTAL = QUESTIONS.length; // 20
+
+// ── Phone formatting ──────────────────────────────────────────────────────────
+// Types out as 416-605-2033. A separator is only ever added once there's a digit
+// to its right, so backspace always deletes a digit instead of a dash the
+// formatter would immediately put back.
+function formatPhone(raw: string): string {
+  // Anything explicitly international is the user's business, not ours.
+  if (raw.trimStart().startsWith('+')) return raw;
+
+  let d = raw.replace(/\D/g, '');
+  if (d.length > 10 && d.startsWith('1')) d = d.slice(1);   // leading country code
+  d = d.slice(0, 10);
+
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+}
 
 // ── Shared text style (PP Neue Montreal is the root font) ─────────────────────
 const text = (size: number, weight: number, color: string, extra?: React.CSSProperties): React.CSSProperties => ({
@@ -374,7 +391,9 @@ function ApplyPageInner() {
   const set = (field: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setForm(f => ({ ...f, [field]: e.target.value }));
+    const raw = e.target.value;
+    const v = (field === 'phone' || field === 'guardian_phone') ? formatPhone(raw) : raw;
+    setForm(f => ({ ...f, [field]: v }));
     setNudgeMsg(null);
   };
 
@@ -896,8 +915,14 @@ function ApplyPageInner() {
           from { opacity: 0; transform: translateY(-4px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes tdt-loc-row-in {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .tdt-loc-row { animation: tdt-loc-row-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
         @media (prefers-reduced-motion: reduce) {
-          .tdt-loc-panel { animation: none !important; }
+          .tdt-loc-panel,
+          .tdt-loc-row { animation: none !important; transition: none !important; }
         }
         @media (max-width: 639px) {
           .tdt-loc-row { padding: 13px 12px !important; }
