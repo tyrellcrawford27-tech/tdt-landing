@@ -37,7 +37,7 @@ const You = ({ children }: { children: React.ReactNode }) => <em className="ital
 const PROGRAM_STEPS: ProgramStep[] = [
   { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: <>Jaiden watches <You>your</You> film like a scout would. Then he tells <You>you</You> the thing that must change the next time <You>you</You> step on the court.</>, image: 'diagnosis-1.webp' },
   { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Then comes <You>your</You> module. Pulled straight from what Jaiden saw in <You>your</You> film.</>, image: 'drill-true.webp' },
-  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A plan built for <You>you</You> to be sharper on the court and harder to overlook.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
+  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A complete plan that's <You>yours</You> alone to be sharper on the court and harder to overlook.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
 
 // Mobile Program section — pinned, one stage per swipe.
@@ -587,7 +587,20 @@ export default function Home() {
               onClick={(e) => {
                 e.preventDefault();
                 setMenuOpen(false);
-                setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: 'smooth' }); }, 150);
+                // Jump instantly while the overlay is still fading — the fade masks
+                // the jump, and an instant scroll can't be cancelled mid-flight by
+                // main-thread jank the way a long smooth scroll can (which stranded
+                // taps short of their section). The body scroll-lock lifts in the
+                // menu-close effect, so poll for that instead of racing it with a
+                // fixed delay: scrollTo is a silent no-op while the lock is on.
+                // setTimeout rather than requestAnimationFrame: rAF freezes when the
+                // page is hidden or throttled, which would swallow the tap entirely.
+                const jump = (triesLeft: number) => {
+                  if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
+                  const el = document.getElementById(id);
+                  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: 'instant' });
+                };
+                setTimeout(() => jump(30), 16);
               }}
             >
               <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -765,7 +778,7 @@ export default function Home() {
               Now you need someone to notice.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              Being seen isn't luck. It's performing on the court and having the film to prove it.
+              If getting recruited is the goal, we've got a lot to break down to make you impossible to overlook.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton
@@ -930,18 +943,9 @@ export default function Home() {
                 {/* Single sticky viewport */}
                 <div className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
 
-                  {/* Header lives inside the pinned viewport rather than in its own
-                      sticky scope, so it enters, holds, and releases as one piece with
-                      the stage content — a separate scope drifts out of sync because a
-                      sticky element's release also depends on its own height. */}
-                  <div className="relative z-10 flex flex-col items-end justify-center gap-[3px] pt-[18px] pb-[26px] flex-shrink-0 text-right">
-                    <h2 className="text-[17px] md:text-[19px] font-bold tracking-[-0.025em] text-white/55">
-                      Make them rewind.
-                    </h2>
-                    <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {STEPS[activeStep].num} <span className="text-white/12">/ {String(STEPS.length).padStart(2, '0')}</span>
-                    </span>
-                  </div>
+                  {/* The "Make them rewind." header rides with the screenshot frame in
+                      the right column below, so it stays anchored just above the product
+                      shot at every viewport size instead of floating at the pane top. */}
 
                   {/* Main content */}
                   <div className="relative z-10 flex flex-col md:flex-row flex-1 items-center gap-[8px] md:gap-[60px] lg:gap-[80px] min-h-0">
@@ -981,7 +985,16 @@ export default function Home() {
                     </div>
 
                     {/* Right — persistent UI frame */}
-                    <div className="flex w-full flex-1 items-start md:items-center justify-center md:justify-end h-[66%] md:h-full py-0 md:py-[16px]">
+                    <div className="flex w-full flex-1 flex-col items-stretch justify-center md:items-end h-[66%] md:h-full py-0 md:py-[16px]">
+                      {/* Header sits with the frame so it always hugs the screenshot */}
+                      <div className="flex flex-col items-end gap-[3px] pb-[25px] flex-shrink-0 text-right">
+                        <h2 className="text-[17px] md:text-[19px] font-bold tracking-[-0.025em] text-white/55">
+                          Make them rewind.
+                        </h2>
+                        <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {STEPS[activeStep].num} <span className="text-white/12">/ {String(STEPS.length).padStart(2, '0')}</span>
+                        </span>
+                      </div>
                       {/* Ambient glow behind frame */}
                       <div className="relative w-full" style={{ maxHeight: '100%', aspectRatio: '16 / 10' }}>
                         <div

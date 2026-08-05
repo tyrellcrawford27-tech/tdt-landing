@@ -10,5 +10,5 @@ export async function GET() {
   // const data = await res.json();
   // return NextResponse.json({ remaining: data.remaining });
 
-  return NextResponse.json({ remaining: 4 });
+  return NextResponse.json({ remaining: 3 });
 }

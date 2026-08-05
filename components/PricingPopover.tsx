@@ -305,10 +305,10 @@ export function PricingPopover() {
 
               <div className="flex flex-col items-start gap-[10px]">
                 <p className="lg-row text-[16px] font-medium leading-[19px]" style={{ color: INK, animationDelay: '0.25s' }}>
-                  The first four spots cost less.
+                  The first three spots cost less.
                 </p>
                 <p className="lg-row text-[13px] font-normal leading-[16px]" style={{ color: MUTED, animationDelay: '0.29s' }}>
-                  $1,000 normally. The first four to lock in their spot pay $800 instead.
+                  $1,000 normally. The first three to lock in their spot pay $800 instead.
                 </p>
               </div>
 
@@ -320,7 +320,7 @@ export function PricingPopover() {
                   </span>
                 ) : spots !== null ? (
                   <span className="lg-row text-[13px] font-normal leading-[16px]" style={{ color: ACCENT, animationDelay: '0.33s' }}>
-                    {spots} of 4 early spot{spots !== 1 ? 's' : ''} remaining
+                    {spots} of 3 early spot{spots !== 1 ? 's' : ''} remaining
                   </span>
                 ) : null}
 
