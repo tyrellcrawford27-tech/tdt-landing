@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, forwardRef, Suspense } from 'react';
+import { useState, useEffect, useRef, forwardRef, Fragment, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
+import { LocationInput } from '@/components/LocationInput';
 import { OSBA_SCHOOLS } from '@/lib/schools';
+import { preloadCities } from '@/lib/cities';
+import { loadGeoHint } from '@/lib/geo';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
 const BG    = '#FAF6F2';
@@ -153,136 +156,6 @@ function CyclingHeadline({ style }: { style?: React.CSSProperties }) {
   );
 }
 
-// ── Location autocomplete (Nominatim / OpenStreetMap) ────────────────────────
-type NominatimResult = {
-  display_name: string;
-  address: { city?: string; town?: string; village?: string; state?: string; country?: string };
-};
-
-const LocationInput = forwardRef<HTMLInputElement, {
-  value: string;
-  onChange: (v: string) => void;
-  baseStyle: React.CSSProperties;
-}>(function LocationInput({ value, onChange, baseStyle }, ref) {
-  const [query, setQuery]     = useState(value);
-  const [results, setResults] = useState<NominatimResult[]>([]);
-  const [open, setOpen]       = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const search = (q: string) => {
-    clearTimeout(timer.current);
-    if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
-    timer.current = setTimeout(async () => {
-      try {
-        const res  = await fetch(
-          `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=8`,
-          { headers: { 'Accept-Language': 'en' } }
-        );
-        const data: NominatimResult[] = await res.json();
-        // Dedupe by "city + country" to avoid duplicates
-        const seen = new Set<string>();
-        const filtered = data.filter(r => {
-          const city = r.address.city || r.address.town || r.address.village;
-          if (!city) return false;
-          const key = `${city}|${r.address.state || ''}|${r.address.country || ''}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        }).slice(0, 6);
-        setResults(filtered);
-        setOpen(filtered.length > 0);
-      } catch { setResults([]); }
-    }, 350);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    onChange(e.target.value);
-    search(e.target.value);
-  };
-
-  const select = (r: NominatimResult) => {
-    const city    = r.address.city || r.address.town || r.address.village || '';
-    const state   = r.address.state || '';
-    const country = r.address.country || '';
-    const fmt     = [city, state, country].filter(Boolean).join(', ');
-    setQuery(fmt);
-    onChange(fmt);
-    setOpen(false);
-  };
-
-  return (
-    <div style={{ position: 'relative', width: '100%' }}>
-      <input
-        ref={ref}
-        type="text"
-        value={query}
-        onChange={handleChange}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        onFocus={() => results.length > 0 && setOpen(true)}
-        placeholder="Mississauga, Ontario"
-        autoComplete="off"
-        style={baseStyle}
-      />
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 8px)',
-          left: 0,
-          right: 0,
-          background: '#ffffff',
-          borderRadius: 16,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-          border: '1px solid rgba(0,0,0,0.05)',
-          padding: '6px',
-          zIndex: 200,
-        }}>
-          {results.map((r, i) => {
-            const city    = r.address.city || r.address.town || r.address.village || '';
-            const state   = r.address.state || '';
-            const country = r.address.country || '';
-            const region  = [state, country].filter(Boolean).join(', ');
-            return (
-              <button
-                key={i}
-                type="button"
-                onMouseDown={() => select(r)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '9px 12px',
-                  border: 'none',
-                  borderRadius: 10,
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'background 0.12s',
-                  boxSizing: 'border-box',
-                  gap: 12,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = BG)}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <span style={{ fontSize: 14, fontWeight: 400, color: '#000', letterSpacing: '-0.02em', lineHeight: '18px' }}>
-                  {city}
-                </span>
-                {region && (
-                  <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(0,0,0,0.3)', letterSpacing: '-0.01em', lineHeight: '18px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {region}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-});
-
 // ── School autocomplete (OSBA schools, with free-text fallback) ──────────────
 const SchoolInput = forwardRef<HTMLInputElement, {
   value: string;
@@ -311,7 +184,8 @@ const SchoolInput = forwardRef<HTMLInputElement, {
     if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); setActiveIdx(i => Math.min(i + 1, matches.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); setActiveIdx(i => Math.max(i - 1, 0)); }
     else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); e.stopPropagation(); commit(matches[activeIdx].name); }
-    else if (e.key === 'Escape') { setOpen(false); }
+    // Also clear the highlight, or a later Enter commits a row nobody can see.
+    else if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); setActiveIdx(-1); }
   };
 
   return (
@@ -422,6 +296,16 @@ function ApplyPageInner() {
   const inputRef   = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const advanceRef = useRef<() => void>(() => {});
   const resumeScreenRef = useRef(1);
+  // Set when city_state came from the picker. A value the dropdown offered must
+  // never be rejected by the validator, independent of the heuristics.
+  const cityFromPicker = useRef(false);
+
+  // Warm the city index while the applicant reads the intro screen, so question
+  // 03 is instant even on a slow connection. Both calls are idempotent.
+  useEffect(() => {
+    const ric = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 200));
+    ric(() => { preloadCities(); loadGeoHint(); });
+  }, []);
 
   // Restore draft from localStorage on mount — keep the intro screen visible
   // and only jump to the saved progress once the user clicks "Let's Begin",
@@ -577,8 +461,12 @@ function ApplyPageInner() {
         const [city, region] = v.split(',').map(s => s.trim());
         if (!city || city.length < 2) return true;           // city must exist
         if (!region || region.length < 2) return true;       // region must exist
-        if (!/[aeiou]/i.test(city)) return true;             // city must have vowels
-        if (/[^aeiou\s''\-]{5,}/i.test(city)) return true;  // no consonant mashing
+        // Fold accents before the heuristics, or Köln / Ürümqi / Cần Thơ read as
+        // consonant mash. y counts as a vowel (Lynn, Spry, Zephyrhills), and
+        // . / digits are separators (St. John's, Hounsfield Heights/Briar Hill).
+        const base = city.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '');
+        if (!/[aeiouy]/.test(base)) return true;             // city must have vowels
+        if (/[^aeiouy\s'’\-./0-9]{6,}/.test(base)) return true; // no consonant mashing
         return false;
       }
       case 'current_team_school':
@@ -674,7 +562,8 @@ function ApplyPageInner() {
       triggerShake();
       return;
     }
-    if (v && validateContent(q.field, v)) {
+    const pickerVouched = q.field === 'city_state' && cityFromPicker.current;
+    if (v && !pickerVouched && validateContent(q.field, v)) {
       const msgs = VALIDATION_BAD[q.field] ?? ["That doesn't look right", "Check your answer", "FIX IT."];
       fireNudge(msgs[attempts % msgs.length]);
       setAttempts(a => a + 1);
@@ -849,7 +738,12 @@ function ApplyPageInner() {
         <LocationInput
           ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
           value={val}
-          onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
+          onChange={v => {
+            cityFromPicker.current = false;
+            setForm(f => ({ ...f, [q.field]: v }));
+            setNudgeMsg(null);
+          }}
+          onCommit={() => { cityFromPicker.current = true; }}
           baseStyle={inputBoxStyle}
         />
       );
@@ -998,7 +892,15 @@ function ApplyPageInner() {
           75%  { transform: translateX(4px); }
           87%  { transform: translateX(-2px); }
         }
+        @keyframes tdt-pop-in {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .tdt-loc-panel { animation: none !important; }
+        }
         @media (max-width: 639px) {
+          .tdt-loc-row { padding: 13px 12px !important; }
           .tdt-card { padding: 28px 16px !important; border-radius: 20px !important; }
           .tdt-card-inner { padding-left: 0 !important; padding-right: 0 !important; }
           .tdt-question-text { font-size: 17px !important; line-height: 24px !important; }
@@ -1154,7 +1056,8 @@ function ApplyPageInner() {
                     </>
                   ) : q.question}
                 </p>
-                {renderInput()}
+                {/* Keyed so two same-typed questions never share input state */}
+                <Fragment key={q.field}>{renderInput()}</Fragment>
               </div>
             </div>
 
