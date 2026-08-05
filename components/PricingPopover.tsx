@@ -66,14 +66,16 @@ export function PricingPopover() {
   // Dismiss on outside click / Escape
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: MouseEvent) => {
+    const onDown = (e: PointerEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onDown);
+    // pointerdown, not mousedown: iOS Safari doesn't reliably synthesise mouse
+    // events for taps on non-interactive areas, so outside-taps could miss.
+    document.addEventListener('pointerdown', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('pointerdown', onDown);
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);

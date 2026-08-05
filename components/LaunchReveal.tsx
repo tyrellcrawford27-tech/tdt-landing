@@ -290,16 +290,18 @@ export function LaunchReveal({ onClose }: { onClose: () => void }) {
         style={{ zIndex: 10 }}
       >
         {/* Close X */}
+        {/* 44px hit area, 36px visible ring — the ring is the inner span so the
+            touch target can meet the platform minimum without growing visually. */}
         <button
           onClick={onClose}
+          aria-label="Close"
           style={{
             position: 'absolute',
-            top: 24,
-            right: 24,
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            border: '1px solid rgba(26,15,10,0.12)',
+            top: 20,
+            right: 20,
+            width: 44,
+            height: 44,
+            border: 'none',
             background: 'transparent',
             cursor: 'pointer',
             display: 'flex',
@@ -308,9 +310,21 @@ export function LaunchReveal({ onClose }: { onClose: () => void }) {
             ...fadeUp(phase >= 4),
           }}
         >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 1L9 9M9 1L1 9" stroke="#1A0F0A" strokeOpacity="0.35" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <span
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              border: '1px solid rgba(26,15,10,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <path d="M1 1L9 9M9 1L1 9" stroke="#1A0F0A" strokeOpacity="0.35" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </span>
         </button>
 
         <div className="flex flex-col items-center text-center px-6" style={{ userSelect: 'none' }}>

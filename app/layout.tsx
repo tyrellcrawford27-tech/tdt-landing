@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -8,6 +8,14 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon2.png",
   },
+};
+
+// Black browser chrome + edge-to-edge rendering so notched phones show the
+// page's own black behind the status bar instead of default chrome. Fixed
+// elements compensate with env(safe-area-inset-*) where they touch the edges.
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

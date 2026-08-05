@@ -102,6 +102,7 @@ function ProgramMobile() {
             // then centres the content in what's actually left, so it lands in
             // the middle of the readable area rather than the raw viewport.
             className="absolute inset-0 flex flex-col justify-center px-6 pt-[92px] pb-[64px]"
+            aria-hidden={step !== i}
             style={{
               opacity: step === i ? 1 : 0,
               transform: `translateY(${step === i ? 0 : step > i ? -18 : 18}px)`,
@@ -149,7 +150,7 @@ function ProgramMobile() {
         ))}
 
         {/* Dot rail sits outside the stages so it never fades with them */}
-        <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 flex gap-[6px]">
+        <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 flex gap-[6px]" aria-hidden="true">
           {PROGRAM_STEPS.map((s, i) => (
             <span
               key={s.slug}
@@ -206,19 +207,37 @@ const KB_ANIMS = ['kb-a', 'kb-b', 'kb-c', 'kb-d', 'kb-e'];
 function CoachCarousel() {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Read after mount so SSR and first paint agree; drives both the autoplay
+  // and the perpetual Ken Burns zoom.
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = () => setReducedMotion(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   // setTimeout keyed on `current` so clicking a dot cleanly resets the timer
   useEffect(() => {
-    if (paused) return;
+    if (paused || reducedMotion) return;
     const id = setTimeout(() => setCurrent(i => (i + 1) % COACH_IMAGES.length), COACH_INTERVAL);
     return () => clearTimeout(id);
-  }, [current, paused]);
+  }, [current, paused, reducedMotion]);
 
   return (
     <div
       className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      // Touch has no hover, so give phones their own pause affordance:
+      // press and hold stops the rotation.
+      onTouchStart={() => setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
+      onTouchCancel={() => setPaused(false)}
+      role="img"
+      aria-label="Photos of coach Jaiden Francais training athletes"
     >
       <style>{`
         @keyframes kb-a { from { transform: scale(1.05) translate(0, 0);        } to { transform: scale(1.16) translate(-2.2%, -1.6%); } }
@@ -277,8 +296,8 @@ function CoachCarousel() {
               style={{
                 backgroundImage: `url(${img.src})`,
                 backgroundPosition: img.position,
-                animation: `${KB_ANIMS[i % KB_ANIMS.length]} 9s ease-in-out infinite alternate`,
-                willChange: 'transform',
+                animation: reducedMotion ? undefined : `${KB_ANIMS[i % KB_ANIMS.length]} 9s ease-in-out infinite alternate`,
+                willChange: reducedMotion ? undefined : 'transform',
               }}
             />
           </div>
@@ -401,6 +420,13 @@ export default function Home() {
   const cardsStartRef = useRef<HTMLDivElement>(null);
   const coachContentRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuCloseRef = useRef<HTMLButtonElement>(null);
+
+  // Honour prefers-reduced-motion in the explicit JS scrolls (the CSS
+  // scroll-behavior rule only covers native anchor scrolling).
+  const scrollBehavior = () =>
+    (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') as ScrollBehavior;
 
   useEffect(() => {
     const SECTIONS = ['coach', 'program', 'difference', 'pricing', 'faq'];
@@ -484,7 +510,17 @@ export default function Home() {
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (!menuOpen) return () => { document.body.style.overflow = ''; };
+    // Modal behaviour while open: Escape dismisses, focus moves into the
+    // dialog, and returns to the hamburger when it closes.
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    window.addEventListener('keydown', onKey);
+    menuCloseRef.current?.focus({ preventScroll: true });
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+      menuButtonRef.current?.focus({ preventScroll: true });
+    };
   }, [menuOpen]);
 
   const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
@@ -547,12 +583,29 @@ export default function Home() {
 
       {/* ── Mobile full-screen menu overlay ── */}
       <div
+        id="mobile-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        // inert removes the closed (opacity-0 but still mounted) overlay from the
+        // tab order and accessibility tree — without it the page's first Tab lands
+        // on an invisible close button.
+        inert={!menuOpen}
+        aria-hidden={!menuOpen}
         className={`fixed inset-0 z-[100] flex flex-col lg:hidden transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         style={{
           backgroundColor: 'rgba(0,0,0,0.65)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
+          // Keep touch drags on the overlay from rubber-banding the page behind
+          // the glass; the nav inside re-enables vertical panning for itself.
+          overscrollBehavior: 'contain',
+          touchAction: 'none',
+          paddingTop: 'env(safe-area-inset-top)',
         }}
+        // Tapping any dead space dismisses, like a sheet — only taps that land on
+        // a link or button survive.
+        onClick={(e) => { if (!(e.target as HTMLElement).closest('a,button')) setMenuOpen(false); }}
       >
         {/* Top bar — mirrors the header: logo left, close right */}
         <div className="flex h-[64px] items-center justify-between px-6">
@@ -560,8 +613,9 @@ export default function Home() {
             <TDTLogo letterColor="rgb(255,255,255)" />
           </div>
           <button
+            ref={menuCloseRef}
             onClick={() => setMenuOpen(false)}
-            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center text-white/70"
+            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white/70 active:bg-white/10"
             aria-label="Close menu"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -570,13 +624,17 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Links — numbered, staggered entrance */}
-        <nav className="flex flex-1 flex-col justify-center px-8">
+        {/* Links — numbered, staggered entrance. The nav is its own scroll
+            container so short landscape viewports can still reach every link;
+            my-auto on the inner wrapper centers when there's room but keeps the
+            top reachable when content overflows (justify-center wouldn't). */}
+        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
+          <div className="my-auto">
           {NAV_LINKS.map(({ id, label }, i) => (
             <a
               key={id}
               href={`#${id}`}
-              className="flex cursor-pointer items-baseline gap-[16px] border-b border-white/[0.08] py-[18px] last:border-b-0"
+              className="flex cursor-pointer items-baseline gap-[16px] border-b border-white/[0.08] py-[18px] last:border-b-0 -mx-3 px-3 rounded-[12px] active:bg-white/[0.06]"
               style={{
                 opacity: menuOpen ? 1 : 0,
                 transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
@@ -609,20 +667,25 @@ export default function Home() {
               <span className="text-[30px] font-medium tracking-[-0.02em] text-white/90">{label}</span>
             </a>
           ))}
+          </div>
         </nav>
 
         {/* Bottom actions */}
         <div
-          className="flex w-full flex-col items-center gap-[18px] px-6 pb-10"
+          className="flex w-full flex-col items-center gap-[18px] px-6"
           style={{
             opacity: menuOpen ? 1 : 0,
             transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
             transition: menuOpen
               ? 'opacity 0.45s cubic-bezier(0.16,1,0.3,1) 420ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) 420ms'
               : 'opacity 0.2s ease, transform 0.2s ease',
+            // Clear the home indicator on notched phones
+            paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))',
           }}
         >
-          <a href="https://app.thinkdifferenttraining.com/access" className="text-[14px] text-white/60">Log In</a>
+          {/* -my-3 cancels the 44px hit area's extra height inside the gap so
+              visual spacing is unchanged */}
+          <a href="https://app.thinkdifferenttraining.com/access" className="-my-3 flex min-h-[44px] items-center px-6 text-[14px] text-white/60">Log In</a>
           <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className="w-full h-[48px] text-[15px]">
             Book call
           </CTAButton>
@@ -630,11 +693,13 @@ export default function Home() {
       </div>
 
       {/* ── Header ── */}
-      <header className="fixed top-0 z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none">
+      <header className="fixed z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
         <div
           className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border pointer-events-auto"
-          onMouseEnter={() => setNavHovered(true)}
-          onMouseLeave={() => setNavHovered(false)}
+          // Pointer-type-gated: on touch, mouseenter fires on tap and never
+          // reliably leaves, sticking the pill out of compact mode.
+          onPointerEnter={(e) => { if (e.pointerType === 'mouse') setNavHovered(true); }}
+          onPointerLeave={() => setNavHovered(false)}
           style={{
             width: 'calc(100% - 80px)',
             maxWidth: showCompact ? '380px' : scrolled ? '960px' : '100%',
@@ -658,13 +723,17 @@ export default function Home() {
             transition: 'all 0.5s cubic-bezier(0.4,0,0.2,1)',
           }}
         >
-          {/* Logo */}
+          {/* Logo — the button is a fixed 44px tap target; the inner div carries
+              the animated visual size and clips the oversized SVG as before. The
+              negative margin keeps the pill's visual metrics unchanged. */}
           <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className={`flex cursor-pointer items-center justify-center flex-shrink-0 overflow-hidden transition-all duration-500 ${showCompact ? 'h-[38px] w-[34px]' : scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}
+            onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })}
+            className="flex h-11 w-11 -mx-[5px] cursor-pointer items-center justify-center flex-shrink-0"
             aria-label="Back to top"
           >
-            <TDTLogo letterColor={`rgb(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)})`} />
+            <div className={`flex items-center justify-center overflow-hidden transition-all duration-500 ${showCompact ? 'h-[38px] w-[34px]' : scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}>
+              <TDTLogo letterColor={`rgb(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)})`} />
+            </div>
           </button>
 
           {/* Desktop center — crossfades between nav links and section label */}
@@ -686,7 +755,7 @@ export default function Home() {
                   style={navLinkStyle(id)}
                   onClick={(e) => {
                     e.preventDefault();
-                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: 'smooth' });
+                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: scrollBehavior() });
                   }}
                 >
                   {label}
@@ -723,10 +792,14 @@ export default function Home() {
               </CTAButton>
             </div>
             <button
-              className="lg:hidden flex h-11 w-11 cursor-pointer items-center justify-center"
+              ref={menuButtonRef}
+              className="lg:hidden flex h-11 w-11 cursor-pointer items-center justify-center active:opacity-60"
               style={navTextStyle}
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+              aria-haspopup="dialog"
             >
               <svg width="22" height="15" viewBox="0 0 22 15" fill="none">
                 <path d="M0 1H22M0 7.5H22M0 14H22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -748,6 +821,8 @@ export default function Home() {
           {/* Video iframe — replace src with your video embed URL */}
           <iframe
             src={heroPlaying ? 'about:blank' : undefined}
+            title="Training film"
+            inert={!heroPlaying}
             className="absolute inset-0 w-full h-full transition-opacity duration-500"
             style={{ opacity: heroPlaying ? 1 : 0, pointerEvents: heroPlaying ? 'auto' : 'none', border: 'none' }}
             allow="autoplay; fullscreen"
@@ -784,7 +859,7 @@ export default function Home() {
               <CTAButton
                 onClick={() => {
                   const el = document.getElementById('program');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  if (el) el.scrollIntoView({ behavior: scrollBehavior() });
                 }}
                 className="h-[37px] px-[20px] text-[14px]"
               >
@@ -1100,9 +1175,12 @@ export default function Home() {
               </div>
 
               {/* Same table on every breakpoint — scaled down on mobile, horizontal-scroll fallback if it still overflows */}
+              {/* 0.72 rather than 0.62: at 0.62 the table's 16px cells render at
+                  ~9.9px on a phone, which is below comfortable reading size. The
+                  overflow-x-auto wrapper absorbs the extra width. */}
               <style>{`
-                .diff-table-sizer { width: 558px; height: 446px; }
-                .diff-table-scaled { width: 900px; height: 720px; transform: scale(0.62); transform-origin: top left; }
+                .diff-table-sizer { width: 648px; height: 518px; }
+                .diff-table-scaled { width: 900px; height: 720px; transform: scale(0.72); transform-origin: top left; }
                 @media (min-width: 1024px) {
                   .diff-table-sizer { width: 900px; height: 720px; }
                   .diff-table-scaled { transform: scale(1); }
@@ -1371,12 +1449,15 @@ export default function Home() {
                     <button
                       onClick={() => setOpenFaq(isOpen ? -1 : index)}
                       className="flex cursor-pointer items-start gap-[10px] px-0 py-[20px] text-left w-full min-h-[44px]"
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-panel-${index}`}
                     >
                       <span className="flex-1 text-[14px] md:text-[16px] font-normal leading-[22px] md:leading-[19px] tracking-[-0.02em] text-[rgba(0,0,0,0.7)]">
                         {item.question}
                       </span>
                       <svg
                         width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        aria-hidden="true"
                         className="flex-shrink-0 mt-[2px]"
                         style={{
                           transform: isOpen ? 'rotate(0deg)' : 'rotate(180deg)',
@@ -1388,6 +1469,9 @@ export default function Home() {
                       </svg>
                     </button>
                     <div
+                      id={`faq-panel-${index}`}
+                      role="region"
+                      aria-hidden={!isOpen}
                       className="overflow-hidden"
                       style={{
                         maxHeight: isOpen ? '400px' : '0px',
