@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, forwardRef, Fragment, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, Fragment, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
@@ -9,11 +9,14 @@ import { SchoolInput } from '@/components/SchoolInput';
 import { preloadCities } from '@/lib/cities';
 import { preloadSchools } from '@/lib/schoolsIndex';
 import { loadGeoHint } from '@/lib/geo';
+import Cal, { getCalApi } from '@calcom/embed-react';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
 const BG    = '#FAF6F2';
 const TERRA = '#B34929';
 const CARD  = '#FFFFFF';
+
+const ADULT_AGE = 18;
 
 // ── Form data ─────────────────────────────────────────────────────────────────
 type FormData = {
@@ -27,60 +30,90 @@ type FormData = {
   years_playing: string;
   current_team_school: string;
   biggest_weakness: string;
-  goal: string;
   social_link: string;
-  why_this_program: string;
   time_commitment: string;
-  why_basketball: string;
   guardian_name: string;
   guardian_phone: string;
   guardian_email: string;
   guardian_aware: string;
-  anything_else: string;
 };
 
 const EMPTY: FormData = {
   full_name: '', age: '', city_state: '',
   email: '', phone: '', device_access: '', position: '', years_playing: '',
-  current_team_school: '', biggest_weakness: '', goal: '', social_link: '',
-  why_this_program: '', time_commitment: '', why_basketball: '',
-  guardian_name: '', guardian_phone: '', guardian_email: '',
-  guardian_aware: '', anything_else: '',
+  current_team_school: '', biggest_weakness: '', social_link: '',
+  time_commitment: '',
+  guardian_name: '', guardian_phone: '', guardian_email: '', guardian_aware: '',
 };
 
 // ── Questions ─────────────────────────────────────────────────────────────────
+// A "group" screen bundles a few short fields onto one card instead of
+// burning a full screen per field — used for contact info and for the
+// parent/guardian block, which only applies to minors (see buildQuestions).
+type SubField =
+  | { field: keyof FormData; kind: 'text' | 'email' | 'tel'; label: string; placeholder: string }
+  | { field: keyof FormData; kind: 'radio-grid'; label: string; options: string[] };
+
 type Q =
-  | { num: string; section: string; question: string; field: keyof FormData; type: 'text' | 'email' | 'tel' | 'number'; placeholder: string }
-  | { num: string; section: string; question: string; field: keyof FormData; type: 'textarea'; placeholder: string }
-  | { num: string; section: string; question: string; field: keyof FormData; type: 'location' }
-  | { num: string; section: string; question: string; field: keyof FormData; type: 'school' }
-  | { num: string; section: string; question: string; field: keyof FormData; type: 'radio-grid'; options: string[] }
-  | { num: string; section: string; question: string; field: keyof FormData; type: 'choice'; options: string[] };
+  | { section: string; question: string; field: keyof FormData; type: 'text' | 'email' | 'tel' | 'number'; placeholder: string }
+  | { section: string; question: string; field: keyof FormData; type: 'textarea'; placeholder: string }
+  | { section: string; question: string; field: keyof FormData; type: 'location' }
+  | { section: string; question: string; field: keyof FormData; type: 'school' }
+  | { section: string; question: string; field: keyof FormData; type: 'radio-grid'; options: string[] }
+  | { section: string; question: string; field: keyof FormData; type: 'choice'; options: string[] }
+  | { section: string; question: string; type: 'group'; kind: 'contact' | 'game' | 'parent'; subtext?: string; subs: SubField[] };
 
-const QUESTIONS: Q[] = [
-  { num: '01', section: 'Info',              question: "What's your full name?",                                field: 'full_name',           type: 'text',       placeholder: 'First and last name' },
-  { num: '02', section: 'Info',              question: 'How old are you?',                                      field: 'age',                 type: 'number',     placeholder: '17' },
-  { num: '03', section: 'Info',              question: 'City, State / Province',                                field: 'city_state',          type: 'location' },
-  { num: '04', section: 'Info',              question: "What's your email?",                                    field: 'email',               type: 'email',      placeholder: 'you@email.com' },
-  { num: '05', section: 'Info',              question: "What's your phone number?",                             field: 'phone',               type: 'tel',        placeholder: '416-605-2033' },
-  { num: '06', section: 'Info',              question: 'Do you have consistent access to a laptop or computer?', field: 'device_access',       type: 'radio-grid', options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'] },
-  { num: '07', section: 'Your game',         question: 'What position do you play?',                            field: 'position',            type: 'radio-grid', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
-  { num: '08', section: 'Your game',         question: 'Years playing competitively',                           field: 'years_playing',       type: 'radio-grid', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
-  { num: '09', section: 'Your game',         question: 'Current team or school?',                               field: 'current_team_school', type: 'school' },
-  { num: '10', section: 'Your game',         question: "What's your biggest weakness as a player right now?",   field: 'biggest_weakness',    type: 'textarea',   placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
-  { num: '11', section: 'Your game',         question: "What's your goal?",                                     field: 'goal',                type: 'textarea',   placeholder: 'Play D1 and earn a scholarship' },
-  { num: '12', section: 'Your game',         question: "Drop your Instagram or Twitter (X)",                    field: 'social_link',         type: 'text',       placeholder: 'instagram.com/yourusername' },
-  { num: '13', section: 'Your commitment',   question: 'Why do you want to do this program specifically?',      field: 'why_this_program',    type: 'textarea',   placeholder: "What made you want to apply? What are you hoping changes after 100 days?" },
-  { num: '14', section: 'Your commitment',   question: 'How much time can you realistically commit per day?',   field: 'time_commitment',     type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
-  { num: '15', section: 'Your commitment',   question: "Why basketball? What are you actually chasing?",        field: 'why_basketball',      type: 'textarea',   placeholder: "Be honest — there's no wrong answer." },
-  { num: '16', section: 'Parent / Guardian', question: 'Parent / guardian name',                                field: 'guardian_name',       type: 'text',       placeholder: 'Full name' },
-  { num: '17', section: 'Parent / Guardian', question: 'Their phone number',                                    field: 'guardian_phone',      type: 'tel',        placeholder: '416-605-2033' },
-  { num: '18', section: 'Parent / Guardian', question: "Their email address",                                   field: 'guardian_email',      type: 'email',      placeholder: 'parent@email.com' },
-  { num: '19', section: 'Parent / Guardian', question: "Does your parent / guardian know you're applying?",     field: 'guardian_aware',      type: 'choice',     options: ['Yes', 'No'] },
-  { num: '20', section: 'Extra',             question: 'Anything else Jaiden should know?',                     field: 'anything_else',       type: 'textarea',   placeholder: 'Anything on your mind...' },
-];
+// Every applicant now books a discovery call as the closing step, and the
+// call recovers what the "why" essays used to ask for far better than a text
+// box can — so those are cut. What's left is what the call genuinely can't
+// produce in advance: contact info, a pre-call read on the player, and — for
+// a minor — the parent who actually pays, looped in before the call happens.
+function buildQuestions(isMinor: boolean): Q[] {
+  const qs: Q[] = [
+    { section: 'Info', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'First and last name' },
+    { section: 'Info', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17' },
+    { section: 'Info', question: 'City, State / Province', field: 'city_state', type: 'location' },
+    {
+      section: 'Info', question: 'Where can we reach you?', type: 'group', kind: 'contact',
+      subs: [
+        { field: 'email', kind: 'email', label: 'Email', placeholder: 'you@email.com' },
+        { field: 'phone', kind: 'tel', label: 'Phone number', placeholder: '416-605-2033' },
+      ],
+    },
+    { section: 'Info', question: 'Do you have consistent access to a laptop or computer?', field: 'device_access', type: 'radio-grid', options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'] },
+    {
+      section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
+      subs: [
+        { field: 'position', kind: 'radio-grid', label: 'Position', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
+        { field: 'years_playing', kind: 'radio-grid', label: 'Years playing competitively', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
+      ],
+    },
+    { section: 'Your game', question: 'Current team or school?', field: 'current_team_school', type: 'school' },
+    { section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
+    { section: 'Your game', question: "Drop your Instagram or Twitter (X)", field: 'social_link', type: 'text', placeholder: 'instagram.com/yourusername' },
+    { section: 'Your commitment', question: 'How much time can you realistically commit per day?', field: 'time_commitment', type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
+  ];
 
-const TOTAL = QUESTIONS.length; // 20
+  // The buyer is the parent on ~80% of applications, and a discovery call
+  // booked by a 15-year-old alone is a call with the wrong person in the
+  // room. Adults skip this entirely — they book for themselves.
+  if (isMinor) {
+    qs.push(
+      {
+        section: 'Parent / Guardian', question: "Who's the parent or guardian we're looping in?", type: 'group', kind: 'parent',
+        subtext: "They're the one who'll be on the call with you — we'll send them the invite.",
+        subs: [
+          { field: 'guardian_name', kind: 'text', label: 'Their name', placeholder: 'Full name' },
+          { field: 'guardian_phone', kind: 'tel', label: 'Their phone number', placeholder: '416-605-2033' },
+          { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'parent@email.com' },
+        ],
+      },
+      { section: 'Parent / Guardian', question: "Have you told them you're applying?", field: 'guardian_aware', type: 'choice', options: ['Yes', 'No'] },
+    );
+  }
+
+  return qs;
+}
 
 // ── Phone formatting ──────────────────────────────────────────────────────────
 // Types out as 416-605-2033. A separator is only ever added once there's a digit
@@ -202,6 +235,42 @@ function GoBackButton({ onClick }: { onClick: () => void }) {
 
 const STORAGE_KEY = 'tdt-apply-draft';
 
+// ── Radio button style (shared by standalone radio-grid questions and the
+//    smaller grids inside a group card) ────────────────────────────────────
+function radioBtnStyle(active: boolean, compact: boolean): React.CSSProperties {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: compact ? 10 : 12,
+    padding: compact ? '12px 14px' : '16px 18px',
+    borderRadius: 12,
+    border: active ? `1.5px solid ${TERRA}` : '1px solid rgba(0,0,0,0.08)',
+    background: '#ffffff',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontSize: compact ? 14 : 15,
+    fontWeight: 400,
+    letterSpacing: '-0.02em',
+    color: 'rgba(0,0,0,0.75)',
+    textAlign: 'left',
+    transition: 'border-color 0.15s ease',
+    boxShadow: '0px 1px 4px rgba(0,0,0,0.05)',
+  };
+}
+function radioCircleStyle(active: boolean): React.CSSProperties {
+  return {
+    flexShrink: 0,
+    width: 20,
+    height: 20,
+    borderRadius: '50%',
+    border: active ? `1.5px solid ${TERRA}` : '1.5px solid rgba(0,0,0,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'border-color 0.15s ease',
+  };
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 function ApplyPageInner() {
   const searchParams = useSearchParams();
@@ -225,11 +294,30 @@ function ApplyPageInner() {
   // never be rejected by the validator, independent of the heuristics.
   const cityFromPicker = useRef(false);
 
+  // The buyer is the parent on most applications, so anyone under 18 gets the
+  // parent block; adults skip it and book the call for themselves. Defaults
+  // to true (minor) until age is answered, since the parent screens sit near
+  // the end of the flow and age is always answered first.
+  const isMinor = form.age ? parseInt(form.age, 10) < ADULT_AGE : true;
+  const questions = useMemo(() => buildQuestions(isMinor), [isMinor]);
+  const TOTAL = questions.length;
+
   // Warm the city index while the applicant reads the intro screen, so question
   // 03 is instant even on a slow connection. Both calls are idempotent.
   useEffect(() => {
     const ric = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 200));
     ric(() => { preloadCities(); preloadSchools(); loadGeoHint(); });
+  }, []);
+
+  // The Cal.com embed defaults to dark theme, which clashes with the rest of
+  // the site — force it light to match. Configuring this early (rather than
+  // only on the booking screen) means it's already applied by the time the
+  // applicant gets there.
+  useEffect(() => {
+    (async () => {
+      const cal = await getCalApi();
+      cal('ui', { theme: 'light', styles: { branding: { brandColor: TERRA } } });
+    })();
   }, []);
 
   // Restore draft from localStorage on mount — keep the intro screen visible
@@ -241,7 +329,7 @@ function ApplyPageInner() {
       if (saved) {
         const { form: f, screen: s } = JSON.parse(saved);
         setForm(f);
-        if (s >= 1 && s <= TOTAL) resumeScreenRef.current = s;
+        if (s >= 1) resumeScreenRef.current = s;
       }
     } catch {}
   }, []);
@@ -250,7 +338,7 @@ function ApplyPageInner() {
   useEffect(() => {
     if (screen < 1 || screen > TOTAL) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen })); } catch {}
-  }, [form, screen]);
+  }, [form, screen, TOTAL]);
 
   // Keep advanceRef fresh every render so the keydown handler always calls latest advance
   // (assigned after advance is defined below — see comment there)
@@ -266,14 +354,14 @@ function ApplyPageInner() {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Enter') return;
       if (screen > TOTAL) return;
-      const q = screen > 0 ? QUESTIONS[screen - 1] : null;
+      const q = screen > 0 ? questions[screen - 1] : null;
       if (q?.type === 'textarea' && !e.metaKey && !e.ctrlKey) return;
       e.preventDefault();
       advanceRef.current();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [screen]);
+  }, [screen, questions, TOTAL]);
 
   const triggerShake = () => {
     setShaking(false);
@@ -317,13 +405,11 @@ function ApplyPageInner() {
     years_playing:       ["How long have you been playing?", "Pick one — be honest", "YEARS PLAYING. PICK ONE."],
     current_team_school: ["What team or school?", "Team or school name please", "TEAM. OR. SCHOOL."],
     biggest_weakness:    ["Be honest here", "Something — anything", "YOUR WEAKNESS. TELL US."],
-    goal:                ["What's driving you?", "What's your goal?", "GOAL. TYPE IT. NOW."],
     social_link:         ["Drop your Instagram or Twitter link", "We need to see your account", "LINK. NOW."],
-    why_this_program:    ["Tell Jaiden why you're here", "Why this program?", "WHY ARE YOU HERE?!"],
     time_commitment:     ["How much time can you give?", "Pick a time commitment", "PICK ONE!!"],
-    why_basketball:      ["What are you chasing?", "Why basketball?", "WHY BASKETBALL — GO."],
     guardian_name:       ["Add their name", "Parent or guardian name", "NAME. NOW."],
     guardian_phone:      ["Add their number", "Their phone number please", "THEIR NUMBER — GO."],
+    guardian_email:      ["We'll need their email", "Their email please", "EMAIL — NOW."],
     guardian_aware:      ["Yes or no?", "Pick one", "YES. OR. NO."],
   };
 
@@ -336,10 +422,7 @@ function ApplyPageInner() {
     phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     current_team_school: ["Give us a real team or school name", "More than one letter", "TEAM OR SCHOOL NAME."],
     biggest_weakness:    ["Give more detail than that", "Dig deeper — be specific", "ACTUALLY ANSWER IT."],
-    goal:                ["That's too vague, give us more", "Be specific about your goal", "REAL ANSWER. MORE DETAIL."],
     social_link:         ["That doesn't look like a real link or handle", "Try instagram.com/you or @yourhandle", "REAL LINK OR HANDLE."],
-    why_this_program:    ["That's not enough — tell Jaiden more", "Why specifically this program?", "WE NEED MORE THAN THAT."],
-    why_basketball:      ["More than that — what are you really chasing?", "Be honest, dig deeper", "REAL ANSWER. GO DEEPER."],
     guardian_name:       ["That doesn't look like a full name", "Letters only please", "REAL NAME."],
     guardian_phone:      ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     guardian_email:      ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
@@ -379,6 +462,7 @@ function ApplyPageInner() {
         return isNaN(n) || n < 10 || n > 25;
       }
       case 'email':
+      case 'guardian_email':
         return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
       case 'phone':
       case 'guardian_phone':
@@ -405,17 +489,40 @@ function ApplyPageInner() {
         return !(looksLikeHandle || looksLikeUrl);
       }
       case 'biggest_weakness':
-      case 'goal':
-      case 'why_basketball':
         return v.length < 20 || isGibberishText(v) || isDisengaged(v);
-      case 'why_this_program':
-        return v.length < 25 || isGibberishText(v) || isDisengaged(v);
       default:
         return false;
     }
   };
 
-  const OPTIONAL = new Set<keyof FormData>(['anything_else']);
+  // Nothing left in the trimmed form is optional — every remaining field is
+  // either load-bearing for the call or a hard screen.
+  const OPTIONAL = new Set<keyof FormData>();
+
+  // Fire-and-forget partial save the moment we have contact info, so an
+  // applicant who abandons the form later is still a reachable lead instead
+  // of a total loss. Safe to call more than once — the backend upserts by
+  // email, so a later correction just updates the same draft row.
+  const saveProgress = () => {
+    const payload = {
+      email: form.email,
+      phone: form.phone,
+      first_name: form.full_name.trim().split(/\s+/)[0] || '',
+      last_name: form.full_name.trim().split(/\s+/).slice(1).join(' '),
+      athlete_name: form.full_name.trim(),
+      athlete_email: form.email,
+      athlete_phone: form.phone,
+      age: form.age ? parseInt(form.age) : null,
+      city: form.city_state,
+      submitted_at: new Date().toISOString(),
+    };
+    fetch('/api/apply/save-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => { /* best-effort — final submit is still the source of truth */ });
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -440,22 +547,16 @@ function ApplyPageInner() {
       current_team:        form.current_team_school,
       current_team_school: form.current_team_school,
       biggest_weakness:    form.biggest_weakness,
-      goal:                form.goal,
       social_link:         form.social_link,
-      why_program:         form.why_this_program,
-      why_this_program:    form.why_this_program,
       time_commitment:     form.time_commitment,
-      why_basketball:      form.why_basketball,
-      parent_name:         form.guardian_name,
-      guardian_name:       form.guardian_name,
-      parent_phone:        form.guardian_phone,
-      guardian_phone:      form.guardian_phone,
-      parent_email:        form.guardian_email,
-      guardian_email:      form.guardian_email,
-      parent_aware:        form.guardian_aware || null,
-      guardian_aware:      form.guardian_aware || null,
-      additional_notes:    form.anything_else || null,
-      anything_else:       form.anything_else || null,
+      parent_name:         isMinor ? form.guardian_name : null,
+      guardian_name:       isMinor ? form.guardian_name : null,
+      parent_phone:        isMinor ? form.guardian_phone : null,
+      guardian_phone:      isMinor ? form.guardian_phone : null,
+      parent_email:        isMinor ? form.guardian_email : null,
+      guardian_email:      isMinor ? form.guardian_email : null,
+      parent_aware:        isMinor ? (form.guardian_aware || null) : null,
+      guardian_aware:      isMinor ? (form.guardian_aware || null) : null,
       early_pricing:     earlyPricing || null,
       submitted_at:      new Date().toISOString(),
       status:            'pending',
@@ -477,10 +578,53 @@ function ApplyPageInner() {
   };
 
   const advance = async () => {
-    if (screen === 0) { goTo(resumeScreenRef.current); return; }
-    if (screen === TOTAL) { handleSubmit(); return; }
+    if (screen === 0) { goTo(Math.min(resumeScreenRef.current, TOTAL)); return; }
     if (checkingEmail) return;
-    const q = QUESTIONS[screen - 1];
+    const q = questions[screen - 1];
+    // The last screen can be the guardian_aware gate, which — unlike the old
+    // form's optional last question — has a hard validation rule. Submit only
+    // fires after that rule (and everything else below) passes.
+    const finish = () => { if (screen === TOTAL) handleSubmit(); else goTo(screen + 1); };
+
+    if (q.type === 'group') {
+      for (const sub of q.subs) {
+        const v = form[sub.field].toString().trim();
+        if (!v) {
+          const msgs = VALIDATION[sub.field] ?? ["Fill this in to continue", "Still need this", "FILL IT IN."];
+          fireNudge(msgs[attempts % msgs.length]);
+          setAttempts(a => a + 1);
+          triggerShake();
+          return;
+        }
+        if (validateContent(sub.field, v)) {
+          const msgs = VALIDATION_BAD[sub.field] ?? ["That doesn't look right", "Check your answer", "FIX IT."];
+          fireNudge(msgs[attempts % msgs.length]);
+          setAttempts(a => a + 1);
+          triggerShake();
+          return;
+        }
+        // Block a repeat applicant right at the email step instead of after the
+        // whole form. Fail-open on network errors — the final submit still guards.
+        if (sub.field === 'email') {
+          setCheckingEmail(true);
+          try {
+            const res = await fetch(`/api/apply/check-email?email=${encodeURIComponent(v)}`);
+            const json = await res.json();
+            if (json.exists) {
+              fireNudge("Email in use");
+              triggerShake();
+              setCheckingEmail(false);
+              return;
+            }
+          } catch { /* fail-open */ }
+          setCheckingEmail(false);
+        }
+      }
+      if (q.kind === 'contact') saveProgress();
+      finish();
+      return;
+    }
+
     const v = form[q.field].toString().trim();
     if (!OPTIONAL.has(q.field) && !v) {
       const msgs = VALIDATION[q.field] ?? ["Fill this in to continue", "Still need this", "FILL IT IN."];
@@ -497,28 +641,20 @@ function ApplyPageInner() {
       triggerShake();
       return;
     }
-    // Block a repeat applicant right at the email step instead of after the
-    // whole form. Fail-open on network errors — the final submit still guards.
-    if (q.field === 'email') {
-      setCheckingEmail(true);
-      try {
-        const res = await fetch(`/api/apply/check-email?email=${encodeURIComponent(v)}`);
-        const json = await res.json();
-        if (json.exists) {
-          fireNudge("Email in use");
-          triggerShake();
-          setCheckingEmail(false);
-          return;
-        }
-      } catch { /* fail-open */ }
-      setCheckingEmail(false);
+    // A minor can't book alone — they need to have told their parent before
+    // moving on, not just claim they will.
+    if (q.field === 'guardian_aware' && v !== 'Yes') {
+      fireNudge("Loop them in first");
+      setAttempts(a => a + 1);
+      triggerShake();
+      return;
     }
-    goTo(screen + 1);
+    finish();
   };
   const retreat = () => { if (screen > 1) goTo(screen - 1); };
 
   // Keep advanceRef pointing to the latest advance closure
-  advanceRef.current = advance;;
+  advanceRef.current = advance;
 
   const fadeStyle: React.CSSProperties = {
     opacity:   visible ? 1 : 0,
@@ -572,61 +708,72 @@ function ApplyPageInner() {
     </div>
   );
 
-  // ── Success ───────────────────────────────────────────────────────────
-  if (screen === TOTAL + 1) return (
-    <div style={{ minHeight: '100dvh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 80px' }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
-        @media (max-width: 639px) {
-          .tdt-card { padding: 28px 16px !important; }
-          .tdt-card-inner { padding-left: 0 !important; padding-right: 0 !important; }
-        }
-      `}</style>
-      <div style={{ ...fadeStyle, width: '100%', maxWidth: 700 }}>
+  // ── Booking (final step) ─────────────────────────────────────────────────
+  // The application isn't the review anymore — the call is. This screen's
+  // only job is getting a booked call, embedded right here instead of
+  // sending the applicant off to another tab, with the parent locked in as
+  // a guest when the athlete is a minor.
+  if (screen === TOTAL + 1) {
+    const guardianFirst = isMinor && form.guardian_name ? form.guardian_name.trim().split(/\s+/)[0] : null;
+    const calConfig: Record<string, string | string[]> = {
+      theme: 'dark',
+      name: form.full_name.trim(),
+      email: form.email,
+    };
+    if (isMinor && form.guardian_email) calConfig.guests = [form.guardian_email];
 
-        {/* Section label */}
-        <p style={{ ...text(16, 500, TERRA), textAlign: 'center', marginBottom: 20 }}>
-          You're in the queue.
-        </p>
+    return (
+      <div style={{ minHeight: '100dvh', background: BG, padding: '60px 20px 80px' }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
+          .tdt-booking-cal { border-radius: 28px; overflow: hidden; }
+        `}</style>
+        <div style={{ ...fadeStyle, maxWidth: 1400, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {/* Card */}
-        <div className="tdt-card" style={{
-          boxSizing: 'border-box',
-          width: '100%',
-          background: CARD,
-          border: '1px solid rgba(0,0,0,0.05)',
-          borderRadius: 28,
-          padding: '44px 20px',
-        }}>
-          <div className="tdt-card-inner" style={{ padding: '0px 50px', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
-            <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
-              Jaiden's going to read this himself. Not skim it, read it. Most people hear back within a few days. Either way you'll get a real answer, not silence.
+          {/* Copy */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, textAlign: 'center', alignItems: 'center', maxWidth: 700, margin: '0 auto', width: '100%' }}>
+            <p style={{ ...text(16, 500, TERRA), margin: 0 }}>
+              Application in. Now the real part.
             </p>
-            <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), textAlign: 'center', lineHeight: 1.7, margin: 0 }}>
-              In the meantime, get back to work. The version of you that gets into Cohort 1 is the same version that doesn't wait around for a yes to start putting in the work.
+            <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.7, margin: 0 }}>
+              Applying doesn&apos;t get you in. The call does. Twenty minutes to map out exactly how we&apos;d get you seen, and we&apos;ll both know if it&apos;s the right fit.
             </p>
-            <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, textAlign: 'center', margin: '8px 0 0' }}>
-              Jaiden Francais
+            {isMinor && (
+              <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.7, margin: 0 }}>
+                {guardianFirst ? `${guardianFirst}'s` : "Your parent's"} invited on the call too — pick a time that works for both of you.
+              </p>
+            )}
+            <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, margin: '4px 0 0' }}>
+              Talk soon
             </p>
           </div>
-        </div>
 
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
-            ← Back to home
-          </a>
+          {/* Booking */}
+          <div className="tdt-booking-cal">
+            <Cal
+              calLink="tyrell-crawford-2pjfa2/30min"
+              config={calConfig}
+              style={{ width: '100%', height: '680px', overflow: 'scroll' }}
+            />
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
+              ← Back to home
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // ── 1–19: Question screens ────────────────────────────────────────────────
+  // ── Question / group screens ─────────────────────────────────────────────
   const qi  = screen - 1;
-  const q   = QUESTIONS[qi];
-  const val = form[q.field];
+  const q   = questions[qi];
   const isFirst = screen === 1;
   const isLast  = screen === TOTAL;
   const progress = (screen / TOTAL) * 100;
+  const numLabel = String(screen).padStart(2, '0');
 
   // Frame 424 input style — no fill, 5% black border, 30% drop shadow
   const inputBoxStyle: React.CSSProperties = {
@@ -646,12 +793,50 @@ function ApplyPageInner() {
     fontFamily: 'inherit',
   };
 
+  const renderGroupSub = (sub: SubField) => {
+    if (sub.kind === 'radio-grid') {
+      const val = form[sub.field];
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%' }}>
+          {sub.options.map(opt => {
+            const active = val === opt;
+            return (
+              <button
+                key={opt}
+                type="button"
+                className="tdt-radio-btn"
+                onClick={() => { setForm(f => ({ ...f, [sub.field]: opt })); setNudgeMsg(null); }}
+                style={radioBtnStyle(active, true)}
+              >
+                <span style={radioCircleStyle(active)}>
+                  {active && <span style={{ width: 10, height: 10, borderRadius: '50%', background: TERRA, display: 'block' }} />}
+                </span>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+    return (
+      <input
+        type={sub.kind}
+        value={form[sub.field]}
+        onChange={set(sub.field)}
+        placeholder={sub.placeholder}
+        style={{ ...inputBoxStyle, padding: '16px 10px' }}
+      />
+    );
+  };
+
   const renderInput = () => {
+    if (q.type === 'group') return null; // rendered separately — see the JSX branch above
+
     if (q.type === 'textarea') {
       return (
         <textarea
           ref={inputRef as unknown as React.RefObject<HTMLTextAreaElement>}
-          value={val}
+          value={form[q.field]}
           onChange={set(q.field)}
           placeholder={'placeholder' in q ? q.placeholder : ''}
           rows={4}
@@ -664,7 +849,7 @@ function ApplyPageInner() {
       return (
         <LocationInput
           ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
-          value={val}
+          value={form[q.field]}
           onChange={v => {
             cityFromPicker.current = false;
             setForm(f => ({ ...f, [q.field]: v }));
@@ -680,7 +865,7 @@ function ApplyPageInner() {
       return (
         <SchoolInput
           ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
-          value={val}
+          value={form[q.field]}
           onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
           baseStyle={inputBoxStyle}
         />
@@ -688,6 +873,7 @@ function ApplyPageInner() {
     }
 
     if (q.type === 'radio-grid') {
+      const val = form[q.field];
       return (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%' }}>
           {q.options.map(opt => {
@@ -698,40 +884,10 @@ function ApplyPageInner() {
                 type="button"
                 className="tdt-radio-btn"
                 onClick={() => { setForm(f => ({ ...f, [q.field]: opt })); setNudgeMsg(null); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '16px 18px',
-                  borderRadius: 12,
-                  border: active ? `1.5px solid ${TERRA}` : '1px solid rgba(0,0,0,0.08)',
-                  background: '#ffffff',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  fontSize: 15,
-                  fontWeight: 400,
-                  letterSpacing: '-0.02em',
-                  color: 'rgba(0,0,0,0.75)',
-                  textAlign: 'left',
-                  transition: 'border-color 0.15s ease',
-                  boxShadow: '0px 1px 4px rgba(0,0,0,0.05)',
-                }}
+                style={radioBtnStyle(active, false)}
               >
-                {/* Radio circle */}
-                <span style={{
-                  flexShrink: 0,
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  border: active ? `1.5px solid ${TERRA}` : '1.5px solid rgba(0,0,0,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'border-color 0.15s ease',
-                }}>
-                  {active && (
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: TERRA, display: 'block' }} />
-                  )}
+                <span style={radioCircleStyle(active)}>
+                  {active && <span style={{ width: 10, height: 10, borderRadius: '50%', background: TERRA, display: 'block' }} />}
                 </span>
                 {opt}
               </button>
@@ -742,6 +898,7 @@ function ApplyPageInner() {
     }
 
     if (q.type === 'choice') {
+      const val = form[q.field];
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
           <div style={{ display: 'flex', gap: 10, width: '100%' }}>
@@ -752,15 +909,7 @@ function ApplyPageInner() {
                   key={opt}
                   type="button"
                   className="tdt-choice-btn"
-                  onClick={() => {
-                    setForm(f => ({ ...f, [q.field]: opt }));
-                    if (q.field === 'guardian_aware') {
-                      if (opt === 'No') fireNudge('Consider letting them know :)', 'info');
-                      else setNudgeMsg(null);
-                    } else {
-                      setNudgeMsg(null);
-                    }
-                  }}
+                  onClick={() => { setForm(f => ({ ...f, [q.field]: opt })); setNudgeMsg(null); }}
                   style={{
                     ...inputBoxStyle,
                     flex: 1,
@@ -779,6 +928,13 @@ function ApplyPageInner() {
               );
             })}
           </div>
+          {q.field === 'guardian_aware' && val === 'No' && (
+            <div style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: 'rgba(179,73,41,0.06)', border: '1px solid rgba(179,73,41,0.15)' }}>
+              <p style={{ ...text(14, 400, 'rgba(0,0,0,0.6)'), lineHeight: 1.6, margin: 0 }}>
+                Tell them before you go further. Something like: <em>&ldquo;I applied to a basketball program — it&apos;s $1,000 and I want you on the call with me.&rdquo;</em> Come back and hit Yes once they know.
+              </p>
+            </div>
+          )}
         </div>
       );
     }
@@ -787,7 +943,7 @@ function ApplyPageInner() {
       <input
         ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
         type={q.type}
-        value={val}
+        value={form[q.field]}
         onChange={set(q.field)}
         placeholder={'placeholder' in q ? q.placeholder : ''}
         style={inputBoxStyle}
@@ -956,7 +1112,7 @@ function ApplyPageInner() {
                   color: '#000000',
                   opacity: 0.3,
                 }}>
-                  {q.num}
+                  {numLabel}
                 </span>
               </div>
 
@@ -982,15 +1138,28 @@ function ApplyPageInner() {
                   margin: 0,
                   fontFamily: 'inherit',
                 }}>
-                  {q.question.includes('(optional)') ? (
-                    <>
-                      {q.question.replace(' (optional)', '')}
-                      <span style={{ fontSize: 12, fontWeight: 400, opacity: 0.5, marginLeft: 6 }}>(optional)</span>
-                    </>
-                  ) : q.question}
+                  {q.question}
                 </p>
-                {/* Keyed so two same-typed questions never share input state */}
-                <Fragment key={q.field}>{renderInput()}</Fragment>
+                {q.type === 'group' ? (
+                  <>
+                    {q.subtext && (
+                      <p style={{ ...text(14, 400, 'rgba(0,0,0,0.4)'), textAlign: 'center', lineHeight: 1.6, margin: '-10px 0 0', width: '100%' }}>
+                        {q.subtext}
+                      </p>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+                      {q.subs.map(sub => (
+                        <div key={sub.field} style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                          <p style={{ ...text(13, 500, 'rgba(0,0,0,0.4)'), margin: 0 }}>{sub.label}</p>
+                          {renderGroupSub(sub)}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  // Keyed so two same-typed questions never share input state
+                  <Fragment key={q.field}>{renderInput()}</Fragment>
+                )}
               </div>
             </div>
 

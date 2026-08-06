@@ -787,8 +787,8 @@ export default function Home() {
               >
                 Log In
               </a>
-              <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
-                Book call
+              <CTAButton href="/apply" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
+                Apply
               </CTAButton>
             </div>
             <button

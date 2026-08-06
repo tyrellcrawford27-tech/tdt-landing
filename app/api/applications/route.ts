@@ -7,6 +7,10 @@ export async function GET() {
     const { data, error } = await admin
       .from('applications')
       .select('*')
+      // time_commitment is the last field collected before submit — a row
+      // missing it is a partial save from an in-progress application, not a
+      // real submission for the coach to review (see /api/apply/save-progress).
+      .not('time_commitment', 'is', null)
       .order('submitted_at', { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ data });
