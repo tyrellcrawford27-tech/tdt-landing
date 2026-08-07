@@ -686,8 +686,8 @@ export default function Home() {
           {/* -my-3 cancels the 44px hit area's extra height inside the gap so
               visual spacing is unchanged */}
           <a href="https://app.thinkdifferenttraining.com/access" className="-my-3 flex min-h-[44px] items-center px-6 text-[14px] text-white/60">Log In</a>
-          <CTAButton href="https://cal.com/tyrell-crawford-2pjfa2/30min" target="_blank" rel="noopener noreferrer" className="w-full h-[48px] text-[15px]">
-            Book call
+          <CTAButton href="/apply" className="w-full h-[48px] text-[15px]">
+            Apply
           </CTAButton>
         </div>
       </div>
@@ -853,7 +853,7 @@ export default function Home() {
               Now you need someone to notice.
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              If getting recruited is the goal, we've got a lot to break down to make you impossible to overlook.
+              If getting recruited is the goal, we&apos;ll help you make the most of your prep season and become impossible to overlook.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton
@@ -1523,7 +1523,7 @@ export default function Home() {
               </div>
               <div className="flex-1 flex items-center justify-center md:justify-end gap-[14px]">
                 <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)]">
-                  thinkdifferenttraining2020@gmail.com
+                  jaiden@thinkdifferenttraining.com
                 </span>
                 <a
                   href="https://www.instagram.com/thinkdifferent_training/?hl=en"

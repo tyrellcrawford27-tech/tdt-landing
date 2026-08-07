@@ -16,8 +16,6 @@ const BG    = '#FAF6F2';
 const TERRA = '#B34929';
 const CARD  = '#FFFFFF';
 
-const ADULT_AGE = 18;
-
 // ── Form data ─────────────────────────────────────────────────────────────────
 type FormData = {
   full_name: string;
@@ -36,6 +34,7 @@ type FormData = {
   guardian_phone: string;
   guardian_email: string;
   guardian_aware: string;
+  goal: string;
 };
 
 const EMPTY: FormData = {
@@ -44,12 +43,13 @@ const EMPTY: FormData = {
   current_team_school: '', biggest_weakness: '', social_link: '',
   time_commitment: '',
   guardian_name: '', guardian_phone: '', guardian_email: '', guardian_aware: '',
+  goal: '',
 };
 
 // ── Questions ─────────────────────────────────────────────────────────────────
 // A "group" screen bundles a few short fields onto one card instead of
 // burning a full screen per field — used for contact info and for the
-// parent/guardian block, which only applies to minors (see buildQuestions).
+// parent/supporter block (see buildQuestions).
 type SubField =
   | { field: keyof FormData; kind: 'text' | 'email' | 'tel'; label: string; placeholder: string }
   | { field: keyof FormData; kind: 'radio-grid'; label: string; options: string[] };
@@ -66,9 +66,9 @@ type Q =
 // Every applicant now books a discovery call as the closing step, and the
 // call recovers what the "why" essays used to ask for far better than a text
 // box can — so those are cut. What's left is what the call genuinely can't
-// produce in advance: contact info, a pre-call read on the player, and — for
-// a minor — the parent who actually pays, looped in before the call happens.
-function buildQuestions(isMinor: boolean): Q[] {
+// produce in advance: contact info, a pre-call read on the player, and the
+// parent who actually pays, looped in before the call happens.
+function buildQuestions(): Q[] {
   const qs: Q[] = [
     { section: 'Info', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'First and last name' },
     { section: 'Info', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17' },
@@ -89,28 +89,37 @@ function buildQuestions(isMinor: boolean): Q[] {
       ],
     },
     { section: 'Your game', question: 'Current team or school?', field: 'current_team_school', type: 'school' },
-    { section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest — self-awareness is the first thing Jaiden looks for.' },
+    { section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest. Self-awareness is the first thing Jaiden looks for.' },
     { section: 'Your game', question: "Drop your Instagram or Twitter (X)", field: 'social_link', type: 'text', placeholder: 'instagram.com/yourusername' },
     { section: 'Your commitment', question: 'How much time can you realistically commit per day?', field: 'time_commitment', type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
   ];
 
-  // The buyer is the parent on ~80% of applications, and a discovery call
-  // booked by a 15-year-old alone is a call with the wrong person in the
-  // room. Adults skip this entirely — they book for themselves.
-  if (isMinor) {
-    qs.push(
-      {
-        section: 'Parent / Guardian', question: "Who's the parent or guardian we're looping in?", type: 'group', kind: 'parent',
-        subtext: "They're the one who'll be on the call with you — we'll send them the invite.",
-        subs: [
-          { field: 'guardian_name', kind: 'text', label: 'Their name', placeholder: 'Full name' },
-          { field: 'guardian_phone', kind: 'tel', label: 'Their phone number', placeholder: '416-605-2033' },
-          { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'parent@email.com' },
-        ],
-      },
-      { section: 'Parent / Guardian', question: "Have you told them you're applying?", field: 'guardian_aware', type: 'choice', options: ['Yes', 'No'] },
-    );
-  }
+  // The buyer is the parent on the overwhelming majority of applications, and
+  // a discovery call booked by the player alone is a call with the wrong person
+  // in the room. Asked of everyone regardless of age — this is a prep-age
+  // audience, and even an adult applicant usually has a parent in the decision.
+  qs.push(
+    {
+      section: 'Parent / Supporter', question: "Who's the parent or supporter we're looping in?", type: 'group', kind: 'parent',
+      subtext: "Whoever's helping you make this decision. We'll keep them in the loop.",
+      subs: [
+        { field: 'guardian_name', kind: 'text', label: 'Their name', placeholder: 'Full name' },
+        { field: 'guardian_phone', kind: 'tel', label: 'Their phone number', placeholder: '416-605-2033' },
+        { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'their@email.com' },
+      ],
+    },
+    { section: 'Parent / Supporter', question: "Have you told them you're applying?", field: 'guardian_aware', type: 'choice', options: ['Yes', 'No'] },
+  );
+
+  // Always the last question — the ceiling call, closing on belief rather
+  // than logistics.
+  qs.push({
+    section: 'The ceiling',
+    question: "What's the highest you see this going for you and what makes you believe it?",
+    field: 'goal',
+    type: 'textarea',
+    placeholder: 'Be honest pro, D1, or wherever you truly see it. Then tell me why.',
+  });
 
   return qs;
 }
@@ -294,12 +303,10 @@ function ApplyPageInner() {
   // never be rejected by the validator, independent of the heuristics.
   const cityFromPicker = useRef(false);
 
-  // The buyer is the parent on most applications, so anyone under 18 gets the
-  // parent block; adults skip it and book the call for themselves. Defaults
-  // to true (minor) until age is answered, since the parent screens sit near
-  // the end of the flow and age is always answered first.
-  const isMinor = form.age ? parseInt(form.age, 10) < ADULT_AGE : true;
-  const questions = useMemo(() => buildQuestions(isMinor), [isMinor]);
+  // Every applicant answers the parent block, so the question list is fixed —
+  // no age branching, and therefore no way for a back-edit to the age field to
+  // resize the flow underneath someone mid-application.
+  const questions = useMemo(() => buildQuestions(), []);
   const TOTAL = questions.length;
 
   // Warm the city index while the applicant reads the intro screen, so question
@@ -396,21 +403,22 @@ function ApplyPageInner() {
   // Escalating messages when field is empty
   const VALIDATION: Partial<Record<keyof FormData, string[]>> = {
     full_name:           ["Name pls", "First and last name", "FULL NAME. GO."],
-    age:                 ["How old are you?", "Age. Just a number.", "YOUR AGE — TYPE IT."],
+    age:                 ["How old are you?", "Age. Just a number.", "YOUR AGE. TYPE IT."],
     city_state:          ["Where are you based?", "City and province/state please", "WHERE ARE YOU FROM?!"],
-    email:               ["We'll need your email", "Email address please", "YOUR EMAIL — NOW."],
+    email:               ["We'll need your email", "Email address please", "YOUR EMAIL. NOW."],
     phone:               ["Add a phone number", "Phone number, please", "PHONE NUMBER!!"],
     device_access:       ["Do you have a laptop or computer?", "Pick one", "PICK ONE!!"],
     position:            ["Pick your position", "Choose one", "PICK. A. POSITION."],
-    years_playing:       ["How long have you been playing?", "Pick one — be honest", "YEARS PLAYING. PICK ONE."],
+    years_playing:       ["How long have you been playing?", "Pick one, be honest", "YEARS PLAYING. PICK ONE."],
     current_team_school: ["What team or school?", "Team or school name please", "TEAM. OR. SCHOOL."],
-    biggest_weakness:    ["Be honest here", "Something — anything", "YOUR WEAKNESS. TELL US."],
+    biggest_weakness:    ["Be honest here", "Something, anything", "YOUR WEAKNESS. TELL US."],
     social_link:         ["Drop your Instagram or Twitter link", "We need to see your account", "LINK. NOW."],
     time_commitment:     ["How much time can you give?", "Pick a time commitment", "PICK ONE!!"],
-    guardian_name:       ["Add their name", "Parent or guardian name", "NAME. NOW."],
-    guardian_phone:      ["Add their number", "Their phone number please", "THEIR NUMBER — GO."],
-    guardian_email:      ["We'll need their email", "Their email please", "EMAIL — NOW."],
+    guardian_name:       ["Add their name", "Parent or supporter name", "NAME. NOW."],
+    guardian_phone:      ["Add their number", "Their phone number please", "THEIR NUMBER. GO."],
+    guardian_email:      ["We'll need their email", "Their email please", "EMAIL. NOW."],
     guardian_aware:      ["Yes or no?", "Pick one", "YES. OR. NO."],
+    goal:                ["Tell us how high you see this going", "Where do you see this going?", "YOUR CEILING. TELL US."],
   };
 
   // Escalating messages when content doesn't pass validation
@@ -421,11 +429,12 @@ function ApplyPageInner() {
     email:               ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
     phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     current_team_school: ["Give us a real team or school name", "More than one letter", "TEAM OR SCHOOL NAME."],
-    biggest_weakness:    ["Give more detail than that", "Dig deeper — be specific", "ACTUALLY ANSWER IT."],
+    biggest_weakness:    ["Give more detail than that", "Dig deeper, be specific", "ACTUALLY ANSWER IT."],
     social_link:         ["That doesn't look like a real link or handle", "Try instagram.com/you or @yourhandle", "REAL LINK OR HANDLE."],
     guardian_name:       ["That doesn't look like a full name", "Letters only please", "REAL NAME."],
     guardian_phone:      ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     guardian_email:      ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
+    goal:                ["Give more than that. Level and why.", "Say the level, then why you believe it", "LEVEL. AND. WHY."],
   };
 
   // Returns true if the value fails content validation for that field
@@ -490,6 +499,10 @@ function ApplyPageInner() {
       }
       case 'biggest_weakness':
         return v.length < 20 || isGibberishText(v) || isDisengaged(v);
+      case 'goal':
+        // Two-part answer (a level, then the reasoning) — asks for a little
+        // more length than the single-beat weakness question.
+        return v.length < 25 || isGibberishText(v);
       default:
         return false;
     }
@@ -547,16 +560,17 @@ function ApplyPageInner() {
       current_team:        form.current_team_school,
       current_team_school: form.current_team_school,
       biggest_weakness:    form.biggest_weakness,
+      goal:                form.goal,
       social_link:         form.social_link,
       time_commitment:     form.time_commitment,
-      parent_name:         isMinor ? form.guardian_name : null,
-      guardian_name:       isMinor ? form.guardian_name : null,
-      parent_phone:        isMinor ? form.guardian_phone : null,
-      guardian_phone:      isMinor ? form.guardian_phone : null,
-      parent_email:        isMinor ? form.guardian_email : null,
-      guardian_email:      isMinor ? form.guardian_email : null,
-      parent_aware:        isMinor ? (form.guardian_aware || null) : null,
-      guardian_aware:      isMinor ? (form.guardian_aware || null) : null,
+      parent_name:         form.guardian_name || null,
+      guardian_name:       form.guardian_name || null,
+      parent_phone:        form.guardian_phone || null,
+      guardian_phone:      form.guardian_phone || null,
+      parent_email:        form.guardian_email || null,
+      guardian_email:      form.guardian_email || null,
+      parent_aware:        form.guardian_aware || null,
+      guardian_aware:      form.guardian_aware || null,
       early_pricing:     earlyPricing || null,
       submitted_at:      new Date().toISOString(),
       status:            'pending',
@@ -676,7 +690,7 @@ function ApplyPageInner() {
           to   { opacity: 0; transform: translateY(-14px); filter: blur(8px); }
         }
         @media (max-width: 639px) {
-          .tdt-intro-desc { font-size: 15px !important; line-height: 1.6 !important; }
+          .tdt-intro-desc { font-size: 15px !important; line-height: 1.45 !important; }
         }
       `}</style>
 
@@ -697,9 +711,9 @@ function ApplyPageInner() {
           opacity: 0.4,
           maxWidth: 800,
           textAlign: 'center',
-          lineHeight: 1.6,
+          lineHeight: 1.45,
         }}>
-          This isn't a quick signup. The questions are real, the time commitment is real, and so is the {earlyPricing ? '$800' : '$1,000'}. Answer honestly. Jaiden's deciding if this is the right fit, not just whether you're good enough.
+          We&apos;re looking for the ones who are starving for it. Players who are done waiting for something to happen and ready to go take it. We can&apos;t want it more than you do. Show us that&apos;s you.
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin
@@ -712,15 +726,14 @@ function ApplyPageInner() {
   // The application isn't the review anymore — the call is. This screen's
   // only job is getting a booked call, embedded right here instead of
   // sending the applicant off to another tab, with the parent locked in as
-  // a guest when the athlete is a minor.
+  // a guest on the invite.
   if (screen === TOTAL + 1) {
-    const guardianFirst = isMinor && form.guardian_name ? form.guardian_name.trim().split(/\s+/)[0] : null;
     const calConfig: Record<string, string | string[]> = {
       theme: 'dark',
       name: form.full_name.trim(),
       email: form.email,
     };
-    if (isMinor && form.guardian_email) calConfig.guests = [form.guardian_email];
+    if (form.guardian_email) calConfig.guests = [form.guardian_email];
 
     return (
       <div style={{ minHeight: '100dvh', background: BG, padding: '60px 20px 80px' }}>
@@ -728,23 +741,15 @@ function ApplyPageInner() {
           @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
           .tdt-booking-cal { border-radius: 28px; overflow: hidden; }
         `}</style>
-        <div style={{ ...fadeStyle, maxWidth: 1400, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ ...fadeStyle, maxWidth: 1400, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
 
           {/* Copy */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, textAlign: 'center', alignItems: 'center', maxWidth: 700, margin: '0 auto', width: '100%' }}>
             <p style={{ ...text(16, 500, TERRA), margin: 0 }}>
               Application in. Now the real part.
             </p>
-            <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.7, margin: 0 }}>
-              Applying doesn&apos;t get you in. The call does. Twenty minutes to map out exactly how we&apos;d get you seen, and we&apos;ll both know if it&apos;s the right fit.
-            </p>
-            {isMinor && (
-              <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.7, margin: 0 }}>
-                {guardianFirst ? `${guardianFirst}'s` : "Your parent's"} invited on the call too — pick a time that works for both of you.
-              </p>
-            )}
-            <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, margin: '4px 0 0' }}>
-              Talk soon
+            <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.5, margin: 0 }}>
+              The application tells us you&apos;re serious. The call tells us if we&apos;re a fit. Grab a time you and your parent can both sit down for it, this one&apos;s a family decision.
             </p>
           </div>
 
@@ -756,6 +761,10 @@ function ApplyPageInner() {
               style={{ width: '100%', height: '680px', overflow: 'scroll' }}
             />
           </div>
+
+          <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, textAlign: 'center', margin: '4px 0 0' }}>
+            Talk soon
+          </p>
 
           <div style={{ textAlign: 'center' }}>
             <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
@@ -931,7 +940,7 @@ function ApplyPageInner() {
           {q.field === 'guardian_aware' && val === 'No' && (
             <div style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: 'rgba(179,73,41,0.06)', border: '1px solid rgba(179,73,41,0.15)' }}>
               <p style={{ ...text(14, 400, 'rgba(0,0,0,0.6)'), lineHeight: 1.6, margin: 0 }}>
-                Tell them before you go further. Something like: <em>&ldquo;I applied to a basketball program — it&apos;s $1,000 and I want you on the call with me.&rdquo;</em> Come back and hit Yes once they know.
+                Go tell them first. This is a real commitment and they&apos;re part of it. Better they hear it from you now than find out later. Hit Yes once they know.
               </p>
             </div>
           )}
@@ -1143,7 +1152,7 @@ function ApplyPageInner() {
                 {q.type === 'group' ? (
                   <>
                     {q.subtext && (
-                      <p style={{ ...text(14, 400, 'rgba(0,0,0,0.4)'), textAlign: 'center', lineHeight: 1.6, margin: '-10px 0 0', width: '100%' }}>
+                      <p style={{ ...text(14, 400, 'rgba(0,0,0,0.4)'), lineHeight: 1.6, margin: '-10px 0 0', width: '100%' }}>
                         {q.subtext}
                       </p>
                     )}
