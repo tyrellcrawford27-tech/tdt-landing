@@ -1389,7 +1389,7 @@ export default function Home() {
                       animation: 'tdt-gradient-pan 5s linear infinite',
                     }}
                   >
-                    Your Membership
+                    Your spot
                   </h2>
 
                   <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">

@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code local config and worktrees
+.claude/
+
+# Source/original media kept locally — the app ships the .webp exports
+*-original-backup*
+*.mov
+/public/Drill Library 3.png
+/public/diagnosis-1.png
+/public/the-100-days.png
