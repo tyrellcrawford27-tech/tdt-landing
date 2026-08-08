@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { EarlyBirdIcon } from './EarlyBirdIcon';
+import { EARLY_BIRD_TOTAL, EARLY_BIRD_PRICE, FULL_PRICE } from '@/lib/earlyPricingConfig';
+
+// The copy reads "The first three spots" — spell small counts so changing the
+// total doesn't leave a digit sitting mid-sentence.
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
 
 const LIQUID = '#EFE0D5'; // warm off-white — reads as a body of liquid against #FAF6F2
 
@@ -16,6 +22,9 @@ export function PricingPopover() {
   const [open, setOpen]           = useState(false);
   const [mounted, setMounted]     = useState(false);
   const [spots, setSpots]         = useState<number | null>(null);
+  // Total comes from the API too, so the "N of M" copy can never drift from
+  // the server's idea of how many discounted spots exist.
+  const [total, setTotal]         = useState(EARLY_BIRD_TOTAL);
   const [spotsLoading, setSpots_] = useState(false);
   const rootRef  = useRef<HTMLDivElement>(null);
   const glassRef = useRef<HTMLDivElement>(null);
@@ -43,6 +52,10 @@ export function PricingPopover() {
 
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
+  // Only claim sold-out once the server has actually answered — never off the
+  // initial null, or the card would flash "gone" while availability loads.
+  const soldOut = spots === 0;
+
   const toggle = () => {
     if (open) { setOpen(false); return; }
     setMounted(true);
@@ -51,7 +64,11 @@ export function PricingPopover() {
     setSpots_(true);
     fetch('/api/early-pricing-spots')
       .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d && typeof d.remaining === 'number') setSpots(d.remaining); })
+      .then(d => {
+        if (!d) return;
+        if (typeof d.remaining === 'number') setSpots(d.remaining);
+        if (typeof d.total === 'number') setTotal(d.total);
+      })
       .catch(() => {})
       .finally(() => setSpots_(false));
   };
@@ -307,10 +324,12 @@ export function PricingPopover() {
 
               <div className="flex flex-col items-start gap-[10px]">
                 <p className="lg-row text-[16px] font-medium leading-[19px]" style={{ color: INK, animationDelay: '0.25s' }}>
-                  The first three spots cost less.
+                  {soldOut ? 'The early spots are gone.' : `The first ${numberWord(total)} spots cost less.`}
                 </p>
                 <p className="lg-row text-[13px] font-normal leading-[16px]" style={{ color: MUTED, animationDelay: '0.29s' }}>
-                  $1,000 normally. The first three to lock in their spot pay $800 instead.
+                  {soldOut
+                    ? `All ${numberWord(total)} discounted spots have been claimed. The program is ${FULL_PRICE}.`
+                    : `${FULL_PRICE} normally. The first ${numberWord(total)} to lock in their spot pay ${EARLY_BIRD_PRICE} instead.`}
                 </p>
               </div>
 
@@ -322,12 +341,12 @@ export function PricingPopover() {
                   </span>
                 ) : spots !== null ? (
                   <span className="lg-row text-[13px] font-normal leading-[16px]" style={{ color: ACCENT, animationDelay: '0.33s' }}>
-                    {spots} of 3 early spot{spots !== 1 ? 's' : ''} remaining
+                    {spots} of {total} early spot{spots !== 1 ? 's' : ''} remaining
                   </span>
                 ) : null}
 
                 <a
-                  href="/apply?early_pricing=true"
+                  href={soldOut ? '/apply' : '/apply?early_pricing=true'}
                   className="lg-row inline-flex h-[28px] items-center justify-center rounded-[30px] px-[10px] text-[13px] font-normal leading-[16px] text-white transition-transform duration-200 hover:scale-[1.03] active:scale-[0.97]"
                   style={{
                     background: `linear-gradient(180deg, ${ACCENT} 0%, ${ACCENT_DEEP} 100%)`,
@@ -335,7 +354,7 @@ export function PricingPopover() {
                     animationDelay: '0.37s',
                   }}
                 >
-                  Apply with discount
+                  {soldOut ? 'Apply now' : 'Apply with discount'}
                 </a>
               </div>
             </div>

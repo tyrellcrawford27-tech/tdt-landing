@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import { sendBookingEmails } from '@/lib/email';
+import { getEarlyPricingSpots } from '@/lib/earlyPricing';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const admin = createAdminClient();
+
+    // The client sets early_pricing from a URL param (/apply?early_pricing=true),
+    // which anyone can type or share after the promo is gone. Re-decide it here:
+    // a discount is only granted if a spot is genuinely still open at write time.
+    // (Narrow race: two submissions landing together can both pass this check.
+    // With three spots that's acceptable — the dashboard shows the truth and the
+    // count self-corrects — but a hard cap would need a DB-level constraint.)
+    if (body.early_pricing) {
+      try {
+        const { remaining } = await getEarlyPricingSpots();
+        body.early_pricing = remaining > 0 ? true : null;
+      } catch (e) {
+        // Can't confirm availability → don't hand out a discount we can't back.
+        console.error('[apply] early-pricing check failed', e);
+        body.early_pricing = null;
+      }
+    }
 
     const email = typeof body.email === 'string' ? body.email.trim() : '';
     if (email) {

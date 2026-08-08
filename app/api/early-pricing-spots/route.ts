@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server';
+import { getEarlyPricingSpots, EARLY_BIRD_TOTAL } from '@/lib/earlyPricing';
 
-export const runtime = 'edge';
+// Node runtime (not edge) to match the other service-role Supabase routes.
+export const dynamic = 'force-dynamic';
 
-// TODO: replace this stub with a real fetch to the Replit backend once the
-// endpoint is ready. Expected response shape: { remaining: number }
 export async function GET() {
-  // const res = await fetch('https://YOUR_REPLIT_URL/api/early-pricing-spots', { next: { revalidate: 30 } });
-  // if (!res.ok) return NextResponse.json({ error: 'upstream error' }, { status: 502 });
-  // const data = await res.json();
-  // return NextResponse.json({ remaining: data.remaining });
-
-  return NextResponse.json({ remaining: 3 });
+  try {
+    const spots = await getEarlyPricingSpots();
+    return NextResponse.json(spots, {
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
+    });
+  } catch (e: unknown) {
+    // Never surface a scarcity claim we can't back: on failure report the full
+    // allotment rather than a stale or invented number, and let the caller
+    // decide how loudly to fail.
+    const msg = e instanceof Error ? e.message : 'Server error';
+    console.error('[early-pricing-spots]', msg);
+    return NextResponse.json(
+      { remaining: EARLY_BIRD_TOTAL, total: EARLY_BIRD_TOTAL, taken: 0, degraded: true },
+      { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+    );
+  }
 }

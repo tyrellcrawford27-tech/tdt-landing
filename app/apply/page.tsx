@@ -283,7 +283,21 @@ function radioCircleStyle(active: boolean): React.CSSProperties {
 // ── Page ──────────────────────────────────────────────────────────────────────
 function ApplyPageInner() {
   const searchParams = useSearchParams();
-  const earlyPricing = searchParams.get('early_pricing') === 'true';
+  const claimsEarlyPricing = searchParams.get('early_pricing') === 'true';
+  // The URL param is only a request — a shared or stale link shouldn't promise a
+  // price we won't honour. Confirm against the server before showing $800
+  // anywhere; /api/apply re-checks again at write time regardless.
+  const [earlySpotOpen, setEarlySpotOpen] = useState(false);
+  useEffect(() => {
+    if (!claimsEarlyPricing) return;
+    let cancelled = false;
+    fetch('/api/early-pricing-spots')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && d && typeof d.remaining === 'number') setEarlySpotOpen(d.remaining > 0); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [claimsEarlyPricing]);
+  const earlyPricing = claimsEarlyPricing && earlySpotOpen;
 
   const [screen, setScreen]         = useState(0);
   const [form, setForm]             = useState<FormData>(EMPTY);
