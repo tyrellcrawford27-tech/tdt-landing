@@ -848,7 +848,7 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              You made the roster.
+              You&apos;re on the roster.
               <br />
               Now you need someone to notice.
             </h1>
@@ -1393,7 +1393,7 @@ export default function Home() {
                   </h2>
 
                   <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                    100 days to build the film they can't pass on.
+                    Private coaching with Jaiden, one on one, for 100 days.
                   </p>
                 </div>
 
