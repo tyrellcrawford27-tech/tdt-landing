@@ -7,10 +7,13 @@ export async function GET() {
     const { data, error } = await admin
       .from('applications')
       .select('*')
-      // time_commitment is the last field collected before submit — a row
-      // missing it is a partial save from an in-progress application, not a
-      // real submission for the coach to review (see /api/apply/save-progress).
-      .not('time_commitment', 'is', null)
+      // Booking the call is now a required part of finishing the
+      // application, not a follow-up — a row without a confirmed booking is
+      // either an in-progress draft or a completed form still awaiting the
+      // call, neither of which is a real submission for the coach to review
+      // yet. call_booked_at is only ever set by the Cal.com webhook (see
+      // app/api/cal/webhook/route.ts), never by the client.
+      .not('call_booked_at', 'is', null)
       .order('submitted_at', { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ data });

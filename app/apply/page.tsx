@@ -243,6 +243,12 @@ function GoBackButton({ onClick }: { onClick: () => void }) {
 }
 
 const STORAGE_KEY = 'tdt-apply-draft';
+// Set once the application form itself is finished, cleared once the call is
+// confirmed booked (by the server, never by the client). Its presence on
+// mount is what lets someone who closes the tab after finishing the form —
+// but before booking — come straight back to the booking step instead of
+// redoing the whole application.
+const SUBMITTED_KEY = 'tdt-apply-submitted';
 
 // ── Radio button style (shared by standalone radio-grid questions and the
 //    smaller grids inside a group card) ────────────────────────────────────
@@ -310,6 +316,13 @@ function ApplyPageInner() {
   const [attempts, setAttempts]     = useState(0);
   const [shaking, setShaking]       = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  // True only when a finished-but-not-yet-booked application is waiting to be
+  // resumed. Must start false — this page is server-prerendered, and
+  // localStorage doesn't exist server-side, so reading it during the initial
+  // render (even lazily) would make the client's first render disagree with
+  // the prerendered HTML and fail hydration. The effect below flips this
+  // right after mount instead, before anything else can render.
+  const [resumeChecking, setResumeChecking] = useState(false);
   const inputRef   = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const advanceRef = useRef<() => void>(() => {});
   const resumeScreenRef = useRef(1);
@@ -344,8 +357,11 @@ function ApplyPageInner() {
   // Restore draft from localStorage on mount — keep the intro screen visible
   // and only jump to the saved progress once the user clicks "Let's Begin",
   // instead of silently skipping straight past the intro on every revisit.
+  // Skipped entirely when a finished application is waiting on a booking —
+  // that's a different, further-along state handled by the effect below.
   useEffect(() => {
     try {
+      if (localStorage.getItem(SUBMITTED_KEY)) return; // handled by the effect below instead
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const { form: f, screen: s } = JSON.parse(saved);
@@ -355,11 +371,95 @@ function ApplyPageInner() {
     } catch {}
   }, []);
 
+  // The application form itself is done, but booking the call is a required
+  // part of finishing — not a follow-up. On mount, if this browser finished
+  // the form but we don't yet know it booked, ask the server (never trust a
+  // client-side claim) and land directly on whichever screen is true: the
+  // booking step if not yet confirmed, or the confirmed screen if it is.
+  // Fails open to the booking screen on any error — a broken status check
+  // must never trap someone who genuinely booked behind an infinite loading
+  // state or an unrelated error.
+  useEffect(() => {
+    let raw: string | null = null;
+    try { raw = localStorage.getItem(SUBMITTED_KEY); } catch {}
+    if (!raw) return; // nothing to resume — stay put, already false from initial render
+
+    setResumeChecking(true);
+
+    let info: { full_name?: string; email?: string; guardian_email?: string | null };
+    try { info = JSON.parse(raw); } catch { setResumeChecking(false); return; }
+    if (!info.email) { setResumeChecking(false); return; }
+
+    setForm(f => ({
+      ...f,
+      full_name: info.full_name || f.full_name,
+      email: info.email || f.email,
+      guardian_email: info.guardian_email || f.guardian_email,
+    }));
+
+    fetch(`/api/apply/booking-status?email=${encodeURIComponent(info.email)}`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (json?.booked) {
+          try { localStorage.removeItem(SUBMITTED_KEY); } catch {}
+          setScreen(TOTAL + 2);
+        } else {
+          setScreen(TOTAL + 1);
+        }
+      })
+      .catch(() => { setScreen(TOTAL + 1); })
+      .finally(() => setResumeChecking(false));
+  }, [TOTAL]);
+
   // Auto-save draft whenever form or screen changes (skip intro + success)
   useEffect(() => {
     if (screen < 1 || screen > TOTAL) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen })); } catch {}
   }, [form, screen, TOTAL]);
+
+  // The embed's bookingSuccessfulV2 event is a client-side postMessage — a
+  // hint that booking probably just succeeded, not proof (the same reasoning
+  // that applies to any client-only signal gating something real). It never
+  // flips the screen by itself; it only kicks off a short poll of our own
+  // server-confirmed status, which is the one thing allowed to do that.
+  useEffect(() => {
+    if (screen !== TOTAL + 1) return;
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    const stopPolling = () => { if (pollTimer) clearInterval(pollTimer); };
+
+    const checkStatus = () => {
+      if (!form.email) return;
+      fetch(`/api/apply/booking-status?email=${encodeURIComponent(form.email)}`)
+        .then(res => (res.ok ? res.json() : null))
+        .then(json => {
+          if (cancelled || !json?.booked) return;
+          try { localStorage.removeItem(SUBMITTED_KEY); localStorage.removeItem(STORAGE_KEY); } catch {}
+          stopPolling();
+          setScreen(TOTAL + 2);
+        })
+        .catch(() => {});
+    };
+
+    let attempts = 0;
+    (async () => {
+      const cal = await getCalApi();
+      cal('on', {
+        action: 'bookingSuccessfulV2',
+        callback: () => {
+          if (cancelled || pollTimer) return; // already polling
+          checkStatus();
+          pollTimer = setInterval(() => {
+            attempts += 1;
+            checkStatus();
+            if (attempts >= 10) stopPolling(); // ~20s, then give up quietly
+          }, 2000);
+        },
+      });
+    })();
+
+    return () => { cancelled = true; stopPolling(); };
+  }, [screen, form.email, TOTAL]);
 
   // Keep advanceRef fresh every render so the keydown handler always calls latest advance
   // (assigned after advance is defined below — see comment there)
@@ -597,7 +697,17 @@ function ApplyPageInner() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Submission failed');
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        // The form is done, but the application isn't — booking is what's
+        // left. Keep just enough to resume straight into the booking step
+        // (or the confirmed screen) if this tab closes before that happens.
+        localStorage.setItem(SUBMITTED_KEY, JSON.stringify({
+          full_name: form.full_name.trim(),
+          email: form.email,
+          guardian_email: form.guardian_email || null,
+        }));
+      } catch {}
       goTo(TOTAL + 1);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
@@ -690,6 +800,13 @@ function ApplyPageInner() {
     transition: 'opacity 0.2s ease, transform 0.2s ease',
   };
 
+  // ── Resuming ──────────────────────────────────────────────────────────────
+  // Briefly shown only when this browser already finished the form and we're
+  // confirming with the server whether the call is booked yet — never long
+  // enough to matter, but showing the intro's "Let's Begin" copy here would
+  // be wrong for someone who's already done with the application itself.
+  if (resumeChecking) return <div style={{ minHeight: '100dvh', background: BG }} />;
+
   // ── 0: Intro ──────────────────────────────────────────────────────────────
   if (screen === 0) return (
     <div style={{ minHeight: '100dvh', background: BG, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 25, padding: '60px 24px' }}>
@@ -763,7 +880,7 @@ function ApplyPageInner() {
               Application in. Now the real part.
             </p>
             <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.5, margin: 0 }}>
-              The application tells us you&apos;re serious. The call tells us if we&apos;re a fit. Grab a time you and your parent can both sit down for it, this one&apos;s a family decision.
+              The application tells us you&apos;re serious. The call tells us if we&apos;re a fit, and it&apos;s the last step. Grab a time you and your parent can both sit down for it, this one&apos;s a family decision.
             </p>
           </div>
 
@@ -789,6 +906,30 @@ function ApplyPageInner() {
       </div>
     );
   }
+
+  // ── Confirmed ─────────────────────────────────────────────────────────────
+  // Reached only once the server (the Cal.com webhook, never the client) has
+  // recorded a booking for this email — either right after the embed polling
+  // above catches it, or on a later visit once it already had.
+  if (screen === TOTAL + 2) return (
+    <div style={{ minHeight: '100dvh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 80px' }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');`}</style>
+      <div style={{ ...fadeStyle, width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', textAlign: 'center' }}>
+        <p style={{ ...text(16, 500, TERRA), margin: 0 }}>
+          You&apos;re booked.
+        </p>
+        <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.5, margin: 0 }}>
+          Check your email for the calendar invite. See you on the call.
+        </p>
+        <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, margin: '4px 0 0' }}>
+          Talk soon
+        </p>
+        <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
+          ← Back to home
+        </a>
+      </div>
+    </div>
+  );
 
   // ── Question / group screens ─────────────────────────────────────────────
   const qi  = screen - 1;
