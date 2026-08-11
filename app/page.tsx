@@ -778,9 +778,15 @@ export default function Home() {
                 </a>
               ))}
             </nav>
-            {/* Section label — shown when in a section */}
+            {/* Section label — shown when in a section. All possible labels are
+                mounted at once, stacked on the same centered anchor point, and
+                cross-fade via opacity/blur/translateY as activeSection changes —
+                the same "keep every state's node alive, transition between them"
+                idiom the coach carousel uses, so the swap animates instead of
+                snapping and there's no enter/exit unmount choreography to get
+                right for a fixed, small set of labels. */}
             <span
-              className="absolute left-1/2 text-[14px] font-medium tracking-[-0.02em] whitespace-nowrap transition-all duration-500"
+              className="absolute left-1/2 whitespace-nowrap transition-all duration-500"
               style={{
                 opacity: showCompact ? 1 : 0,
                 transform: showCompact ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(5px)',
@@ -788,7 +794,20 @@ export default function Home() {
                 pointerEvents: 'none',
               }}
             >
-              {SECTION_LABELS[activeSection] ?? ''}
+              {Object.entries(SECTION_LABELS).map(([id, label]) => (
+                <span
+                  key={id}
+                  className="absolute left-1/2 top-1/2 text-[14px] font-medium tracking-[-0.02em] whitespace-nowrap"
+                  style={{
+                    transform: `translate(-50%, -50%) translateY(${activeSection === id ? 0 : -6}px)`,
+                    opacity: activeSection === id ? 1 : 0,
+                    filter: activeSection === id ? 'blur(0px)' : 'blur(3px)',
+                    transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s cubic-bezier(0.16,1,0.3,1)',
+                  }}
+                >
+                  {label}
+                </span>
+              ))}
             </span>
           </div>
 
@@ -1389,6 +1408,26 @@ export default function Home() {
                 transform: `translateY(${lerp(28, 0, revealEased)}px) scale(${(0.94 + 0.06 * revealEased).toFixed(4)})`,
               }}
             >
+              {/* Mobile-only heading, sitting directly above the card rather
+                  than overlaid on it — the Spline scene already bakes in its
+                  own "Think Different Training" / "100 Days" text at the top
+                  and center, so anything layered on top of the card itself
+                  collides with that. The desktop heading (in the right
+                  column) is hidden here to avoid showing it twice. */}
+              <h2
+                className="lg:hidden text-[36px] font-bold leading-tight tracking-[-0.02em] text-center"
+                style={{
+                  background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
+                  backgroundSize: '200% auto',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  animation: 'tdt-gradient-pan 5s linear infinite',
+                }}
+              >
+                Application
+              </h2>
+
               {/* Left — card by itself. Copy on the card ("$1000" etc.) lives
                   in the Spline scene, not here — edit it at spline.design. */}
               <div className="relative w-full flex-1 rounded-[24px]" style={{ aspectRatio: '633/399' }}>
@@ -1398,11 +1437,11 @@ export default function Home() {
                 />
               </div>
 
-              {/* Right — heading, subtext, CTA */}
+              {/* Right — heading (desktop only), subtext, CTA */}
               <div className="flex w-full lg:w-[420px] flex-shrink-0 flex-col items-center lg:items-start gap-[16px] text-center lg:text-left">
                 <div className="flex flex-col gap-[6px] items-center lg:items-start">
                   <h2
-                    className="text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
+                    className="hidden lg:block text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
                     style={{
                       background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
                       backgroundSize: '200% auto',
