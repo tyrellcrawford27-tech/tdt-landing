@@ -6,7 +6,6 @@ import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
 import { LaunchReveal } from "@/components/LaunchReveal";
-import { PricingPopover } from "@/components/PricingPopover";
 import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon";
 import Spline from "@splinetool/react-spline";
 
@@ -169,18 +168,22 @@ function ProgramMobile() {
 
 
 
-// How far past #pricing's top counts as "in" the pricing section, in viewports.
-// The panel holds on black and only resolves the card partway through its scroll,
-// so both the nav jump target and the active-label check measure from here.
-// Must land inside [0.525, 0.75]: the card reveal completes at 0.525 and the
-// sticky panel unpins at 0.75 — within that span the card sits flex-centered
+// How far past the apply-cta section's top counts as "in" it, in viewports.
+// The panel holds on black and only resolves the CTA partway through its
+// scroll, so the active-label check measures from here rather than the
+// section's literal top.
+// Must land inside [0.525, 0.75]: the reveal completes at 0.525 and the
+// sticky panel unpins at 0.75 — within that span the CTA sits flex-centered
 // in the viewport; past it the whole stage rides up and off-center.
-const PRICING_NAV_OFFSET_VH = 0.7;
+const APPLY_CTA_NAV_OFFSET_VH = 0.7;
 
+// Pricing used to be a nav destination; the section it pointed at is now a
+// plain Apply push (see "apply-cta" below), so it isn't a distinct place to
+// navigate to anymore — dropped from both nav menus rather than pointing at
+// a section with nothing pricing-shaped left in it.
 const NAV_LINKS = [
   { id: 'coach', label: 'The Coach' },
   { id: 'program', label: 'Program' },
-  { id: 'pricing', label: 'Pricing' },
   { id: 'faq', label: 'FAQ' },
 ] as const;
 
@@ -188,7 +191,7 @@ const SECTION_LABELS: Record<string, string> = {
   coach: 'Meet the Coach',
   program: 'The Program',
   difference: 'Why TDT',
-  pricing: 'Pricing',
+  'apply-cta': 'Apply now',
   faq: 'FAQ',
 };
 
@@ -400,6 +403,7 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [navHovered, setNavHovered] = useState(false);
+  const applyBtnRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [coachVisible, setCoachVisible] = useState(false);
   const [tableVisible, setTableVisible] = useState(false);
@@ -429,7 +433,7 @@ export default function Home() {
     (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') as ScrollBehavior;
 
   useEffect(() => {
-    const SECTIONS = ['coach', 'program', 'difference', 'pricing', 'faq'];
+    const SECTIONS = ['coach', 'program', 'difference', 'apply-cta', 'faq'];
     const onScroll = () => {
       setScrolled(prev => window.scrollY > (prev ? 40 : 80));
       if (transitionZoneRef.current) {
@@ -452,11 +456,10 @@ export default function Home() {
       for (const id of SECTIONS) {
         const el = document.getElementById(id);
         if (!el) continue;
-        // Pricing opens on a screen of held black before the light flips and the
-        // card resolves, so measuring from its top would light the label while the
-        // panel still reads as the quote above it. Same offset the nav link scrolls
-        // to, so the label and the jump target can't disagree.
-        const enterAt = id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0;
+        // The apply CTA opens on a screen of held black before the light flips
+        // and the content resolves, so measuring from its top would light the
+        // label while the panel still reads as the quote above it.
+        const enterAt = id === 'apply-cta' ? window.innerHeight * APPLY_CTA_NAV_OFFSET_VH : 0;
         if (el.getBoundingClientRect().top + enterAt <= mid) active = id;
       }
       setActiveSection(active);
@@ -656,7 +659,7 @@ export default function Home() {
                 const jump = (triesLeft: number) => {
                   if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
                   const el = document.getElementById(id);
-                  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: 'instant' });
+                  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
                 };
                 setTimeout(() => jump(30), 16);
               }}
@@ -698,7 +701,20 @@ export default function Home() {
           className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border pointer-events-auto"
           // Pointer-type-gated: on touch, mouseenter fires on tap and never
           // reliably leaves, sticking the pill out of compact mode.
-          onPointerEnter={(e) => { if (e.pointerType === 'mouse') setNavHovered(true); }}
+          //
+          // Also skip the expand entirely when the cursor arrives from the
+          // right, over/near the Apply button: expanding shoves Apply further
+          // right just as the user is closing in on it, so a click meant for
+          // Apply can land short. Approaching from the left (logo, nav links)
+          // still expands as normal.
+          onPointerEnter={(e) => {
+            if (e.pointerType !== 'mouse') return;
+            if (showCompact && applyBtnRef.current) {
+              const btnLeft = applyBtnRef.current.getBoundingClientRect().left;
+              if (e.clientX >= btnLeft - 24) return;
+            }
+            setNavHovered(true);
+          }}
           onPointerLeave={() => setNavHovered(false)}
           style={{
             width: 'calc(100% - 80px)',
@@ -755,7 +771,7 @@ export default function Home() {
                   style={navLinkStyle(id)}
                   onClick={(e) => {
                     e.preventDefault();
-                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + (id === 'pricing' ? window.innerHeight * PRICING_NAV_OFFSET_VH : 0), behavior: scrollBehavior() });
+                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: scrollBehavior() });
                   }}
                 >
                   {label}
@@ -787,9 +803,11 @@ export default function Home() {
               >
                 Log In
               </a>
-              <CTAButton href="/apply" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
-                Apply
-              </CTAButton>
+              <div ref={applyBtnRef}>
+                <CTAButton href="/apply" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
+                  Apply
+                </CTAButton>
+              </div>
             </div>
             <button
               ref={menuButtonRef}
@@ -1330,8 +1348,13 @@ export default function Home() {
           </blockquote>
         </section>
 
-        {/* ── Pricing — the lights come up and the card is right there in the spotlight ── */}
-        <section id="pricing" ref={transitionZoneRef} className="relative w-full" style={{ height: '175vh' }}>
+        {/* ── Apply CTA — the lights come up on a direct push to apply ──
+            Was a price reveal; archived (see git history) in favor of
+            maximizing applications over sorting by ticket price. The
+            scroll-linked dark→light stage stays — it's what flips the
+            header and the sections below into light mode, not just a
+            frame for the old price card. */}
+        <section id="apply-cta" ref={transitionZoneRef} className="relative w-full" style={{ height: '175vh' }}>
           <div
             className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
             style={{ backgroundColor: panelBg, color: '#000' }}
@@ -1366,7 +1389,8 @@ export default function Home() {
                 transform: `translateY(${lerp(28, 0, revealEased)}px) scale(${(0.94 + 0.06 * revealEased).toFixed(4)})`,
               }}
             >
-              {/* Left — card by itself */}
+              {/* Left — card by itself. Copy on the card ("$1000" etc.) lives
+                  in the Spline scene, not here — edit it at spline.design. */}
               <div className="relative w-full flex-1 rounded-[24px]" style={{ aspectRatio: '633/399' }}>
                 <Spline
                   scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
@@ -1376,7 +1400,6 @@ export default function Home() {
 
               {/* Right — heading, subtext, CTA */}
               <div className="flex w-full lg:w-[420px] flex-shrink-0 flex-col items-center lg:items-start gap-[16px] text-center lg:text-left">
-                <PricingPopover />
                 <div className="flex flex-col gap-[6px] items-center lg:items-start">
                   <h2
                     className="text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
@@ -1389,16 +1412,16 @@ export default function Home() {
                       animation: 'tdt-gradient-pan 5s linear infinite',
                     }}
                   >
-                    Your spot
+                    Application
                   </h2>
 
                   <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                    Private coaching with Jaiden, one on one, for 100 days.
+                    10 spots. One cohort. Apply and find out if you&apos;re one of them.
                   </p>
                 </div>
 
                 <CTAButton href="/apply" className="h-[42px] px-8 text-[16px]">
-                  Claim your spot
+                  Apply now
                 </CTAButton>
               </div>
             </div>
