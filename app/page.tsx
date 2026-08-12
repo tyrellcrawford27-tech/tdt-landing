@@ -34,7 +34,7 @@ type ProgramStep = {
 const You = ({ children }: { children: React.ReactNode }) => <em className="italic">{children}</em>;
 
 const PROGRAM_STEPS: ProgramStep[] = [
-  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Diagnosed on day one.", body: <>Jaiden watches <You>your</You> film like a scout would. Then he tells <You>you</You> the thing that must change the next time <You>you</You> step on the court.</>, image: 'diagnosis-1.webp' },
+  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Straight to the problem.", body: <>He's not watching for highlights. He's watching for the possession where <You>you</You> had the answer and didn't see it.</>, image: 'diagnosis-1.webp' },
   { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Then comes <You>your</You> module. Pulled straight from what Jaiden saw in <You>your</You> film.</>, image: 'drill-true.webp' },
   { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A complete plan that's <You>yours</You> alone to be sharper on the court and harder to overlook.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
@@ -885,29 +885,30 @@ export default function Home() {
                 backgroundClip: 'text',
               }}
             >
-              You&apos;re on the roster.
+              You&apos;re better in practice
               <br />
-              Now you need someone to notice.
+              than in games
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              If getting recruited is the goal, we&apos;ll help you make the most of your prep season and become impossible to overlook.
+              Practice teaches the what. Games demand the when.
+              <br />
+              You were only ever taught half of it.
             </p>
             <div className="flex items-center gap-[16px]">
-              <CTAButton
-                onClick={() => {
+              <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
+                Claim your spot
+              </CTAButton>
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
                   const el = document.getElementById('program');
                   if (el) el.scrollIntoView({ behavior: scrollBehavior() });
                 }}
-                className="h-[37px] px-[20px] text-[14px]"
-              >
-                See the program
-              </CTAButton>
-              <a
-                href="/apply"
+                href="#program"
                 className="group inline-flex items-center text-[14px] font-normal tracking-[-0.02em] text-white/80 transition-colors duration-200 ease-out hover:text-white"
               >
                 <span className="underline underline-offset-4 decoration-white/40 transition-colors duration-200 ease-out group-hover:decoration-white/70">
-                  Claim your spot
+                  See the program
                 </span>
                 <span className="inline-block ml-[6px] transition-transform duration-300 ease-out group-hover:translate-x-[4px]">→</span>
               </a>
@@ -965,20 +966,16 @@ export default function Home() {
               <div>
                 <div className="flex flex-col gap-[18px]">
                   <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
-                    I've spent seven years next to some of the best players this country's ever made.
+                    I've spent years next to some of the best players this country has ever made. And I kept noticing the same thing every time. There's a gap between who a player is in practice and who he is in a real game.
                   </p>
                   <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.45)]" style={{ lineHeight: '26px', ...revealLine(150) }}>
-                    Here's what I learned watching them.
+                    Why's that?
                   </p>
-                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                    The ones who get recruited aren't the ones who work hardest. They're the ones who knew exactly what was holding them back, and fixed it before anyone was watching.
+                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(300) }}>
+                    The reason's simple, and it's crazy to me that nobody talks about it. No matter what level you're at, practice teaches you what to do. It doesn't teach you when. That other half is the timing. The read. Knowing which thing the moment is asking for. Almost nobody's coaching that.
                   </p>
-                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.45)]" style={{ lineHeight: '26px', ...revealLine(450) }}>
-                    That's the whole job.
-                  </p>
-                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(600) }}>
-                    Not generic drills. Not recycled advice. I find the one thing keeping you off the floor. Then we put it on film, and we fix it, so when the right people finally watch,{' '}
-                    <span className="font-bold text-white">there's nothing left to pass on.</span>
+                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(450) }}>
+                    That's the half I coach.
                   </p>
                 </div>
                 <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
