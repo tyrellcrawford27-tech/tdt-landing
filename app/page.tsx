@@ -1098,7 +1098,7 @@ export default function Home() {
                       {/* Header sits with the frame so it always hugs the screenshot */}
                       <div className="flex flex-col items-end gap-[3px] pb-[25px] flex-shrink-0 text-right">
                         <h2 className="text-[17px] md:text-[19px] font-bold tracking-[-0.025em] text-white/55">
-                          Make them rewind.
+                          Until it translates.
                         </h2>
                         <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                           {STEPS[activeStep].num} <span className="text-white/12">/ {String(STEPS.length).padStart(2, '0')}</span>
