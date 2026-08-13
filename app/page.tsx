@@ -35,7 +35,7 @@ const You = ({ children }: { children: React.ReactNode }) => <em className="ital
 
 const PROGRAM_STEPS: ProgramStep[] = [
   { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Straight to the problem.", body: <>He's not watching for highlights. He's watching for the possession where <You>you</You> had the answer and didn't see it.</>, image: 'diagnosis-1.webp' },
-  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Then comes <You>your</You> module. Pulled straight from what Jaiden saw in <You>your</You> film.</>, image: 'drill-true.webp' },
+  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Jaiden pulls what <You>you</You> work on straight from <You>your</You> film. Then he walks <You>you</You> through it one-on-one until it translates.</>, image: 'drill-true.webp' },
   { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A complete plan that's <You>yours</You> alone to be sharper on the court and harder to overlook.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
 
