@@ -1154,34 +1154,34 @@ export default function Home() {
         {(() => {
           const ROWS = [
             {
-              slug: 'priority',
-              topic: 'Priority',
-              tdt: 'Getting you an offer',
-              others: "Winning this week's game",
+              slug: 'translation',
+              topic: 'Translation',
+              tdt: 'Taught',
+              others: 'Assumed',
             },
             {
-              slug: 'focus',
-              topic: 'Focus',
-              tdt: "You and Jaiden. That's it",
-              others: "A roster full of names, coach's attention split",
+              slug: 'where-starts',
+              topic: 'Where it starts',
+              tdt: 'Your game film',
+              others: 'The gym floor',
             },
             {
               slug: 'film',
-              topic: 'Film',
+              topic: 'Your film',
               tdt: 'Broken down, every submission',
-              others: 'Rarely watched close, if at all',
+              others: 'Cut into highlights',
             },
             {
-              slug: 'feedback',
-              topic: 'Feedback',
-              tdt: 'Specific to your game',
-              others: 'General notes for the whole team',
+              slug: 'attention',
+              topic: 'Attention',
+              tdt: "You and Jaiden. That's it",
+              others: 'A group, split between everyone',
             },
             {
-              slug: 'tracking',
-              topic: 'Tracking',
-              tdt: 'Your progress, logged every session',
-              others: 'No real record of what improved',
+              slug: 'progress',
+              topic: 'Progress',
+              tdt: 'Scored and logged every session',
+              others: 'You feel like you got better',
             },
           ];
 
@@ -1202,9 +1202,9 @@ export default function Home() {
                   </span>
                 </h3>
                 <h2 className="w-full max-w-[620px] text-center text-[22px] md:text-[26px] font-normal leading-[30px] md:leading-[34px] tracking-[-0.02em] text-white">
-                  Not your <strong className="italic">$29.99/month</strong> course.
+                  Everywhere else teaches the first half.
                   <br />
-                  This is training built around one thing, getting you an offer.
+                  You've had that half your whole life. This is the other one.
                 </h2>
               </div>
 
