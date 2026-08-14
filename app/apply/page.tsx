@@ -35,6 +35,7 @@ type FormData = {
   guardian_email: string;
   guardian_aware: string;
   goal: string;
+  heard_about: string;
 };
 
 const EMPTY: FormData = {
@@ -44,6 +45,7 @@ const EMPTY: FormData = {
   time_commitment: '',
   guardian_name: '', guardian_phone: '', guardian_email: '', guardian_aware: '',
   goal: '',
+  heard_about: '',
 };
 
 // ── Questions ─────────────────────────────────────────────────────────────────
@@ -59,7 +61,7 @@ type Q =
   | { section: string; question: string; field: keyof FormData; type: 'textarea'; placeholder: string }
   | { section: string; question: string; field: keyof FormData; type: 'location' }
   | { section: string; question: string; field: keyof FormData; type: 'school' }
-  | { section: string; question: string; field: keyof FormData; type: 'radio-grid'; options: string[] }
+  | { section: string; question: string; field: keyof FormData; type: 'radio-grid'; subtext?: string; options: string[] }
   | { section: string; question: string; field: keyof FormData; type: 'choice'; options: string[] }
   | { section: string; question: string; type: 'group'; kind: 'contact' | 'game' | 'parent'; subtext?: string; subs: SubField[] };
 
@@ -80,7 +82,11 @@ function buildQuestions(): Q[] {
         { field: 'phone', kind: 'tel', label: 'Phone number', placeholder: '416-605-2033' },
       ],
     },
-    { section: 'Info', question: 'Do you have consistent access to a laptop or computer?', field: 'device_access', type: 'radio-grid', options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'] },
+    {
+      section: 'Info', question: 'Do you have consistent access to a laptop or computer?', field: 'device_access', type: 'radio-grid',
+      subtext: "Phone's fine — film review is just easier on a bigger screen.",
+      options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'],
+    },
     {
       section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
       subs: [
@@ -91,6 +97,13 @@ function buildQuestions(): Q[] {
     { section: 'Your game', question: 'Current team or school?', field: 'current_team_school', type: 'school' },
     { section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest. Self-awareness is the first thing Jaiden looks for.' },
     { section: 'Your game', question: "Drop your Instagram or Twitter (X)", field: 'social_link', type: 'text', placeholder: 'instagram.com/yourusername' },
+    {
+      section: 'The ceiling',
+      question: "What's the highest you see this going for you and what makes you believe it?",
+      field: 'goal',
+      type: 'textarea',
+      placeholder: 'Be honest pro, D1, or wherever you truly see it. Then tell me why.',
+    },
     { section: 'Your commitment', question: 'How much time can you realistically commit per day?', field: 'time_commitment', type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
   ];
 
@@ -111,17 +124,35 @@ function buildQuestions(): Q[] {
     { section: 'Parent / Supporter', question: "Have you told them you're applying?", field: 'guardian_aware', type: 'choice', options: ['Yes', 'No'] },
   );
 
-  // Always the last question — the ceiling call, closing on belief rather
-  // than logistics.
+  // Always the last question — where the lead actually came from.
   qs.push({
-    section: 'The ceiling',
-    question: "What's the highest you see this going for you and what makes you believe it?",
-    field: 'goal',
-    type: 'textarea',
-    placeholder: 'Be honest pro, D1, or wherever you truly see it. Then tell me why.',
+    section: 'One more thing',
+    question: 'How did you hear about this?',
+    field: 'heard_about',
+    type: 'radio-grid',
+    options: ['Instagram post', 'Instagram DM', 'Instagram story', 'A friend or teammate', 'From Jaiden directly', 'Other'],
   });
 
   return qs;
+}
+
+// Used when a saved draft's screen index can no longer be trusted (see
+// DRAFT_VERSION below) — walks the CURRENT question order and returns the
+// screen number of the first still-incomplete REQUIRED question. Optional
+// fields (currently just heard_about) are skipped entirely regardless of
+// whether they're filled, so nobody gets bounced back to a field they
+// deliberately left blank.
+function firstIncompleteScreen(qs: Q[], form: FormData, optional: Set<keyof FormData>): number {
+  for (let i = 0; i < qs.length; i++) {
+    const q = qs[i];
+    if (q.type === 'group') {
+      const incomplete = q.subs.some(sub => !optional.has(sub.field) && !form[sub.field].toString().trim());
+      if (incomplete) return i + 1;
+      continue;
+    }
+    if (!optional.has(q.field) && !form[q.field].toString().trim()) return i + 1;
+  }
+  return qs.length;
 }
 
 // ── Phone formatting ──────────────────────────────────────────────────────────
@@ -243,6 +274,18 @@ function GoBackButton({ onClick }: { onClick: () => void }) {
 }
 
 const STORAGE_KEY = 'tdt-apply-draft';
+// Bump this whenever buildQuestions()'s order changes. A stored draft whose
+// version doesn't match has its screen index discarded (its typed answers
+// are kept) and gets re-resumed at the first incomplete required question
+// instead — a raw array index from a prior question order can silently
+// point at the wrong question, or skip one, after a reorder. See the restore
+// effect below and firstIncompleteScreen() above.
+const DRAFT_VERSION = 2;
+// Attribution is the one non-load-bearing field left — it's also the very
+// last screen before Submit, so any bug in its validation would block every
+// application behind it. Not worth that risk for a "how'd you hear about
+// us" answer.
+const OPTIONAL = new Set<keyof FormData>(['heard_about']);
 // Set once the application form itself is finished, cleared once the call is
 // confirmed booked (by the server, never by the client). Its presence on
 // mount is what lets someone who closes the tab after finishing the form —
@@ -364,9 +407,18 @@ function ApplyPageInner() {
       if (localStorage.getItem(SUBMITTED_KEY)) return; // handled by the effect below instead
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const { form: f, screen: s } = JSON.parse(saved);
+        const { form: f, screen: s, version: v } = JSON.parse(saved);
         setForm(f);
-        if (s >= 1) resumeScreenRef.current = s;
+        if (v === DRAFT_VERSION && s >= 1) {
+          resumeScreenRef.current = s;
+        } else {
+          // Stale draft from before a question-order change (or from before
+          // versioning existed at all) — the saved index can't be trusted to
+          // point at the right question anymore, but the typed answers are
+          // still good. Resume at the first incomplete required question
+          // instead of trusting the index.
+          resumeScreenRef.current = firstIncompleteScreen(questions, f, OPTIONAL);
+        }
       }
     } catch {}
   }, []);
@@ -414,7 +466,7 @@ function ApplyPageInner() {
   // Auto-save draft whenever form or screen changes (skip intro + success)
   useEffect(() => {
     if (screen < 1 || screen > TOTAL) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen })); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION })); } catch {}
   }, [form, screen, TOTAL]);
 
   // The embed's bookingSuccessfulV2 event is a client-side postMessage — a
@@ -622,9 +674,6 @@ function ApplyPageInner() {
     }
   };
 
-  // Nothing left in the trimmed form is optional — every remaining field is
-  // either load-bearing for the call or a hard screen.
-  const OPTIONAL = new Set<keyof FormData>();
 
   // Fire-and-forget partial save the moment we have contact info, so an
   // applicant who abandons the form later is still a reachable lead instead
@@ -685,6 +734,7 @@ function ApplyPageInner() {
       guardian_email:      form.guardian_email || null,
       parent_aware:        form.guardian_aware || null,
       guardian_aware:      form.guardian_aware || null,
+      heard_about:         form.heard_about || null,
       early_pricing:     earlyPricing || null,
       submitted_at:      new Date().toISOString(),
       status:            'pending',
@@ -1321,8 +1371,15 @@ function ApplyPageInner() {
                     </div>
                   </>
                 ) : (
-                  // Keyed so two same-typed questions never share input state
-                  <Fragment key={q.field}>{renderInput()}</Fragment>
+                  <Fragment key={q.field}>
+                    {q.type === 'radio-grid' && q.subtext && (
+                      <p style={{ ...text(14, 400, 'rgba(0,0,0,0.4)'), lineHeight: 1.6, margin: '-10px 0 0', width: '100%' }}>
+                        {q.subtext}
+                      </p>
+                    )}
+                    {/* Keyed so two same-typed questions never share input state */}
+                    {renderInput()}
+                  </Fragment>
                 )}
               </div>
             </div>

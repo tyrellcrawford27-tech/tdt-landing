@@ -29,6 +29,7 @@ type App = {
   parent_phone: string | null;
   parent_email: string | null;
   parent_aware: string | null;
+  heard_about: string | null;
   submitted_at: string;
   status: string;
 };
@@ -205,6 +206,7 @@ export default function Dashboard() {
                 ['Time/day',         selected.time_commitment],
                 ['School or team',   selected.current_team],
                 ['Device access',    selected.device_access],
+                ['Heard about us',   selected.heard_about],
               ] as [string, string | null][]).filter(([, v]) => v).map(([lbl, val]) => (
                 <div key={lbl} style={{ padding: '6px 14px', borderRadius: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
                   <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 500 }}>{lbl} </span>
