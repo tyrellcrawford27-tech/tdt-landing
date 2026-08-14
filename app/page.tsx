@@ -1427,13 +1427,11 @@ export default function Home() {
 
               {/* Left — card by itself. Copy on the card ("$1000" etc.) lives
                   in the Spline scene, not here — edit it at spline.design. */}
-              <div className="relative w-full flex-1 rounded-[24px] overflow-visible" style={{ aspectRatio: '633/399' }}>
-                <div className="absolute inset-0 rounded-[24px] overflow-hidden">
-                  <Spline
-                    scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                    style={{ width: '100%', height: '100%', display: 'block' }}
-                  />
-                </div>
+              <div className="relative w-full flex-1" style={{ aspectRatio: '633/399', borderRadius: '24px', overflow: 'visible' }}>
+                <Spline
+                  scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
+                  style={{ width: '100%', height: '100%', display: 'block', borderRadius: '24px' }}
+                />
               </div>
 
               {/* Right — heading (desktop only), subtext, CTA */}
