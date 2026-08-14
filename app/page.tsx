@@ -36,7 +36,7 @@ const You = ({ children }: { children: React.ReactNode }) => <em className="ital
 const PROGRAM_STEPS: ProgramStep[] = [
   { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Straight to the problem.", body: <>He's not watching for highlights. He's watching for the possession where <You>you</You> had the answer and didn't see it.</>, image: 'diagnosis-1.webp' },
   { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Jaiden pulls what <You>you</You> work on from <You>your</You> film. Then explains one-on-one how to translate it into real games.</>, image: 'drill-true.webp' },
-  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A complete plan that's <You>yours</You> alone to be sharper on the court and harder to overlook.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
+  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A complete plan that's <You>yours</You> alone to translate into real games.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
 
 // Mobile Program section — pinned, one stage per swipe.
@@ -1474,32 +1474,36 @@ export default function Home() {
             <div className="flex w-full flex-col items-start">
               {[
                 {
-                  question: "Why should I trust one guy's opinion over what my coach already tells me?",
-                  answer: "Because your coach has a season to win and a full roster to manage. Getting you recruited isn't his job. Making you impossible to overlook is the only thing Jaiden's doing here.",
+                  question: "Why am I better in practice than in games?",
+                  answer: "Practice tells you what's coming. You know the set, you know the call, and if you blow it you get another rep in thirty seconds. A game gives you one look, half a second, and no answer key. The move was never the problem. The moment was.",
                 },
                 {
-                  question: "How is this different from just watching my own film back?",
-                  answer: "You already know what you think happened out there. The real question is what a recruiter sees, and that's usually not the same thing.",
+                  question: "Isn't this just confidence?",
+                  answer: "That's the first thing everyone says, and it's why it never gets fixed. Confidence comes after you know what you're looking at. Right now he's deciding from scratch every possession. That's not nerves, that's a gap in what he was taught.",
+                },
+                {
+                  question: "Why can't I just watch my own film back?",
+                  answer: "You can't see the read you don't know exists. That's what makes this hard to fix alone. The gap sits exactly where you can't look. You'll watch the possession and see a shot that didn't fall. Jaiden sees the pass that was open two seconds earlier.",
                 },
                 {
                   question: "I already have a highlight tape. Isn't that enough?",
-                  answer: "Here's a little freebie: recruiters look past that. Your best plays don't win you an offer, your worst habits lose it. What actually gets evaluated is what happens in between the highlights, the reads, the hesitations, the stuff you don't put in the tape. That's what this program is built to find.",
+                  answer: "A highlight tape is every time it went right. Everything we work on lives in the possessions you'd never put in one, and those are the ones that decide how far you go.",
                 },
                 {
-                  question: "Why are you only accepting 12 athletes?",
-                  answer: "Jaiden is personally watching your film and holding your hand through every one of the 100 days. That's simply not possible past a certain number. 12 is the real limit for what one person can actually do right, not a marketing number.",
-                },
-                {
-                  question: "Is this going to conflict with my school team or my current trainer?",
-                  answer: "Not even a little. Nobody's asking you to choose. This runs next to what you're already doing. It just makes sure those reps are aimed at something.",
+                  question: "How does this fit with my school team and my trainer?",
+                  answer: "Your coach is coaching a team, live, with a season to win. He'll tell you what to do in the moment. Nobody has time to sit down with your film afterward and go through when and why. That was never the job.\n\nNothing here asks you to change what he runs or stop working with your trainer. They're teaching what to do. We're teaching when. It sits on top of the work you're already doing.",
                 },
                 {
                   question: "What if I don't have film yet?",
-                  answer: "Not a dealbreaker. Even a phone recording of a scrimmage or open gym works to start. Jaiden's looking for real reads and habits, not production value.",
+                  answer: "Most players have more than they think. Team footage, league footage, a parent filming from the stands. Any of it works. It doesn't need to be edited or good quality. It just needs to be a real game.",
+                },
+                {
+                  question: "Is my son ready for this?",
+                  answer: "This is for players who already put the work in and can't understand why it isn't showing up on Friday. If he's still learning to handle the ball, this isn't the right hundred days. If he's good in practice and quiet in games, this was built for him.",
                 },
                 {
                   question: "What if this doesn't lead to anything and we've wasted the money and the time?",
-                  answer: "No one can promise an offer. What you're paying for is a real, tracked record of improvement and an honest assessment most players never get. That's worth something on its own.",
+                  answer: "Nobody can promise you a result that depends on other people. What we can promise is exactly what you get: [HOURS] hours of your film studied, [HOURS] hours on live calls with Jaiden, and every drill tied to a possession from your own game. Nobody else will put a number on it. We just did.",
                 },
               ].map((item, index) => {
                 const isOpen = openFaq === index;
