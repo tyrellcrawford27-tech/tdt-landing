@@ -1486,10 +1486,6 @@ export default function Home() {
                   answer: "You can't see the read you don't know exists. That's what makes this hard to fix alone. The gap sits exactly where you can't look. You'll watch the possession and see a shot that didn't fall. Jaiden sees the pass that was open two seconds earlier.",
                 },
                 {
-                  question: "I already have a highlight tape. Isn't that enough?",
-                  answer: "A highlight tape is every time it went right. Everything we work on lives in the possessions you'd never put in one, and those are the ones that decide how far you go.",
-                },
-                {
                   question: "How does this fit with my school team and my trainer?",
                   answer: "Your coach is coaching a team, live, with a season to win. He'll tell you what to do in the moment. Nobody has time to sit down with your film afterward and go through when and why. That was never the job.\n\nNothing here asks you to change what he runs or stop working with your trainer. They're teaching what to do. We're teaching when. It sits on top of the work you're already doing.",
                 },
