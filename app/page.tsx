@@ -7,7 +7,19 @@ import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
 import { LaunchReveal } from "@/components/LaunchReveal";
 import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon";
+import HeroCarousel, { type HeroSlide } from "@/components/HeroCarousel";
 import Spline from "@splinetool/react-spline";
+
+// Hero background rotation. Sources live in public/ as `hero-N.webp` (1900w)
+// plus a `-sm` 1000w variant for phones; the originals they were derived from
+// are the `hero_N.png` uploads. To add a shot: export both widths, append here.
+const HERO_SLIDES: HeroSlide[] = [
+  { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%' },
+  // Tallest source of the three (2:3) and the tightest framing, so it sits back
+  // near flat cover and crops higher up the frame than the others.
+  { src: '/hero-3.webp', srcSm: '/hero-3-sm.webp', alt: 'Jaiden mid-huddle, breaking down the next rep with a group of athletes', objectPosition: '50% 20%', zoom: 0.3 },
+  { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%' },
+];
 
 // Program section scroll tuning — one step per PROGRAM_STEP_VH of scroll.
 // Shared between the step index and the container height so they can't drift
@@ -408,8 +420,6 @@ export default function Home() {
   const [coachVisible, setCoachVisible] = useState(false);
   const [tableVisible, setTableVisible] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [heroIconMorphed, setHeroIconMorphed] = useState(false);
-  const [heroPlaying, setHeroPlaying] = useState(false);
   const [launched, setLaunched] = useState(false);
 
   // Derived from the scroll-linked programProgress. NaN-safe so a bad reading
@@ -420,7 +430,6 @@ export default function Home() {
   );
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
-  const heroRef = useRef<HTMLElement>(null);
   const cardsStartRef = useRef<HTMLDivElement>(null);
   const coachContentRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -484,16 +493,6 @@ export default function Home() {
   }, []);
 
 
-  const handleHeroPlay = () => {
-    // First click: morph icon, then start inline video
-    setHeroIconMorphed(true);
-    setTimeout(() => setHeroPlaying(true), 180);
-  };
-
-  const handleHeroFullscreen = () => {
-    heroRef.current?.requestFullscreen?.().catch(() => {});
-  };
-
   useEffect(() => {
     const el = tableRef.current;
     if (!el) return;
@@ -540,15 +539,22 @@ export default function Home() {
   const panelBg = `rgb(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)})`;
   const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)},${tt < 0.5 ? 0.96 : 0.92})` };
   const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},0.12)` };
+  // At rest the pill has no background of its own, so nav type sits directly on
+  // the hero photo. The carousel shots include white gym walls — measured ~0.78
+  // luminance behind the pill — so the at-rest treatment runs near-opaque with a
+  // tight double shadow that holds the glyph edges. Once the pill picks up its
+  // blurred background (scrolled / compact) it drops back to the quieter values.
+  const navRestShadow = '0 1px 2px rgba(0,0,0,0.85), 0 2px 14px rgba(0,0,0,0.55)';
+  const navAtRest = !scrolled && !showCompact;
   const navTextStyle = {
-    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${!scrolled && !showCompact ? 0.8 : 0.6})`,
-    textShadow: !scrolled && !showCompact ? '0 1px 6px rgba(0,0,0,0.5)' : 'none',
+    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${navAtRest ? 0.95 : 0.6})`,
+    textShadow: navAtRest ? navRestShadow : 'none',
   };
   const navLinkStyle = (id: string) => ({
-    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${activeSection === id ? 1 : !scrolled && !showCompact ? 0.72 : 0.4})`,
+    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${activeSection === id ? 1 : navAtRest ? 0.9 : 0.4})`,
     transition: 'color 0.3s ease',
     fontWeight: activeSection === id ? '500' : '400',
-    textShadow: !scrolled && !showCompact ? '0 1px 6px rgba(0,0,0,0.5)' : 'none',
+    textShadow: navAtRest ? navRestShadow : 'none',
   });
 
   const fadeUp = (delay: number): React.CSSProperties => ({
@@ -849,32 +855,35 @@ export default function Home() {
       <main className="flex w-full flex-col">
 
         {/* ── Hero ── */}
-        <section ref={heroRef} className="relative w-full min-h-screen bg-black" style={{ minHeight: '100dvh' }}>
-          {/* Background image — fades out when video is playing */}
+        <section className="relative w-full min-h-screen bg-black" style={{ minHeight: '100dvh' }}>
+          {/* Background carousel */}
+          <HeroCarousel slides={HERO_SLIDES} />
+          {/* Bottom scrim. Heavier than it was under the old placeholder: the
+              carousel shots are bright gym floors, and the headline's white→dark
+              gradient fill needs something to sit on. */}
           <div
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-500"
-            style={{ backgroundImage: "url('/hero.webp')", opacity: heroPlaying ? 0 : 1, backgroundSize: 'cover', backgroundAttachment: 'local' }}
-          />
-          {/* Video iframe — replace src with your video embed URL */}
-          <iframe
-            src={heroPlaying ? 'about:blank' : undefined}
-            title="Training film"
-            inert={!heroPlaying}
-            className="absolute inset-0 w-full h-full transition-opacity duration-500"
-            style={{ opacity: heroPlaying ? 1 : 0, pointerEvents: heroPlaying ? 'auto' : 'none', border: 'none' }}
-            allow="autoplay; fullscreen"
-          />
-          {/* Bottom gradient overlay */}
-          <div
-            className="absolute inset-0 transition-opacity duration-500"
-            style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 96%)', opacity: heroPlaying ? 0 : 1 }}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.10) 40%, rgba(0,0,0,0.45) 68%, rgba(0,0,0,0.82) 100%)',
+            }}
           />
 
-          {/* Bottom-left content — hidden when video is playing */}
+          {/* Top scrim. The nav pill is fully transparent until you scroll, so
+              at rest the logo and links sit straight on the photo — and the
+              carousel shots include bright white gym walls that swallow them.
+              Only the hero needs this: every other section gets the pill's own
+              blurred background once `scrolled` flips. */}
           <div
-            className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px] transition-opacity duration-500 pointer-events-none"
-            style={{ opacity: heroPlaying ? 0 : 1, pointerEvents: heroPlaying ? 'none' : 'auto' }}
-          >
+            className="absolute inset-x-0 top-0 h-[160px] lg:h-[220px] pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.50) 34%, rgba(0,0,0,0.22) 66%, rgba(0,0,0,0) 100%)',
+            }}
+          />
+
+          {/* Bottom-left content */}
+          <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px]">
             <CountdownEyebrow />
             <h1
               className="text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]"
@@ -915,48 +924,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Play / fullscreen button — bottom right */}
-          <button
-            onClick={heroPlaying ? handleHeroFullscreen : handleHeroPlay}
-            className="absolute cursor-pointer right-6 md:right-[60px] bottom-[80px] w-[60px] h-[60px] rounded-full flex items-center justify-center hover:opacity-90 active:scale-95"
-            style={{
-              background: 'rgba(146,146,146,0.75)',
-              backdropFilter: 'blur(8px)',
-              transition: 'opacity 0.2s ease, transform 0.15s ease',
-            }}
-            aria-label={heroPlaying ? 'Go fullscreen' : 'Play video'}
-          >
-            {/* ▶ play — visible when idle */}
-            <span
-              className="absolute flex items-center justify-center"
-              style={{
-                opacity: heroIconMorphed ? 0 : 1,
-                transform: heroIconMorphed ? 'scale(1.25) rotate(60deg)' : 'scale(1) rotate(0deg)',
-                transition: 'opacity 0.18s ease, transform 0.18s ease',
-              }}
-            >
-              <svg width="20" height="22" viewBox="0 0 20 22" fill="none">
-                <path d="M4 2.5L18 11L4 19.5V2.5Z" fill="#343434"/>
-              </svg>
-            </span>
-            {/* ⤢ expand — visible when video is playing */}
-            <span
-              className="absolute flex items-center justify-center"
-              style={{
-                opacity: heroIconMorphed ? 1 : 0,
-                transform: heroIconMorphed ? 'scale(1) rotate(0deg)' : 'scale(0.6) rotate(-60deg)',
-                transition: 'opacity 0.18s ease 0.05s, transform 0.18s ease 0.05s',
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M2 2H7M2 2V7M2 2L7 7" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M18 2H13M18 2V7M18 2L13 7" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 18H7M2 18V13M2 18L7 13" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M18 18H13M18 18V13M18 18L13 13" stroke="#343434" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </span>
-          </button>
-
         </section>
 
         {/* ── Coach ── */}
@@ -966,16 +933,13 @@ export default function Home() {
               <div>
                 <div className="flex flex-col gap-[18px]">
                   <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
-                    I've spent years next to some of the best players this country has ever made. And I kept noticing the same thing every time. There's a gap between who a player is in practice and who he is in a real game.
+                    I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts and it's a completely different person out there. I kept asking myself why. Because as a coach it's not only my job to teach you drills. It's to see you shine.
                   </p>
-                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.45)]" style={{ lineHeight: '26px', ...revealLine(150) }}>
-                    Why's that?
+                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(150) }}>
+                    So I studied it. And it's crazy to me how little anybody talks about this. Practice teaches you what to do. Nobody teaches you when. And when you don't know when, you start second-guessing. You hesitate. You pass up the shot. You play safe. People look at that and call it confidence. We work on that too, but not by hyping you up. Confidence is what shows up after you know what you're looking at.
                   </p>
-                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                    The reason's simple, and it's crazy to me that nobody talks about it. No matter what level you're at, practice teaches you what to do. It doesn't teach you when. That other half is the timing. The read. Knowing which thing the moment is asking for. Almost nobody's coaching that.
-                  </p>
-                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(450) }}>
-                    That's the half I coach.
+                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(300) }}>
+                    That's my personal duty to every athlete who comes on. Getting out the talent we both know is lying dormant in there.
                   </p>
                 </div>
                 <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
@@ -1020,7 +984,12 @@ export default function Home() {
               </div>
             </div>
 
-            <CoachCarousel />
+            <div className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end">
+              <div className="relative w-full aspect-video lg:aspect-auto lg:h-[434px] lg:w-[543px] overflow-hidden rounded-[12px] border border-white/40 bg-[#111111]">
+                <div className="absolute inset-0 bg-cover" style={{ backgroundImage: "url('/coach-2.jpg')", backgroundPosition: 'center 30%' }} />
+                <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_55%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1399,7 +1368,7 @@ export default function Home() {
 
             {/* The card + text, revealed by the light */}
             <div
-              className="relative z-10 flex w-full max-w-[1156px] mx-auto flex-col lg:flex-row items-center gap-[50px] lg:gap-[70px]"
+              className="relative z-10 flex w-full max-w-[1156px] mx-auto flex-col lg:flex-row items-center gap-[28px] lg:gap-[70px]"
               style={{
                 opacity: revealEased,
                 transform: `translateY(${lerp(28, 0, revealEased)}px) scale(${(0.94 + 0.06 * revealEased).toFixed(4)})`,
@@ -1427,7 +1396,11 @@ export default function Home() {
 
               {/* Left — card by itself. Copy on the card ("$1000" etc.) lives
                   in the Spline scene, not here — edit it at spline.design. */}
-              <div className="relative w-full flex-1" style={{ minHeight: '400px', borderRadius: '24px', overflow: 'visible', perspective: '1200px' }}>
+              {/* On mobile the holder hugs the Spline canvas — the canvas sizes
+                  itself to the scene's aspect (~2:1), so a fixed 400px min-height
+                  here left ~230px of dead space under the card. Desktop keeps
+                  flex-1 + the 400px floor, where it's the column height. */}
+              <div className="relative w-full flex-none min-h-0 lg:flex-1 lg:min-h-[400px]" style={{ borderRadius: '24px', overflow: 'visible', perspective: '1200px' }}>
                 <Spline
                   scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
                   style={{ width: '100%', height: '100%', display: 'block', borderRadius: '24px', overflow: 'visible' }}
