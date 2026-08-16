@@ -17,7 +17,7 @@ const HERO_SLIDES: HeroSlide[] = [
   { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%' },
   // Tallest source of the three (2:3) and the tightest framing, so it sits back
   // near flat cover and crops higher up the frame than the others.
-  { src: '/hero-3.webp', srcSm: '/hero-3-sm.webp', alt: 'Jaiden mid-huddle, breaking down the next rep with a group of athletes', objectPosition: '50% 20%', zoom: 0.3 },
+  { src: '/hero-3.webp', srcSm: '/hero-3-sm.webp', alt: 'Jaiden mid-huddle, breaking down the next rep with a group of athletes', objectPosition: '50% 5%', zoom: 0.3 },
   { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%' },
 ];
 
@@ -933,13 +933,13 @@ export default function Home() {
               <div>
                 <div className="flex flex-col gap-[18px]">
                   <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
-                    I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts and it's a completely different person out there. I kept asking myself why. Because as a coach it's not only my job to teach you drills. It's to see you shine.
+                    I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts and it's a completely different person out there. I kept asking myself why. Because it's not only my job to teach you drills. It's to see you shine.
                   </p>
                   <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(150) }}>
-                    So I studied it. And it's crazy to me how little anybody talks about this. Practice teaches you what to do. Nobody teaches you when. And when you don't know when, you start second-guessing. You hesitate. You pass up the shot. You play safe. People look at that and call it confidence. We work on that too, but not by hyping you up. Confidence is what shows up after you know what you're looking at.
+                    So I studied it. And it's crazy how little anybody talks about this. Practice teaches you what to do. Nobody teaches you when. And when you don't know when, you start second-guessing. You hesitate. You play safe. People call that confidence. We work on that too, but not by hyping you up. Confidence is what shows up after you know what you're looking at.
                   </p>
                   <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                    That's my personal duty to every athlete who comes on. Getting out the talent we both know is lying dormant in there.
+                    That's my duty to every athlete who comes on. Getting out the talent we both know is lying dormant in there.
                   </p>
                 </div>
                 <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
