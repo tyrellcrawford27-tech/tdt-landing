@@ -17,7 +17,7 @@ const HERO_SLIDES: HeroSlide[] = [
   { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%' },
   // Tallest source of the three (2:3) and the tightest framing, so it sits back
   // near flat cover and crops higher up the frame than the others.
-  { src: '/hero-3.webp', srcSm: '/hero-3-sm.webp', alt: 'Jaiden mid-huddle, breaking down the next rep with a group of athletes', objectPosition: '50% 5%', zoom: 0.3 },
+  { src: '/hero-3.webp', srcSm: '/hero-3-sm.webp', alt: 'Jaiden mid-huddle, breaking down the next rep with a group of athletes', objectPosition: '50% 5%', zoom: 0.15 },
   { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%' },
 ];
 
