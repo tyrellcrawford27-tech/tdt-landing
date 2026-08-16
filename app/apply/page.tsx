@@ -561,7 +561,13 @@ function ApplyPageInner() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const raw = e.target.value;
-    const v = (field === 'phone' || field === 'guardian_phone') ? formatPhone(raw) : raw;
+    const v =
+      (field === 'phone' || field === 'guardian_phone') ? formatPhone(raw)
+      // Age rides on a text input to get the plain 0–9 keypad (see the input
+      // below), so strip anything that isn't a digit here rather than trusting
+      // the field type. Also cleans up a pasted "21 years old".
+      : field === 'age' ? raw.replace(/\D/g, '')
+      : raw;
     setForm(f => ({ ...f, [field]: v }));
     setNudgeMsg(null);
   };
@@ -1153,16 +1159,31 @@ function ApplyPageInner() {
       );
     }
 
+    // A numeric question renders as `tel`, not `number` or inputMode="numeric".
+    // Both of those land iOS on the full keyboard's number plane, which keeps an
+    // ABC key to switch back to letters. `tel` is the only one that raises the
+    // 12-key dialer pad — the same keyboard the phone fields in this form get.
+    // A number input also hands back "" for anything it considers malformed, so
+    // a stray character silently wipes what was typed; `tel` keeps the raw
+    // string for the 10–25 check in invalid(), and `set` strips non-digits.
+    //
+    // min/max are gone with it: they only bind on a number input, there is no
+    // <form> here to run native validation, and they said 10–80 while the real
+    // rule is 10–25.
+    const isNumeric = q.type === 'number';
     return (
       <input
         ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
-        type={q.type}
+        type={isNumeric ? 'tel' : q.type}
+        inputMode={isNumeric ? 'tel' : undefined}
+        pattern={isNumeric ? '[0-9]*' : undefined}
+        maxLength={isNumeric ? 3 : undefined}
+        // Without this the dialer pad drags a phone-number autofill bar with it.
+        autoComplete={isNumeric ? 'off' : undefined}
         value={form[q.field]}
         onChange={set(q.field)}
         placeholder={'placeholder' in q ? q.placeholder : ''}
         style={inputBoxStyle}
-        min={q.type === 'number' ? 10 : undefined}
-        max={q.type === 'number' ? 80 : undefined}
       />
     );
   };
