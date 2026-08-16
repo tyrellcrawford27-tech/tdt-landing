@@ -324,6 +324,53 @@ function CoachCarousel() {
   );
 }
 
+// Toronto, always — this isn't "the visitor's local time," it's "when Jaiden
+// is around." Quiet hours (11pm–8am) are guesswork about a coach's sleep
+// schedule, not a promise; the point is signaling "don't expect a reply
+// tonight," not being precise to the minute.
+const HOME_TIMEZONE = 'America/Toronto';
+const QUIET_START_HOUR = 23;
+const QUIET_END_HOUR = 8;
+
+// `active` gates the interval — this is called unconditionally from the top
+// of Home(), and Home() is a big component with its own scroll/video/Spline
+// work, so ticking every 15s forever (including the ~100% of the time the
+// menu is closed) would re-render the whole thing for no visible benefit.
+// Only pay for it while the clock is actually on screen.
+function useLocalTime(timeZone: string, active: boolean) {
+  function calc() {
+    const now = new Date();
+    const hour = parseInt(
+      new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', hour12: false }).format(now),
+      10
+    );
+    const time = new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: '2-digit', hour12: true })
+      .format(now)
+      .toLowerCase()
+      .replace(/\s+/g, '');
+    // Computed, not hardcoded — a fixed "EST" label would read wrong for half
+    // the year once daylight saving flips it to EDT.
+    const zone = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'short' })
+      .formatToParts(now)
+      .find(p => p.type === 'timeZoneName')?.value ?? '';
+    const asleep = hour >= QUIET_START_HOUR || hour < QUIET_END_HOUR;
+    return { time, zone, asleep };
+  }
+  // calc() is cheap (a couple Intl.format calls) and pure, so it's called
+  // fresh on every render rather than cached in state — that's what keeps
+  // this correct the instant the menu opens, with no separate "refresh on
+  // open" step to get right. The interval below exists only to force a
+  // render every 15s while open; it never computes or holds the value
+  // itself, which is what keeps this out of state-in-effect territory.
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => forceTick(n => n + 1), 15000);
+    return () => clearInterval(id);
+  }, [active]);
+  return calc();
+}
+
 const LAUNCH_DATE = new Date('2026-09-01T00:00:00');
 
 function useCountdown() {
@@ -414,6 +461,7 @@ export default function Home() {
   const [programProgress, setProgramProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const localTime = useLocalTime(HOME_TIMEZONE, menuOpen);
   const [navHovered, setNavHovered] = useState(false);
   const applyBtnRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -706,6 +754,51 @@ export default function Home() {
           ))}
           </div>
         </nav>
+
+        {/* Location + contact — who you're actually reaching, and roughly
+            whether they're awake, before you commit to typing an email. */}
+        <div
+          className="flex w-full flex-col gap-[16px] px-8 pt-[6px] pb-[36px] flex-shrink-0"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
+            transition: menuOpen
+              ? 'opacity 0.45s cubic-bezier(0.16,1,0.3,1) 340ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) 340ms'
+              : 'opacity 0.2s ease, transform 0.2s ease',
+          }}
+        >
+          <div className="flex flex-col gap-[4px]">
+            <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]">LOCATION</span>
+            <span className="text-[14px] font-medium tracking-[-0.02em] text-white/70" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              Toronto, {localTime.zone} — {localTime.time}{localTime.asleep ? ' 💤' : ''}
+            </span>
+          </div>
+
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-col gap-[4px]">
+              <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]">CONTACT</span>
+              <a
+                href="mailto:jaiden@thinkdifferenttraining.com"
+                className="text-[14px] font-medium tracking-[-0.02em] text-white/70 transition-colors hover:text-white"
+              >
+                jaiden@thinkdifferenttraining.com
+              </a>
+            </div>
+            <a
+              href="https://www.instagram.com/thinkdifferent_training/?hl=en"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Think Different Training on Instagram"
+              className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white active:bg-white/10"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
+              </svg>
+            </a>
+          </div>
+        </div>
 
         {/* Bottom actions */}
         <div
