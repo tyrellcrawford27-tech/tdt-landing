@@ -9,10 +9,11 @@ import { SchoolInput } from '@/components/SchoolInput';
 import { preloadCities } from '@/lib/cities';
 import { preloadSchools } from '@/lib/schoolsIndex';
 import { loadGeoHint } from '@/lib/geo';
+import { SURFACE_LIGHT } from '@/lib/theme';
 import Cal, { getCalApi } from '@calcom/embed-react';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
-const BG    = '#FAF6F2';
+const BG    = SURFACE_LIGHT;
 const TERRA = '#B34929';
 const CARD  = '#FFFFFF';
 

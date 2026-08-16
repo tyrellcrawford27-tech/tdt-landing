@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 
-const BG    = '#FAF6F2';
+import { SURFACE_LIGHT, SURFACE_LIGHT_RGB } from '@/lib/theme';
+
+const BG    = SURFACE_LIGHT;
 const TERRA = '#B34929';
 const PASS  = 'tdt2025';
 
@@ -117,7 +119,7 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit' }}>
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(250,246,242,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, background: `rgba(${SURFACE_LIGHT_RGB},0.85)`, backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <p style={{ fontSize: 15, fontWeight: 500, color: TERRA, margin: 0, letterSpacing: '-0.02em' }}>TDT</p>
           <p style={{ fontSize: 15, fontWeight: 400, color: 'rgba(0,0,0,0.4)', margin: 0, letterSpacing: '-0.02em' }}>Applications</p>

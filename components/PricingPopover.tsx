@@ -9,7 +9,7 @@ import { EARLY_BIRD_TOTAL, EARLY_BIRD_PRICE, FULL_PRICE } from '@/lib/earlyPrici
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
 
-const LIQUID = '#EFE0D5'; // warm off-white — reads as a body of liquid against #FAF6F2
+const LIQUID = '#EFE0D5'; // warm off-white — reads as a body of liquid against #FBF6F2
 
 // Early-bird accent — deep burnt sienna, darker and earthier than the page's
 // terracotta so the discount still reads as its own thing.

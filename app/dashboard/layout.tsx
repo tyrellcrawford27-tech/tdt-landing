@@ -8,7 +8,7 @@ import type { Viewport } from 'next';
 // analyses literal values in a viewport export. It must stay in step with
 // --surface-light in globals.css, which paints <body> off the marker below.
 export const viewport: Viewport = {
-  themeColor: '#FAF6F2',
+  themeColor: '#FBF6F2',
   viewportFit: 'cover',
 };
 

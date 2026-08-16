@@ -10,7 +10,7 @@ import type { Viewport } from 'next';
 // (see globals.css); theme-color alone leaves the near-black body showing on
 // overscroll rubber-band.
 export const viewport: Viewport = {
-  themeColor: '#FAF6F2',
+  themeColor: '#FBF6F2',
   viewportFit: 'cover',
 };
 

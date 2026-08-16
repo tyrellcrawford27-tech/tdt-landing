@@ -11,7 +11,9 @@ import {
   useLayoutEffect, useRef, useState,
 } from 'react';
 
-const BG = '#FAF6F2';
+import { SURFACE_LIGHT } from '@/lib/theme';
+
+const BG = SURFACE_LIGHT;
 
 export type ComboRow = {
   id: string | number;   // stable identity across keystrokes (drives animation)
