@@ -466,6 +466,29 @@ export default function Home() {
   const applyBtnRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [coachVisible, setCoachVisible] = useState(false);
+  const [coachExpanded, setCoachExpanded] = useState(false);
+  // Open height of the collapsed half of the coach letter. Animating to a
+  // measured pixel height rather than the grid-template-rows 0fr→1fr trick,
+  // which needs Safari 16 to animate at all and silently sits at 0 where it
+  // doesn't.
+  //
+  // Measured twice over, because either source alone has a hole: the observer
+  // keeps the value honest while the panel is open (a resize or a font swap
+  // would otherwise leave the copy clipped), but it delivers on the rendering
+  // lifecycle, so a first click that lands before any delivery would open to
+  // zero. Re-measuring inside the toggle closes that.
+  const coachRestRef = useRef<HTMLDivElement>(null);
+  const [coachRestH, setCoachRestH] = useState(0);
+  // offsetHeight, not contentRect: the element carries the top padding that
+  // spaces it off the lead paragraph, and contentRect would exclude it.
+  const measureCoachRest = () => setCoachRestH(coachRestRef.current?.offsetHeight ?? 0);
+  useEffect(() => {
+    const el = coachRestRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setCoachRestH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [tableVisible, setTableVisible] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [launched, setLaunched] = useState(false);
@@ -992,12 +1015,18 @@ export default function Home() {
           <HeroCarousel slides={HERO_SLIDES} />
           {/* Bottom scrim. Heavier than it was under the old placeholder: the
               carousel shots are bright gym floors, and the headline's white→dark
-              gradient fill needs something to sit on. */}
+              gradient fill needs something to sit on. Reaches true rgba(0,0,0,1)
+              by 100% — not just "dark enough to read text on" — because the
+              section directly below (Coach) is solid #000000; stopping short
+              (the old curve topped out at 0.82) left a visible seam where
+              photo-tinted-black met true black. The last stretch (92%→100%)
+              carries most of that final ramp so it reads as the photo
+              dissolving into the section below, not a visible gradient band.  */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.10) 40%, rgba(0,0,0,0.45) 68%, rgba(0,0,0,0.82) 100%)',
+                'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.10) 40%, rgba(0,0,0,0.45) 68%, rgba(0,0,0,0.88) 92%, rgba(0,0,0,1) 100%)',
             }}
           />
 
@@ -1063,16 +1092,73 @@ export default function Home() {
           <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center lg:items-start gap-[50px] lg:gap-[100px]">
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
               <div>
-                <div className="flex flex-col gap-[18px]">
-                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
-                    I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts and it's a completely different person out there. I kept asking myself why. Because it's not only my job to teach you drills. It's to see you shine.
-                  </p>
-                  <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(150) }}>
-                    So I studied it. And it's crazy how little anybody talks about this. Practice teaches you what to do. Nobody teaches you when. And when you don't know when, you start second-guessing. You hesitate. You play safe. People call that confidence. We work on that too, but not by hyping you up. Confidence is what shows up after you know what you're looking at.
-                  </p>
-                  <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                    That's my duty to every athlete who comes on. Getting out the talent we both know is lying dormant in there.
-                  </p>
+                {/* No gap on this column: the collapsed panel is zero-height, so
+                    a flex gap would sit on both sides of it and push the toggle
+                    a full two gaps clear of the lead paragraph. Spacing is
+                    carried by the panel's own top padding and the toggle's
+                    margin instead, which keeps one 18px rhythm in both states. */}
+                <div className="flex flex-col">
+                  {/* The collapsed half: the setup, the why, and the line that
+                      hands off to the toggle. */}
+                  <div className="flex flex-col gap-[18px]">
+                    <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
+                      I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts and it's a completely different person out there.
+                    </p>
+                    <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(150) }}>
+                      I kept asking myself why. Because it's not only my job to teach you drills. It's to see you shine.
+                    </p>
+                    <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(300) }}>
+                      So I studied it. And what I found, almost nobody's talking about.
+                    </p>
+                  </div>
+                  {/* The answer to that last line collapses behind the toggle
+                      rather than opening as a wall of text. */}
+                  <div
+                    id="coach-letter-rest"
+                    className="overflow-hidden transition-[height] duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                    // Opening waits on the arrow: the chevron is already turning
+                    // for 180ms before the copy starts moving, so the control
+                    // reads as causing the reveal rather than racing it. Closing
+                    // takes the delay off — a collapse that hesitates after the
+                    // click just feels unresponsive.
+                    style={{
+                      height: coachExpanded ? coachRestH : 0,
+                      transitionDelay: coachExpanded ? '180ms' : '0ms',
+                    }}
+                  >
+                    <div ref={coachRestRef} className="flex flex-col gap-[18px] pt-[18px]">
+                      <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(300) }}>
+                        Practice teaches you what to do. Nobody teaches you when. And when you don't know when, you start second-guessing. You hesitate. You play safe. People call that confidence. We work on that too, but not by hyping you up. Confidence is what shows up after you know what you're looking at.
+                      </p>
+                      <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(300) }}>
+                        That's my duty to every athlete who comes on. Getting out the talent we both know is lying dormant in there.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { measureCoachRest(); setCoachExpanded(v => !v); }}
+                    aria-expanded={coachExpanded}
+                    aria-controls="coach-letter-rest"
+                    className="group mt-[18px] inline-flex cursor-pointer items-center self-start text-[14px] font-normal tracking-[-0.02em] text-white/60 transition-colors duration-200 ease-out hover:text-white"
+                    style={revealLine(450)}
+                  >
+                    <span className="underline underline-offset-4 decoration-white/25 transition-colors duration-200 ease-out group-hover:decoration-white/60">
+                      {coachExpanded ? 'Read less' : 'Read more'}
+                    </span>
+                    <svg
+                      width="12"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      fill="none"
+                      aria-hidden="true"
+                      className="ml-[7px] transition-transform duration-[620ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                      style={{ transform: coachExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    >
+                      <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
                 </div>
                 <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
                   Jaiden Francais
