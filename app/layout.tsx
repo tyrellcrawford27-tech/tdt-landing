@@ -30,7 +30,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet" />
         {/* Preload key visuals so they're already loading before the user scrolls to them */}
-        <link rel="preload" as="image" href="/hero.webp" fetchPriority="high" />
+        <link rel="preload" as="image" href="/hero-1.webp" fetchPriority="high" />
+        <link rel="preload" as="image" href="/hero-3.webp" />
         <link rel="preload" as="image" href="/study-work.webp" />
         <link rel="preload" as="image" href="/drill-true.webp" />
       </head>
