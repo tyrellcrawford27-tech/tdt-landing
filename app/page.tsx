@@ -716,10 +716,16 @@ export default function Home() {
         <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
           <div className="my-auto">
           {NAV_LINKS.map(({ id, label }, i) => (
-            <a
+            // The divider and the tap highlight can't share one rounded box: a
+            // border-radius on an element that only has a border-b still rounds
+            // the corners the line passes through, so the divider visibly curves
+            // at both ends instead of running straight. Split them — this outer
+            // row draws the straight border and carries the entrance animation;
+            // the inner <a> gets its own rounded corners for the active-state
+            // highlight only, which never touches the divider's geometry.
+            <div
               key={id}
-              href={`#${id}`}
-              className="flex cursor-pointer items-baseline gap-[16px] border-b border-white/[0.08] py-[18px] last:border-b-0 -mx-3 px-3 rounded-[12px] active:bg-white/[0.06]"
+              className="border-b border-white/[0.08] last:border-b-0 -mx-3"
               style={{
                 opacity: menuOpen ? 1 : 0,
                 transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
@@ -727,30 +733,35 @@ export default function Home() {
                   ? `opacity 0.45s cubic-bezier(0.16,1,0.3,1) ${120 + i * 70}ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) ${120 + i * 70}ms`
                   : 'opacity 0.2s ease, transform 0.2s ease',
               }}
-              onClick={(e) => {
-                e.preventDefault();
-                setMenuOpen(false);
-                // Jump instantly while the overlay is still fading — the fade masks
-                // the jump, and an instant scroll can't be cancelled mid-flight by
-                // main-thread jank the way a long smooth scroll can (which stranded
-                // taps short of their section). The body scroll-lock lifts in the
-                // menu-close effect, so poll for that instead of racing it with a
-                // fixed delay: scrollTo is a silent no-op while the lock is on.
-                // setTimeout rather than requestAnimationFrame: rAF freezes when the
-                // page is hidden or throttled, which would swallow the tap entirely.
-                const jump = (triesLeft: number) => {
-                  if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
-                  const el = document.getElementById(id);
-                  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
-                };
-                setTimeout(() => jump(30), 16);
-              }}
             >
-              <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                0{i + 1}
-              </span>
-              <span className="text-[30px] font-medium tracking-[-0.02em] text-white/90">{label}</span>
-            </a>
+              <a
+                href={`#${id}`}
+                className="flex cursor-pointer items-baseline gap-[16px] py-[18px] px-3 rounded-[12px] active:bg-white/[0.06]"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen(false);
+                  // Jump instantly while the overlay is still fading — the fade masks
+                  // the jump, and an instant scroll can't be cancelled mid-flight by
+                  // main-thread jank the way a long smooth scroll can (which stranded
+                  // taps short of their section). The body scroll-lock lifts in the
+                  // menu-close effect, so poll for that instead of racing it with a
+                  // fixed delay: scrollTo is a silent no-op while the lock is on.
+                  // setTimeout rather than requestAnimationFrame: rAF freezes when the
+                  // page is hidden or throttled, which would swallow the tap entirely.
+                  const jump = (triesLeft: number) => {
+                    if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
+                    const el = document.getElementById(id);
+                    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
+                  };
+                  setTimeout(() => jump(30), 16);
+                }}
+              >
+                <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  0{i + 1}
+                </span>
+                <span className="text-[30px] font-medium tracking-[-0.02em] text-white/90">{label}</span>
+              </a>
+            </div>
           ))}
           </div>
         </nav>
