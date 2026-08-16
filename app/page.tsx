@@ -1425,7 +1425,7 @@ export default function Home() {
                   </h2>
 
                   <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                    We&apos;re looking for the players who already put the work in and can&apos;t understand why it isn&apos;t showing up in games. If that&apos;s you, tell us.
+                    10 spots. One cohort. Apply and find out if you&apos;re one of them.
                   </p>
                 </div>
 
