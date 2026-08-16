@@ -598,7 +598,7 @@ function ApplyPageInner() {
   const VALIDATION_BAD: Partial<Record<keyof FormData, string[]>> = {
     full_name:           ["Include first and last name", "e.g. Marcus Thompson", "FIRST AND LAST NAME."],
     city_state:          ["Needs to be 'City, Province' format", "e.g. Mississauga, Ontario", "CITY, PROVINCE. THAT'S IT."],
-    age:                 ["Age must be between 10 and 25", "Enter a real age", "REAL AGE. 10–25."],
+    age:                 ["Age must be between 13 and 30", "Enter a real age", "REAL AGE. 13–30."],
     email:               ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
     phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     current_team_school: ["Give us a real team or school name", "More than one letter", "TEAM OR SCHOOL NAME."],
@@ -641,7 +641,7 @@ function ApplyPageInner() {
         return v.length < 2 || !/^[a-zA-ZÀ-ÿ\s''\-]+$/.test(v) || isGibberishName(v);
       case 'age': {
         const n = parseInt(v);
-        return isNaN(n) || n < 10 || n > 25;
+        return isNaN(n) || n < 13 || n > 30;
       }
       case 'email':
       case 'guardian_email':
@@ -1166,11 +1166,11 @@ function ApplyPageInner() {
     // 12-key dialer pad — the same keyboard the phone fields in this form get.
     // A number input also hands back "" for anything it considers malformed, so
     // a stray character silently wipes what was typed; `tel` keeps the raw
-    // string for the 10–25 check in invalid(), and `set` strips non-digits.
+    // string for the 13–30 check in invalid(), and `set` strips non-digits.
     //
     // min/max are gone with it: they only bind on a number input, there is no
     // <form> here to run native validation, and they said 10–80 while the real
-    // rule is 10–25.
+    // rule is 13–30.
     const isNumeric = q.type === 'number';
     return (
       <input
