@@ -1425,7 +1425,7 @@ export default function Home() {
                   </h2>
 
                   <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                    We&apos;re looking for the ones who are starving for it. Players who are done waiting for something to happen and ready to go take it. We can&apos;t want it more than you do. Show us that&apos;s you.
+                    10 spots. One cohort. Apply and find out if you&apos;re one of them.
                   </p>
                 </div>
 
