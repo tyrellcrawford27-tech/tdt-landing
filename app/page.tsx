@@ -537,6 +537,34 @@ export default function Home() {
   const showCompact = isCompact && !navHovered;
 
   const panelBg = `rgb(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)})`;
+
+  // The browser chrome and the overscroll gutter live outside React's tree, so
+  // they don't follow the flip on their own — which left iOS holding a black
+  // status bar over a cream page. Both track `tt` here.
+  //
+  // `tt` is a good proxy for the whole page, not just the panel: it pins to 0
+  // above the transition zone (hero through quote are all #000000) and to 1
+  // below it (FAQ and footer are both #FBF6F2), and those are exactly the two
+  // endpoints it lerps between.
+  //
+  // Quantised because iOS animates every theme-color change: one write per
+  // scroll frame leaves the chrome chasing the page. Sixteen steps still reads
+  // as a gradient and bounds the writes across the flip.
+  const CHROME_STEPS = 16;
+  const ttStepped = Math.round(tt * CHROME_STEPS) / CHROME_STEPS;
+  const chromeSurface = `rgb(${lerp(0,251,ttStepped)},${lerp(0,246,ttStepped)},${lerp(0,242,ttStepped)})`;
+
+  useEffect(() => {
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', chromeSurface);
+    document.documentElement.style.setProperty('--page-surface', chromeSurface);
+  }, [chromeSurface]);
+
+  // Hand the chrome back on the way out. /apply and /dashboard declare their own
+  // cream, but an inline --page-surface left on <html> would outrank it.
+  useEffect(() => () => {
+    document.documentElement.style.removeProperty('--page-surface');
+  }, []);
+
   const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)},${tt < 0.5 ? 0.96 : 0.92})` };
   const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},0.12)` };
   // At rest the pill has no background of its own, so nav type sits directly on

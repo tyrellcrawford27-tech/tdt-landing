@@ -3,6 +3,10 @@
 :root {
   --background: #000000;
   --foreground: #171717;
+  /* The cream the apply flow and dashboard are built on. Kept in step by hand
+     with the themeColor in those routes' layout.tsx — a viewport export only
+     accepts a literal, so it can't read this. */
+  --surface-light: #FAF6F2;
 }
 
 @theme inline {
@@ -34,19 +38,23 @@ a, button {
 }
 
 body {
-  background: var(--background);
+  /* --page-surface lets a route drive what shows in the iOS overscroll
+     rubber-band. The landing page animates it across its dark→light flip so a
+     pull past either end reveals the colour actually at that end of the page,
+     rather than the theme default. Unset everywhere else. */
+  background: var(--page-surface, var(--background));
   color: var(--foreground);
   font-family: "PP Neue Montreal", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow-x: clip;
 }
 
-/* Routes that render a light surface (the apply flow) opt <body> out of the
-   near-black default. Without this the page's own cream stops at the content
-   box and iOS shows black in the overscroll rubber-band and under the status
-   bar — a hard band across the top instead of one continuous surface. The
-   route also declares a matching theme-color; both are needed. */
+/* Routes that render a light surface (the apply flow, the dashboard) opt <body>
+   out of the near-black default. Without this the page's own cream stops at the
+   content box and iOS shows black in the overscroll rubber-band and under the
+   status bar — a hard band across the top instead of one continuous surface.
+   Those routes also declare a matching theme-color; both are needed. */
 body:has([data-surface='light']) {
-  background: #FAF6F2;
+  background: var(--surface-light);
 }
 
 /* Offset anchor targets so they don't hide under the sticky nav
