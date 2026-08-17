@@ -83,7 +83,6 @@ function ProgramMobile() {
   // thumbnail a phone gives them, none of that is readable.
   const [zoomed, setZoomed] = useState<number | null>(null);
   const zoomCloseRef = useRef<HTMLButtonElement>(null);
-  const zoomScrollRef = useRef<HTMLDivElement>(null);
   const shotRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
@@ -120,13 +119,6 @@ function ProgramMobile() {
     const onWide = () => { if (mq.matches) setZoomed(null); };
     mq.addEventListener('change', onWide);
     zoomCloseRef.current?.focus({ preventScroll: true });
-    // Open on the middle of the shot. Anchored top-left it would land on the
-    // frame's corner, which reads as the image being cut off rather than zoomed.
-    const sc = zoomScrollRef.current;
-    if (sc) {
-      sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2;
-      sc.scrollTop = (sc.scrollHeight - sc.clientHeight) / 2;
-    }
     return () => {
       window.removeEventListener('keydown', onKey);
       mq.removeEventListener('change', onWide);
@@ -247,26 +239,26 @@ function ProgramMobile() {
             style={{ background: 'rgba(6,6,6,0.96)', backdropFilter: 'blur(4px)' }}
             onClick={() => setZoomed(null)}
           >
-            {/* Opens pre-zoomed and pans on both axes rather than fitting to the
-                screen. The sources are ~1920x1890 — near square, despite the
-                16/10 thumbnail frame — so fitting either dimension to a portrait
-                phone lands around 600px and leaves the annotations no more
-                readable than the thumbnail. 1400px wide is legible and still
-                only a couple of drags across. Browser pinch-zoom is left
-                available on top of it for anything finer. */}
-            <div
-              ref={zoomScrollRef}
-              className="absolute inset-0 overflow-auto overscroll-contain"
-              style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
-            >
+            {/* Fits the whole shot to the screen. The win over the thumbnail is
+                the crop, not magnification: the thumbnail's 16/10 frame covers a
+                ~1920x1890 near-square source, so it only ever showed the top
+                band of it. Here the full frame is visible at screen width.
+                Anything closer is pinch — the sources are desktop captures, and
+                no fixed zoom makes their text readable on a phone without
+                turning the whole thing into a panning exercise. Scroll stays on
+                the container so a pinch has somewhere to pan to. */}
+            {/* No touch-action override: the default lets the browser handle
+                pan, pinch AND double-tap zoom. Naming the gestures explicitly
+                serialises to `manipulation`, which quietly drops double-tap —
+                the one gesture people reach for first on a picture. */}
+            <div className="absolute inset-0 overflow-auto overscroll-contain px-2 py-[64px]">
               <div className="flex min-h-full min-w-full items-center justify-center">
                 <img
                   src={`/${s.image}`}
                   alt={`${s.label}: ${s.title} — the screen an athlete works from`}
                   draggable={false}
                   onClick={(e) => e.stopPropagation()}
-                  className="select-none"
-                  style={{ width: 'max(100%, 1400px)', maxWidth: 'none', height: 'auto' }}
+                  className="max-h-full max-w-full select-none rounded-[10px] object-contain"
                 />
               </div>
             </div>
@@ -293,7 +285,7 @@ function ProgramMobile() {
               className="pointer-events-none absolute left-0 right-0 text-center text-[11px] tracking-[0.02em] text-white/45"
               style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)' }}
             >
-              Drag to look around · pinch to zoom
+              Pinch to zoom in
             </p>
           </div>
         );
