@@ -78,12 +78,6 @@ const PROGRAM_MOBILE_TAIL_VH = 100;
 function ProgramMobile() {
   const startRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
-  // Which shot is open for a closer look, or null. The screenshots carry the
-  // annotations and coach notes this section is describing, and at the 44svh
-  // thumbnail a phone gives them, none of that is readable.
-  const [zoomed, setZoomed] = useState<number | null>(null);
-  const zoomCloseRef = useRef<HTMLButtonElement>(null);
-  const shotRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -103,29 +97,6 @@ function ProgramMobile() {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  // Modal behaviour for the enlarged shot, matching the mobile menu's: scroll
-  // locked, Escape dismisses, focus moves to the close button and returns to
-  // the thumbnail that opened it.
-  useEffect(() => {
-    if (zoomed === null) return;
-    const opener = shotRefs.current[zoomed];
-    document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomed(null); };
-    window.addEventListener('keydown', onKey);
-    // Past md this whole component is display:none. A viewport that grows while
-    // the overlay is open would hide it and strand the scroll lock, so close it.
-    const mq = window.matchMedia('(min-width: 768px)');
-    const onWide = () => { if (mq.matches) setZoomed(null); };
-    mq.addEventListener('change', onWide);
-    zoomCloseRef.current?.focus({ preventScroll: true });
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      mq.removeEventListener('change', onWide);
-      document.body.style.overflow = '';
-      opener?.focus({ preventScroll: true });
-    };
-  }, [zoomed]);
 
   return (
     <div
@@ -165,17 +136,9 @@ function ProgramMobile() {
 
             {/* 16/10 matches the source screenshots so `cover` fills the frame
                 with no side-cropping; min-h-0 lets it yield height on short
-                screens instead of overflowing.
-
-                A button, not a div: tapping opens the shot large enough to read.
-                Only the active stage takes pointer events (see the wrapper), so
-                the two idle thumbnails behind it aren't tappable. */}
-            <button
-              type="button"
-              ref={(el) => { shotRefs.current[i] = el; }}
-              onClick={() => setZoomed(i)}
-              aria-label={`View the ${s.label} screen up close`}
-              className="group relative block w-full min-h-0 shrink cursor-zoom-in rounded-[16px] overflow-hidden mt-[20px]"
+                screens instead of overflowing. */}
+            <div
+              className="relative w-full min-h-0 shrink rounded-[16px] overflow-hidden mt-[20px]"
               style={{
                 aspectRatio: '16 / 10',
                 maxHeight: '44svh',
@@ -193,19 +156,7 @@ function ProgramMobile() {
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
-              {/* Nothing else here says the frame is tappable, and a screenshot
-                  reads as a picture rather than a control. */}
-              <span
-                className="pointer-events-none absolute bottom-[10px] right-[10px] flex items-center gap-[5px] rounded-full px-[9px] py-[5px] text-[10px] font-medium tracking-[0.02em] text-white/85"
-                style={{ background: 'rgba(12,12,12,0.62)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.12)' }}
-              >
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <circle cx="5" cy="5" r="3.6" stroke="currentColor" strokeWidth="1.3" />
-                  <path d="M7.7 7.7L11 11M5 3.4v3.2M3.4 5h3.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
-                Tap to enlarge
-              </span>
-            </button>
+            </div>
           </div>
         ))}
 
@@ -223,73 +174,6 @@ function ProgramMobile() {
           ))}
         </div>
       </div>
-
-      {/* Enlarged shot. Lives outside the sticky stages so their transforms
-          can't become its containing block and trap the fixed positioning.
-          Mobile-only for free: the root is md:hidden, so past md this whole
-          subtree is display:none and the overlay can't be reached. */}
-      {zoomed !== null && (() => {
-        const s = PROGRAM_STEPS[zoomed];
-        return (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${s.label} — ${s.title}`}
-            className="fixed inset-0 z-[110]"
-            style={{ background: 'rgba(6,6,6,0.96)', backdropFilter: 'blur(4px)' }}
-            onClick={() => setZoomed(null)}
-          >
-            {/* Fits the whole shot to the screen. The win over the thumbnail is
-                the crop, not magnification: the thumbnail's 16/10 frame covers a
-                ~1920x1890 near-square source, so it only ever showed the top
-                band of it. Here the full frame is visible at screen width.
-                Anything closer is pinch — the sources are desktop captures, and
-                no fixed zoom makes their text readable on a phone without
-                turning the whole thing into a panning exercise. Scroll stays on
-                the container so a pinch has somewhere to pan to. */}
-            {/* No touch-action override: the default lets the browser handle
-                pan, pinch AND double-tap zoom. Naming the gestures explicitly
-                serialises to `manipulation`, which quietly drops double-tap —
-                the one gesture people reach for first on a picture. */}
-            <div className="absolute inset-0 overflow-auto overscroll-contain px-2 py-[64px]">
-              <div className="flex min-h-full min-w-full items-center justify-center">
-                <img
-                  src={`/${s.image}`}
-                  alt={`${s.label}: ${s.title} — the screen an athlete works from`}
-                  draggable={false}
-                  onClick={(e) => e.stopPropagation()}
-                  className="max-h-full max-w-full select-none rounded-[10px] object-contain"
-                />
-              </div>
-            </div>
-
-            <button
-              ref={zoomCloseRef}
-              type="button"
-              onClick={() => setZoomed(null)}
-              aria-label="Close"
-              className="absolute right-[14px] flex h-11 w-11 items-center justify-center rounded-full text-white/85 transition-colors duration-200 hover:text-white"
-              style={{
-                top: 'calc(env(safe-area-inset-top, 0px) + 14px)',
-                background: 'rgba(255,255,255,0.10)',
-                border: '1px solid rgba(255,255,255,0.16)',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                <path d="M1 1L14 14M14 1L1 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            </button>
-
-            <p
-              className="pointer-events-none absolute left-0 right-0 text-center text-[11px] tracking-[0.02em] text-white/45"
-              style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)' }}
-            >
-              Pinch to zoom in
-            </p>
-          </div>
-        );
-      })()}
     </div>
   );
 }
