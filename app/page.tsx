@@ -1026,7 +1026,7 @@ export default function Home() {
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.10) 40%, rgba(0,0,0,0.45) 68%, rgba(0,0,0,0.88) 92%, rgba(0,0,0,1) 100%)',
+                'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.07) 40%, rgba(0,0,0,0.35) 68%, rgba(0,0,0,0.85) 92%, rgba(0,0,0,1) 100%)',
             }}
           />
 
