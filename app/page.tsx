@@ -1046,15 +1046,10 @@ export default function Home() {
           {/* Bottom-left content */}
           <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[80px]">
             <CountdownEyebrow />
-            <h1
-              className="text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]"
-              style={{
-                background: 'linear-gradient(90deg, #FFFFFF 0%, rgba(20,20,20,0.75) 135%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
+            {/* Plain white here; the white→dark gradient fill is reapplied at
+                md and up by .hero-headline in globals.css. It can't stay inline
+                because it needs a media query to come off on phones. */}
+            <h1 className="hero-headline text-white text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]">
               You&apos;re better in practice
               <br />
               than in games

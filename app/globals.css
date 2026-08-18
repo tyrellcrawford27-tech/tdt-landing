@@ -57,6 +57,19 @@ body:has([data-surface='light']) {
   background: var(--surface-light);
 }
 
+/* Hero headline: plain white on phones (the gradient's dark tail read as a
+   grey wash over the busier hero photos), the white-to-dark fade restored at
+   md and up where the hero has more room and the fade reads as intentional
+   rather than as lost contrast. */
+@media (min-width: 768px) {
+  .hero-headline {
+    background: linear-gradient(90deg, #FFFFFF 0%, rgba(20,20,20,0.75) 135%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
 /* Offset anchor targets so they don't hide under the sticky nav
    (64px header below lg, 98px at lg and up) */
 section[id] {
