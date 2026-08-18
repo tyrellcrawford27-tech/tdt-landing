@@ -1390,10 +1390,11 @@ export default function Home() {
                 </h2>
               </div>
 
-              {/* Same table on every breakpoint — scaled down on mobile, horizontal-scroll fallback if it still overflows */}
-              {/* 0.72 rather than 0.62: at 0.62 the table's 16px cells render at
-                  ~9.9px on a phone, which is below comfortable reading size. The
-                  overflow-x-auto wrapper absorbs the extra width. */}
+              {/* Phones get the stacked cards below; this scaled table is md and
+                  up only. 0.72 rather than a tighter scale: much below that and
+                  the table's 16px cells get uncomfortably small on a narrow
+                  tablet. The overflow-x-auto wrapper is the fallback if it still
+                  overflows. */}
               <style>{`
                 .diff-table-sizer { width: 648px; height: 518px; }
                 .diff-table-scaled { width: 900px; height: 720px; transform: scale(0.72); transform-origin: top left; }
@@ -1402,11 +1403,51 @@ export default function Home() {
                   .diff-table-scaled { transform: scale(1); }
                 }
               `}</style>
-              <div className="w-full overflow-x-auto lg:overflow-visible">
+              <div ref={tableRef} className="w-full">
+                {/* Mobile: same five comparisons, stacked as cards instead of
+                    a horizontally-scrolled table. A scaled-down 900px table cell
+                    reads as a chart no matter how far it's shrunk; a card per row
+                    reads as a comparison. Desktop keeps the table below, md and up. */}
+                <div className="flex md:hidden w-full max-w-[420px] mx-auto flex-col gap-[14px]">
+                {ROWS.map((row, i) => (
+                  <div
+                    key={row.slug}
+                    className="flex flex-col w-full overflow-hidden"
+                    style={{
+                      border: '1px solid #333333',
+                      borderRadius: '14px',
+                      opacity: tableVisible ? 1 : 0,
+                      transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
+                      transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
+                    }}
+                  >
+                    <div className="px-4 py-[10px]" style={{ borderBottom: '1px solid #333333' }}>
+                      <span className="text-[12px] font-semibold uppercase tracking-[0.04em] text-white/40">
+                        {row.topic}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-[8px] px-4 py-[14px]" style={{ background: '#B34929' }}>
+                        <TDTLogo letterColor="white" width={16} height={19} />
+                        <span className="text-[15px] font-medium leading-[19px] tracking-[-0.02em] text-white">
+                          {row.tdt}
+                        </span>
+                      </div>
+                      <div className="px-4 py-[14px]" style={{ borderTop: '1px solid #1f1f1f' }}>
+                        <span className="text-[15px] font-normal leading-[19px] tracking-[-0.02em] text-white/50">
+                          {row.others}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                </div>
+
+                {/* md and up: the full comparison table, scaled down before lg, horizontal-scroll fallback if it still overflows */}
+                <div className="hidden md:block w-full overflow-x-auto lg:overflow-visible">
                 <div className="mx-auto diff-table-sizer">
                   <div className="diff-table-scaled">
                     <div
-                      ref={tableRef}
                       className="flex flex-row items-end w-[900px] h-[720px] overflow-hidden"
                       style={{ borderBottom: '1px solid #333333', borderRadius: '14px' }}
                     >
@@ -1527,6 +1568,7 @@ export default function Home() {
                 </div>
               </div>
                   </div>
+                </div>
                 </div>
               </div>
             </section>
