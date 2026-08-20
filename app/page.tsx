@@ -1055,9 +1055,7 @@ export default function Home() {
               than in games
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              Practice teaches the what. Games demand the when.
-              <br />
-              You were only ever taught half of it.
+              <em className="italic">100 days</em> of intense film review with Coach Jaiden Francais, and drills built off what he finds.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
