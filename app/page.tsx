@@ -1402,43 +1402,60 @@ export default function Home() {
                 }
               `}</style>
               <div ref={tableRef} className="w-full">
-                {/* Mobile: same five comparisons, stacked as cards instead of
-                    a horizontally-scrolled table. A scaled-down 900px table cell
-                    reads as a chart no matter how far it's shrunk; a card per row
-                    reads as a comparison. Desktop keeps the table below, md and up. */}
-                <div className="flex md:hidden w-full max-w-[420px] mx-auto flex-col gap-[14px]">
-                {ROWS.map((row, i) => (
-                  <div
-                    key={row.slug}
-                    className="flex flex-col w-full overflow-hidden"
-                    style={{
-                      border: '1px solid #333333',
-                      borderRadius: '14px',
-                      opacity: tableVisible ? 1 : 0,
-                      transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
-                      transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
-                    }}
-                  >
-                    <div className="px-4 py-[10px]" style={{ borderBottom: '1px solid #333333' }}>
-                      <span className="text-[12px] font-semibold uppercase tracking-[0.04em] text-white/40">
-                        {row.topic}
+                {/* Mobile: the same 3-column table as desktop — topic, TDT,
+                    everywhere else — sized down to real mobile type rather than
+                    a CSS-scaled 900px table (illegible) or the row stacked into
+                    cards (loses the side-by-side comparison the table is for). */}
+                <div
+                  className="flex md:hidden w-full flex-col"
+                  style={{ border: '1px solid #333333', borderRadius: '14px', overflow: 'hidden' }}
+                >
+                  {/* Header — topic cell stays blank, matching the desktop table
+                      (the topics column has no header cell there either). */}
+                  <div className="grid items-stretch" style={{ gridTemplateColumns: '0.8fr 1.1fr 1.1fr' }}>
+                    <div className="p-[10px]" />
+                    <div className="flex items-center gap-[6px] p-[10px]" style={{ background: '#B34929' }}>
+                      <TDTLogo letterColor="white" width={13} height={15} />
+                      <span className="text-[11px] font-medium leading-[13px] tracking-[-0.01em] text-white">
+                        Think Different Training
                       </span>
                     </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-[8px] px-4 py-[14px]" style={{ background: '#B34929' }}>
-                        <TDTLogo letterColor="white" width={16} height={19} />
-                        <span className="text-[15px] font-medium leading-[19px] tracking-[-0.02em] text-white">
+                    <div className="flex items-center p-[10px]">
+                      <span className="text-[11px] font-medium leading-[13px] tracking-[-0.01em] text-white/50">
+                        Everywhere else
+                      </span>
+                    </div>
+                  </div>
+
+                  {ROWS.map((row, i) => (
+                    <div
+                      key={row.slug}
+                      className="grid items-stretch"
+                      style={{
+                        gridTemplateColumns: '0.8fr 1.1fr 1.1fr',
+                        borderTop: '1px solid #333333',
+                        opacity: tableVisible ? 1 : 0,
+                        transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
+                        transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
+                      }}
+                    >
+                      <div className="flex items-center p-[10px]">
+                        <span className="text-[12px] font-medium leading-[15px] tracking-[-0.01em] text-white/75">
+                          {row.topic}
+                        </span>
+                      </div>
+                      <div className="flex items-center p-[10px]" style={{ background: '#B34929' }}>
+                        <span className="text-[12px] font-normal leading-[15px] tracking-[-0.01em] text-white">
                           {row.tdt}
                         </span>
                       </div>
-                      <div className="px-4 py-[14px]" style={{ borderTop: '1px solid #1f1f1f' }}>
-                        <span className="text-[15px] font-normal leading-[19px] tracking-[-0.02em] text-white/50">
+                      <div className="flex items-center p-[10px]">
+                        <span className="text-[12px] font-normal leading-[15px] tracking-[-0.01em] text-white/50">
                           {row.others}
                         </span>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
 
                 {/* md and up: the full comparison table, scaled down before lg, horizontal-scroll fallback if it still overflows */}
