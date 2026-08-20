@@ -222,6 +222,9 @@ function ProgramDesktop() {
   const stickyRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const railFillRef = useRef<HTMLDivElement>(null);
+  // The rail labels are rendered here but the scroll tween lives inside the
+  // effect below, so the effect hands the jump back out through this.
+  const jumpToStepRef = useRef<((i: number) => void) | null>(null);
   const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
@@ -329,14 +332,25 @@ function ProgramDesktop() {
     let quiet: ReturnType<typeof setTimeout>;
     let gliding = false;
     let tweenRaf = 0;
-    let lastFlick = 0;
+    let lastWheelAt = 0;
+    // Stage the current glide is heading for, or null when idle. Chaining off
+    // this rather than off live scroll position is what lets a second flick
+    // mid-glide advance one more stage instead of re-reading a half-travelled
+    // scrollY and landing back where it started.
+    let targetIdx: number | null = null;
 
     // Fixed duration for gesture-driven moves: every flick travels exactly one
     // stage, so a distance-scaled duration would only make identical gestures
     // feel inconsistent. Hand-rolled rather than scrollTo({behavior:'smooth'})
     // because that gives no control over either duration or curve.
     const GLIDE_MS = 720;
-    const FLICK_COOLDOWN = 260; // < GLIDE_MS, so rapid flicking still works
+    // A trackpad flick isn't one wheel event, it's a burst of dozens spread over
+    // as much as a second or two of momentum. A cooldown can't separate them
+    // from a real second flick — anything short enough to allow deliberate
+    // repeat flicks is short enough for one flick's own tail to retrigger,
+    // which is what was skipping a stage. So split on silence instead: events
+    // closer together than this are one gesture, no matter how many arrive.
+    const GESTURE_GAP_MS = 140;
 
     const geometry = () => {
       const vh = window.innerHeight || 1;
@@ -370,6 +384,7 @@ function ProgramDesktop() {
       const stop = () => {
         html.style.scrollBehavior = prevBehavior;
         gliding = false;
+        targetIdx = null;
       };
 
       const step = (now: number) => {
@@ -392,20 +407,32 @@ function ProgramDesktop() {
       // Outside the staged range the section behaves like any other content.
       if (passed < -0.5 * unit || passed > lastIdx * unit + 0.5 * unit) return;
 
-      const current = Math.round(passed / unit);
-      const next = current + (e.deltaY > 0 ? 1 : -1);
+      const dir = e.deltaY > 0 ? 1 : -1;
+      // Chain off the in-flight target only while one is actually in flight. A
+      // glide interrupted before it settles (tab backgrounded mid-tween, so rAF
+      // never delivers the final frame) would otherwise leave a stale target
+      // here forever, and every later flick would be measured from a stage the
+      // page isn't on.
+      const from = gliding && targetIdx !== null ? targetIdx : Math.round(passed / unit);
+      const next = from + dir;
 
       // Release at both ends so the section can be scrolled out of normally.
       if (next < 0 || next > lastIdx) return;
 
-      // Held for the whole gesture: a trackpad swipe is dozens of wheel events,
-      // and swallowing the tail is what turns them into a single step.
+      // Swallowed for the whole gesture, not just the event that advances —
+      // letting the momentum tail through would scroll the page underneath the
+      // glide.
       e.preventDefault();
 
       const now = performance.now();
-      if (gliding || now - lastFlick < FLICK_COOLDOWN) return;
-      lastFlick = now;
+      const gap = now - lastWheelAt;
+      lastWheelAt = now;
+
+      // Mid-burst: same flick, already acted on.
+      if (gap < GESTURE_GAP_MS) return;
+
       glideTo(Math.round(startY + next * unit));
+      targetIdx = next;
     };
 
     const onKey = (e: KeyboardEvent) => {
@@ -419,12 +446,12 @@ function ProgramDesktop() {
       const passed = window.scrollY - startY;
       if (passed < -0.5 * unit || passed > lastIdx * unit + 0.5 * unit) return;
 
-      const next = Math.round(passed / unit) + dir;
+      const next = (gliding && targetIdx !== null ? targetIdx : Math.round(passed / unit)) + dir;
       if (next < 0 || next > lastIdx) return;
 
       e.preventDefault();
-      if (gliding) return;
       glideTo(Math.round(startY + next * unit));
+      targetIdx = next;
     };
 
     // Fallback for anything that isn't a wheel or an arrow key — touch,
@@ -446,7 +473,16 @@ function ProgramDesktop() {
     };
 
     // Touch always wins outright — never fight a finger for the scroll.
-    const onTouch = () => { gliding = false; };
+    const onTouch = () => { gliding = false; targetIdx = null; };
+
+    // Direct jump for the rail labels — same tween, so clicking a stage and
+    // flicking to it land identically instead of one hard-cutting.
+    jumpToStepRef.current = (i: number) => {
+      const { unit, startY, lastIdx } = geometry();
+      const target = Math.min(lastIdx, Math.max(0, i));
+      glideTo(Math.round(startY + target * unit));
+      targetIdx = target;
+    };
 
     window.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
@@ -454,6 +490,7 @@ function ProgramDesktop() {
     window.addEventListener('touchstart', onTouch, { passive: true });
 
     return () => {
+      jumpToStepRef.current = null;
       clearTimeout(quiet);
       cancelAnimationFrame(tweenRaf);
       document.documentElement.style.scrollBehavior = '';
@@ -570,27 +607,44 @@ function ProgramDesktop() {
               style={{ width: '16.667%', background: 'linear-gradient(90deg, rgba(179,73,41,0.35), #C2552F)' }}
             >
               <span
-                className="absolute right-0 top-1/2 h-[5px] w-[5px] -translate-y-1/2 translate-x-1/2 rounded-full"
-                style={{ background: '#C2552F', boxShadow: '0 0 10px rgba(194,85,47,0.85)' }}
+                className="absolute right-0 top-1/2 h-[4px] w-[4px] -translate-y-1/2 translate-x-1/2 rounded-full"
+                style={{ background: '#C2552F', boxShadow: '0 0 6px rgba(194,85,47,0.55)' }}
               />
             </div>
           </div>
 
           {/* Stage names under their own segment — a map of the section, distinct
-              from the eyebrow inside each panel, which is that stage's heading. */}
-          <div className="relative mt-[12px] h-[13px]">
+              from the eyebrow inside each panel, which is that stage's heading.
+              Same type spec as that eyebrow (11px semibold uppercase, normal
+              tracking) so it reads as the section's own voice; tracking these
+              out instead is the generic micro-label look and matches nothing
+              else on the page. */}
+          <div className="relative mt-[6px] h-[26px]">
             {PROGRAM_STEPS.map((s, i) => (
-              <span
+              <button
                 key={s.slug}
-                className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.14em]"
+                type="button"
+                onClick={() => jumpToStepRef.current?.(i)}
+                aria-label={`Go to ${s.label}`}
+                aria-current={i === activeStep ? 'true' : undefined}
+                // The rail wrapper is pointer-events-none so it can sit over the
+                // panels without eating clicks; the labels opt themselves back in.
+                // py gives a real target height without moving the baseline.
+                className="pointer-events-auto absolute top-0 -translate-x-1/2 cursor-pointer whitespace-nowrap px-2 py-[5px] text-[11px] font-semibold uppercase tracking-normal"
                 style={{
                   left: `${((i + 0.5) / PROGRAM_STEPS.length) * 100}%`,
                   color: i === activeStep ? 'rgba(194,85,47,0.95)' : 'rgba(255,255,255,0.22)',
-                  transition: 'color 0.45s cubic-bezier(0.16,1,0.3,1)',
+                  transition: 'color 0.35s cubic-bezier(0.16,1,0.3,1)',
+                }}
+                onMouseEnter={(e) => {
+                  if (i !== activeStep) e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = i === activeStep ? 'rgba(194,85,47,0.95)' : 'rgba(255,255,255,0.22)';
                 }}
               >
                 {s.label}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -2001,6 +2055,10 @@ export default function Home() {
 
             <div className="flex w-full flex-col items-start">
               {[
+                {
+                  question: "What does film review actually do?",
+                  answer: "Decisions only happen in games, so film is the only place to coach them. Jaiden finds the possessions where you had the answer and didn't see it, and every drill you get is built off those moments.",
+                },
                 {
                   question: "Why am I better in practice than in games?",
                   answer: "Practice tells you what's coming. You know the set, you know the call, and if you blow it you get another rep in thirty seconds. A game gives you one look, half a second, and no answer key. The move was never the problem. The moment was.",
