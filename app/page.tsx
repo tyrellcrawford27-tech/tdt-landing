@@ -333,6 +333,9 @@ function ProgramDesktop() {
     let gliding = false;
     let tweenRaf = 0;
     let lastWheelAt = 0;
+    let lastDelta = 0;
+    // When the current run of swallowed events began, or 0 when not swallowing.
+    let holdingSince = 0;
     // Stage the current glide is heading for, or null when idle. Chaining off
     // this rather than off live scroll position is what lets a second flick
     // mid-glide advance one more stage instead of re-reading a half-travelled
@@ -344,13 +347,26 @@ function ProgramDesktop() {
     // feel inconsistent. Hand-rolled rather than scrollTo({behavior:'smooth'})
     // because that gives no control over either duration or curve.
     const GLIDE_MS = 720;
-    // A trackpad flick isn't one wheel event, it's a burst of dozens spread over
-    // as much as a second or two of momentum. A cooldown can't separate them
-    // from a real second flick — anything short enough to allow deliberate
-    // repeat flicks is short enough for one flick's own tail to retrigger,
-    // which is what was skipping a stage. So split on silence instead: events
-    // closer together than this are one gesture, no matter how many arrive.
-    const GESTURE_GAP_MS = 140;
+    // Separating "one flick" from "still scrolling" is the whole problem here,
+    // and neither timing alone nor magnitude alone does it:
+    //
+    //   - A trackpad flick is a burst of dozens of events whose momentum tail
+    //     can outlast the glide, so a plain cooldown lets the tail advance a
+    //     second stage.
+    //   - A mouse wheel scrolled steadily also fires inside any gap threshold
+    //     wide enough to catch that tail, so a plain gap check freezes it.
+    //
+    // What actually separates them is that momentum DECAYS and deliberate input
+    // does not. So: a gap means a new gesture, and within a stream, a delta that
+    // stops shrinking means the user pushed again.
+    const GESTURE_GAP_MS = 90;
+    // Below this, |deltaY| is a momentum tail rather than anything a hand is
+    // doing. macOS decays well under it long before a tail ends.
+    const MOMENTUM_FLOOR = 8;
+    // Backstop. Whatever the heuristics decide, never hold the section still for
+    // longer than this while input is arriving — being stuck is a worse failure
+    // than advancing one stage too many, so this is the last word.
+    const HOLD_CAP_MS = 900;
 
     const geometry = () => {
       const vh = window.innerHeight || 1;
@@ -417,7 +433,7 @@ function ProgramDesktop() {
       const next = from + dir;
 
       // Release at both ends so the section can be scrolled out of normally.
-      if (next < 0 || next > lastIdx) return;
+      if (next < 0 || next > lastIdx) { holdingSince = 0; return; }
 
       // Swallowed for the whole gesture, not just the event that advances —
       // letting the momentum tail through would scroll the page underneath the
@@ -426,13 +442,40 @@ function ProgramDesktop() {
 
       const now = performance.now();
       const gap = now - lastWheelAt;
+      const delta = Math.abs(e.deltaY);
+      const shrinking = delta < lastDelta;
       lastWheelAt = now;
+      lastDelta = delta;
 
-      // Mid-burst: same flick, already acted on.
-      if (gap < GESTURE_GAP_MS) return;
+      const advance = () => {
+        holdingSince = 0;
+        glideTo(Math.round(startY + next * unit));
+        targetIdx = next;
+      };
 
-      glideTo(Math.round(startY + next * unit));
-      targetIdx = next;
+      // A gap in the stream is unambiguous: the last gesture ended.
+      if (gap >= GESTURE_GAP_MS) { advance(); return; }
+
+      // A tween in flight is its own bounded hold — it always ends, on a timer
+      // we set. So swallow freely here and reset the backstop's clock: counting
+      // glide time towards it is what let a flick's momentum trip the backstop
+      // and steal a second stage.
+      if (gliding) { holdingSince = 0; return; }
+
+      // Not gliding, and the stream is still arriving. This is the only branch
+      // that can swallow unboundedly, so it's the only one that needs a
+      // backstop.
+      if (!holdingSince) holdingSince = now;
+      if (now - holdingSince >= HOLD_CAP_MS) { advance(); return; }
+
+      // Momentum decays; a hand does not. A delta that has stopped shrinking,
+      // and is above the floor, is the user pushing again rather than the last
+      // flick running out. Strictly shrinking, because momentum quantised to
+      // small integers repeats values on the way down, and those repeats sit
+      // below the floor anyway.
+      if (shrinking || delta <= MOMENTUM_FLOOR) return;
+
+      advance();
     };
 
     const onKey = (e: KeyboardEvent) => {
