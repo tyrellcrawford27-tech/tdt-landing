@@ -4,9 +4,20 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Think Different Training",
-  description: "Basketball development coaching with cohort-based training.",
+  description:
+    "100 days of intense film review with Coach Jaiden Francais and drills built off what he finds — turning practice performance into game performance.",
+  // Square, transparent PNGs — Google's own favicon guidance requires square
+  // (the old favicon2.png was 576×671 and never showed up in search).
+  // 48px is Google's stated minimum; 512px covers larger contexts (PWA-style
+  // home-screen icons, share previews). apple-touch-icon gets an opaque
+  // background since iOS composites its own mask/shadow over it and ignores
+  // alpha oddly otherwise.
   icons: {
-    icon: "/favicon2.png",
+    icon: [
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
 };
 
