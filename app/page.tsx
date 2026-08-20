@@ -27,8 +27,12 @@ const HERO_SLIDES: HeroSlide[] = [
 // roughly PROGRAM_STEP_VH of scroll; mobile skips pinning entirely (see
 // ProgramMobile below) and just reveals each stage as it scrolls into view.
 const PROGRAM_STEP_VH = 42;       // scroll distance (% of viewport) per stage — lower = less scroll friction
-const PROGRAM_END_BUFFER_VH = 90; // tail so the last stage lingers before release
-const PROGRAM_STEP_COUNT = 3;
+// Tail after the last stage, before the sticky container releases. Must clear
+// the pinned viewport's own height or the last stage is never reachable:
+// container - sticky >= (steps-1) * STEP_VH. At 3 stages that's a floor of
+// ~47svh; 65 leaves a short breath past the last panel without the half-screen
+// of dead scroll the old 90 left behind.
+const PROGRAM_END_BUFFER_VH = 65;
 
 type ProgramStep = {
   slug: string;
@@ -178,6 +182,422 @@ function ProgramMobile() {
   );
 }
 
+/**
+ * Smootherstep — zero velocity AND zero acceleration at both ends.
+ *
+ * The page's usual curve, cubic-bezier(0.16,1,0.3,1), is an ease-out: it starts
+ * at full speed. That's right for something appearing on its own, but wrong for
+ * moving between two resting points, where an instant start reads as a jolt.
+ * This leaves and arrives with no visible edge at either end, which is what a
+ * stage-to-stage glide needs.
+ *
+ * Panels take their position linearly from scroll, so this curve alone shapes
+ * the motion — see the note in the rAF loop about what compounding two of them
+ * did.
+ */
+const PROGRAM_SNAP_EASE = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+
+/**
+ * ProgramDesktop — md and up. Each stage is a full-bleed panel (copy + its own
+ * screenshot) that slides across the viewport as you scroll, so the transition
+ * IS the scroll rather than a fixed-duration animation it triggers.
+ *
+ * Two things this deliberately does NOT do:
+ *
+ * 1. It doesn't drive position from React state. A scroll-linked transform
+ *    re-rendering this page's whole component tree on every scroll tick is what
+ *    made the first attempt stutter — the work per frame swamped the frame. The
+ *    rAF loop writes transforms straight to the DOM nodes instead, and the only
+ *    state that changes is the active step index, which flips ~3 times total.
+ *
+ * 2. It doesn't put the page gutter on the clipping parent. Panels are
+ *    absolute inset-0 of the sticky box and translate by 100% of their own
+ *    width, so if that box were padded, one "panel width" would be narrower
+ *    than the viewport and the outgoing panel would never clear the screen —
+ *    it'd sit stranded in the margin next to the incoming one. The sticky box
+ *    is full-bleed and each panel carries the gutter itself.
+ */
+function ProgramDesktop() {
+  const startRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const railFillRef = useRef<HTMLDivElement>(null);
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const start = startRef.current;
+    const sticky = stickyRef.current;
+    if (!start || !sticky) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let raf = 0;
+    let running = false;
+    let lastActive = -1;
+
+    const frame = () => {
+      const vh = window.innerHeight || 1;
+      const passed = Math.max(0, -start.getBoundingClientRect().top) / vh;
+      const unit = PROGRAM_STEP_VH / 100;
+      const idx = Math.min(PROGRAM_STEPS.length - 1, Math.max(0, passed / unit));
+      // Linear in scroll, deliberately. Easing the panel here as well as in the
+      // scroll tween that drives it compounds the two curves: measured, that
+      // put the panel 90% of the way across in the first 20% of the glide, then
+      // crawling — which reads as a snap, not a slide. One easing only, and it
+      // belongs on the scroll, so free-scrolling tracks the finger 1:1 too.
+      const position = idx;
+
+      panelRefs.current.forEach((panel, i) => {
+        if (!panel) return;
+        const offset = i - position;
+        const away = Math.min(1, Math.abs(offset));
+        if (reduced) {
+          // Same staging, no travel — a full-width horizontal sweep tied to
+          // scroll is exactly the motion this preference exists to opt out of.
+          panel.style.transform = 'translate3d(0,0,0)';
+          panel.style.opacity = String(1 - away);
+        } else {
+          panel.style.transform = `translate3d(${offset * 100}%,0,0)`;
+          // Slight fade on the way out softens the clip at the screen edge;
+          // not a crossfade, the slide still does the work.
+          panel.style.opacity = String(1 - away * 0.35);
+        }
+        panel.style.pointerEvents = away < 0.5 ? 'auto' : 'none';
+      });
+
+      // +0.5 puts the head at the CENTRE of the active stage's segment, which is
+      // exactly where that stage's label is centred below. Filling to the
+      // segment's trailing edge instead would park the dot on the divider
+      // between two labels, pointing at neither.
+      const fill = railFillRef.current;
+      if (fill) fill.style.width = `${((position + 0.5) / PROGRAM_STEPS.length) * 100}%`;
+
+      const nearest = Math.round(position);
+      if (nearest !== lastActive) {
+        lastActive = nearest;
+        setActiveStep(nearest);
+      }
+
+      if (running) raf = requestAnimationFrame(frame);
+    };
+
+    // Only spin the loop while the section is actually on screen.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !running) {
+          running = true;
+          raf = requestAnimationFrame(frame);
+        } else if (!entry.isIntersecting && running) {
+          running = false;
+          cancelAnimationFrame(raf);
+        }
+      },
+      { rootMargin: '100px' },
+    );
+    io.observe(sticky);
+
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+  }, []);
+
+  // One flick, one stage — the feed-style scroll this section is going for.
+  //
+  // The earlier version let the page scroll freely and snapped back once you
+  // stopped, which meant every transition passed through the state this layout
+  // handles worst: outgoing panel, incoming panel and two screenshots on screen
+  // together. Capturing the gesture instead means that state only ever exists
+  // mid-glide, under our own easing, and never as somewhere you can come to
+  // rest.
+  //
+  // Capture is deliberately narrow. It only applies at md and up (the panels
+  // are display:none below that), only while the section is within its staged
+  // range, and it always releases at the ends — a flick down on the last stage
+  // or up on the first is left to the browser, so the section can never trap
+  // you. Touch is left alone entirely and falls through to the settle-after-
+  // scroll path below, since preventDefault on touchmove is a much easier way
+  // to break a page than it is to improve one.
+  useEffect(() => {
+    const start = startRef.current;
+    if (!start) return;
+
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    let quiet: ReturnType<typeof setTimeout>;
+    let gliding = false;
+    let tweenRaf = 0;
+    let lastFlick = 0;
+
+    // Fixed duration for gesture-driven moves: every flick travels exactly one
+    // stage, so a distance-scaled duration would only make identical gestures
+    // feel inconsistent. Hand-rolled rather than scrollTo({behavior:'smooth'})
+    // because that gives no control over either duration or curve.
+    const GLIDE_MS = 720;
+    const FLICK_COOLDOWN = 260; // < GLIDE_MS, so rapid flicking still works
+
+    const geometry = () => {
+      const vh = window.innerHeight || 1;
+      return {
+        vh,
+        unit: (PROGRAM_STEP_VH / 100) * vh, // one stage, in px of scroll
+        startY: start.getBoundingClientRect().top + window.scrollY,
+        lastIdx: PROGRAM_STEPS.length - 1,
+      };
+    };
+
+    const glideTo = (targetY: number) => {
+      const from = window.scrollY;
+      const delta = targetY - from;
+      if (Math.abs(delta) < 2) return;
+
+      if (reduced.matches) {
+        window.scrollTo(0, targetY);
+        return;
+      }
+
+      const html = document.documentElement;
+      // globals.css sets html { scroll-behavior: smooth }, which would animate
+      // every per-frame scrollTo below and fight this tween into a crawl.
+      const prevBehavior = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
+
+      const t0 = performance.now();
+      gliding = true;
+
+      const stop = () => {
+        html.style.scrollBehavior = prevBehavior;
+        gliding = false;
+      };
+
+      const step = (now: number) => {
+        if (!gliding) { stop(); return; } // cancelled
+        const t = Math.min(1, (now - t0) / GLIDE_MS);
+        window.scrollTo(0, from + delta * PROGRAM_SNAP_EASE(t));
+        if (t < 1) tweenRaf = requestAnimationFrame(step);
+        else stop();
+      };
+      cancelAnimationFrame(tweenRaf);
+      tweenRaf = requestAnimationFrame(step);
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (!desktop.matches || reduced.matches) return;
+
+      const { unit, startY, lastIdx } = geometry();
+      const passed = window.scrollY - startY;
+
+      // Outside the staged range the section behaves like any other content.
+      if (passed < -0.5 * unit || passed > lastIdx * unit + 0.5 * unit) return;
+
+      const current = Math.round(passed / unit);
+      const next = current + (e.deltaY > 0 ? 1 : -1);
+
+      // Release at both ends so the section can be scrolled out of normally.
+      if (next < 0 || next > lastIdx) return;
+
+      // Held for the whole gesture: a trackpad swipe is dozens of wheel events,
+      // and swallowing the tail is what turns them into a single step.
+      e.preventDefault();
+
+      const now = performance.now();
+      if (gliding || now - lastFlick < FLICK_COOLDOWN) return;
+      lastFlick = now;
+      glideTo(Math.round(startY + next * unit));
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (!desktop.matches || reduced.matches) return;
+      const dir = e.key === 'ArrowDown' || e.key === 'PageDown' ? 1
+        : e.key === 'ArrowUp' || e.key === 'PageUp' ? -1
+        : 0;
+      if (!dir) return;
+
+      const { unit, startY, lastIdx } = geometry();
+      const passed = window.scrollY - startY;
+      if (passed < -0.5 * unit || passed > lastIdx * unit + 0.5 * unit) return;
+
+      const next = Math.round(passed / unit) + dir;
+      if (next < 0 || next > lastIdx) return;
+
+      e.preventDefault();
+      if (gliding) return;
+      glideTo(Math.round(startY + next * unit));
+    };
+
+    // Fallback for anything that isn't a wheel or an arrow key — touch,
+    // dragging the scrollbar, a trackpad fling that outruns the cooldown.
+    // Settles to the nearest stage once the page goes quiet.
+    const settle = () => {
+      if (!desktop.matches || gliding) return;
+      const { unit, startY, lastIdx } = geometry();
+      const passed = window.scrollY - startY;
+      if (passed < -0.15 * unit || passed > lastIdx * unit + 0.4 * unit) return;
+      const nearest = Math.min(lastIdx, Math.max(0, Math.round(passed / unit)));
+      glideTo(Math.round(startY + nearest * unit));
+    };
+
+    const onScroll = () => {
+      if (gliding) return; // our own tween, not the user
+      clearTimeout(quiet);
+      quiet = setTimeout(settle, 140); // wait out trackpad momentum
+    };
+
+    // Touch always wins outright — never fight a finger for the scroll.
+    const onTouch = () => { gliding = false; };
+
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('touchstart', onTouch, { passive: true });
+
+    return () => {
+      clearTimeout(quiet);
+      cancelAnimationFrame(tweenRaf);
+      document.documentElement.style.scrollBehavior = '';
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('touchstart', onTouch);
+    };
+  }, []);
+
+  return (
+    <div
+      className="hidden md:block"
+      style={{ height: `${PROGRAM_STEPS.length * PROGRAM_STEP_VH + PROGRAM_END_BUFFER_VH}svh` }}
+    >
+      <div ref={startRef} />
+
+      <div
+        ref={stickyRef}
+        className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] overflow-hidden"
+      >
+        {PROGRAM_STEPS.map((s, i) => (
+          <div
+            key={s.slug}
+            ref={(el) => { panelRefs.current[i] = el; }}
+            // pb clears the progress rail below, so a tall screenshot or a long
+            // heading can't run into it on a short viewport.
+            className="absolute inset-0 flex flex-row items-center gap-[60px] lg:gap-[80px] px-6 md:px-12 lg:px-[100px] pb-[76px]"
+            // Seeded so the first paint matches where the rAF loop will put it
+            // — without this every panel renders stacked at 0 for one frame.
+            style={{ transform: `translate3d(${i * 100}%,0,0)`, willChange: 'transform, opacity' }}
+          >
+            {/* Left — label, heading, body */}
+            <div className="w-[42%] lg:w-[38%] flex-shrink-0 flex flex-col justify-center gap-[18px]">
+              <div className="flex flex-row items-center gap-[8px] text-[#C2552F]">
+                <ProgramStepIcon
+                  name={s.icon}
+                  active={i === activeStep}
+                  className="h-[16px] w-[16px] flex-shrink-0 md:h-[18px] md:w-[18px]"
+                />
+                <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
+                  {s.label}
+                </span>
+              </div>
+              <h2 className="text-[38px] md:text-[44px] lg:text-[50px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
+                {s.title}
+              </h2>
+              <p className="text-[14px] md:text-[15px] font-normal leading-[19px] text-white/50 max-w-[400px]">
+                {s.body}
+              </p>
+            </div>
+
+            {/* Right — this stage's screenshot, travelling with its copy */}
+            <div className="flex flex-1 flex-col items-end justify-center h-full py-[16px]">
+              <div className="flex flex-col items-end gap-[3px] pb-[25px] flex-shrink-0 text-right">
+                <h2 className="text-[17px] md:text-[19px] font-bold tracking-[-0.025em] text-white/55">
+                  Until it translates.
+                </h2>
+                <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {s.num} <span className="text-white/12">/ {String(PROGRAM_STEPS.length).padStart(2, '0')}</span>
+                </span>
+              </div>
+              <div className="relative w-full" style={{ maxHeight: '100%', aspectRatio: '16 / 10' }}>
+                <div
+                  className="absolute inset-0 rounded-[24px] pointer-events-none"
+                  style={{ background: 'radial-gradient(ellipse at 50% 110%, rgba(179,73,41,0.18) 0%, transparent 65%)' }}
+                />
+                <div
+                  className="relative w-full h-full overflow-hidden rounded-[16px]"
+                  style={{
+                    background: '#0c0c0c',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 100px rgba(0,0,0,0.65), 0 8px 32px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  <div
+                    className="absolute inset-0 bg-cover"
+                    style={{
+                      backgroundImage: `url(/${s.image})`,
+                      backgroundPosition: s.imagePosition ?? 'top',
+                      backgroundColor: 'rgba(255,255,255,0.025)',
+                    }}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Progress rail — the one element in here that doesn't travel. The
+            panels slide past it, so it reads as a fixed measure of the whole
+            section rather than a piece of any single stage.
+
+            Sits outside the panel loop for that reason, and shares the panels'
+            gutter so the rule lines up with the copy above it. */}
+        <div className="absolute inset-x-0 bottom-[34px] px-6 md:px-12 lg:px-[100px] pointer-events-none">
+          <div className="relative h-px w-full" style={{ background: 'rgba(255,255,255,0.10)' }}>
+            {/* Stage boundaries, sitting on the rule rather than breaking it */}
+            {PROGRAM_STEPS.slice(1).map((s, i) => (
+              <span
+                key={s.slug}
+                className="absolute top-1/2 h-[7px] w-px -translate-y-1/2"
+                style={{ left: `${((i + 1) / PROGRAM_STEPS.length) * 100}%`, background: 'rgba(255,255,255,0.16)' }}
+              />
+            ))}
+
+            {/* Fill. Width is written by the rAF loop, not transitioned — it's
+                already following scroll every frame, so a transition would only
+                add lag between the rail and the panels it's measuring. */}
+            <div
+              ref={railFillRef}
+              className="absolute inset-y-0 left-0"
+              style={{ width: '16.667%', background: 'linear-gradient(90deg, rgba(179,73,41,0.35), #C2552F)' }}
+            >
+              <span
+                className="absolute right-0 top-1/2 h-[5px] w-[5px] -translate-y-1/2 translate-x-1/2 rounded-full"
+                style={{ background: '#C2552F', boxShadow: '0 0 10px rgba(194,85,47,0.85)' }}
+              />
+            </div>
+          </div>
+
+          {/* Stage names under their own segment — a map of the section, distinct
+              from the eyebrow inside each panel, which is that stage's heading. */}
+          <div className="relative mt-[12px] h-[13px]">
+            {PROGRAM_STEPS.map((s, i) => (
+              <span
+                key={s.slug}
+                className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{
+                  left: `${((i + 0.5) / PROGRAM_STEPS.length) * 100}%`,
+                  color: i === activeStep ? 'rgba(194,85,47,0.95)' : 'rgba(255,255,255,0.22)',
+                  transition: 'color 0.45s cubic-bezier(0.16,1,0.3,1)',
+                }}
+              >
+                {s.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 // How far past the apply-cta section's top counts as "in" it, in viewports.
@@ -458,7 +878,6 @@ function CountdownEyebrow({ onLaunch }: { onLaunch?: () => void }) {
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
   const [tp, setTp] = useState(0);
-  const [programProgress, setProgramProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
   const localTime = useLocalTime(HOME_TIMEZONE, menuOpen);
@@ -493,15 +912,7 @@ export default function Home() {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [launched, setLaunched] = useState(false);
 
-  // Derived from the scroll-linked programProgress. NaN-safe so a bad reading
-  // can never index STEPS out of bounds.
-  const programActiveStep = Math.min(
-    PROGRAM_STEP_COUNT - 1,
-    Math.max(0, Math.floor((programProgress || 0) * (100 / PROGRAM_STEP_VH))) || 0,
-  );
-
   const transitionZoneRef = useRef<HTMLDivElement>(null);
-  const cardsStartRef = useRef<HTMLDivElement>(null);
   const coachContentRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -522,14 +933,6 @@ export default function Home() {
         // so the black→white flip fully completes while the panel still covers the viewport.
         const pinnable = Math.max(1, r.height - window.innerHeight);
         setTp(Math.max(0, Math.min(1, -r.top / pinnable)));
-      }
-      if (cardsStartRef.current) {
-        const r = cardsStartRef.current.getBoundingClientRect();
-        // Guard innerHeight: a collapsed or hidden viewport reports 0, and 0/0
-        // yields NaN, which propagates into the step index and indexes STEPS
-        // out of bounds.
-        const vh = window.innerHeight || 1;
-        setProgramProgress(Math.max(0, -r.top) / vh);
       }
       const mid = window.innerHeight * 0.45;
       let active = '';
@@ -1205,130 +1608,13 @@ export default function Home() {
         </section>
 
         {/* ── Program ── */}
-        {(() => {
-          const STEPS = PROGRAM_STEPS;
-          const STEP_VH = PROGRAM_STEP_VH; // scroll distance (% of viewport) needed to advance one step — lower = less scroll friction
-          const activeStep = programActiveStep;
-
-          return (
-            <section id="program" className="relative w-full bg-[#000000]">
-              <ProgramIconStyles />
-
-              {/* Mobile: no pinning — see ProgramMobile for why. */}
-              <ProgramMobile />
-
-              {/* Desktop/tablet: sticky pin-and-release. Tall scroll container —
-                  one screen per step, plus a short buffer at the end so the last
-                  step lingers before the sticky section releases. */}
-              <div className="hidden md:block" style={{ height: `${STEPS.length * STEP_VH + PROGRAM_END_BUFFER_VH}svh` }}>
-
-                <div ref={cardsStartRef} />
-
-                {/* "The Method" sticky header — scoped to stages 01–02 only. This
-                    wrapper is absolutely positioned over just the first two stages'
-                    worth of scroll (2 * STEP_VH), so the sticky child inside it runs
-                    out of room — and releases — right as stage 03 begins, instead of
-                    riding the page's full sticky span like the content viewport below. */}
-                {/* Single sticky viewport */}
-                <div className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] flex flex-col overflow-hidden px-6 md:px-12 lg:px-[100px]">
-
-                  {/* The "Make them rewind." header rides with the screenshot frame in
-                      the right column below, so it stays anchored just above the product
-                      shot at every viewport size instead of floating at the pane top. */}
-
-                  {/* Main content */}
-                  <div className="relative z-10 flex flex-col md:flex-row flex-1 items-center gap-[8px] md:gap-[60px] lg:gap-[80px] min-h-0">
-
-                    {/* Left — animated text */}
-                    <div className="relative w-full md:w-[42%] lg:w-[38%] flex-shrink-0 h-[26%] md:h-full flex items-center">
-                      {STEPS.map((s, i) => (
-                        <div
-                          key={s.slug}
-                          className="absolute inset-0 flex flex-col justify-end md:justify-center gap-[12px] md:gap-[18px]"
-                          style={{
-                            opacity:   activeStep === i ? 1 : 0,
-                            transform: `translateY(${activeStep === i ? 0 : activeStep > i ? -20 : 20}px)`,
-                            transition: 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)',
-                            pointerEvents: activeStep === i ? 'auto' : 'none',
-                          }}
-                        >
-                          {/* Icon sits inline with the label at every breakpoint */}
-                          <div className="flex flex-row items-center gap-[8px] text-[#C2552F]">
-                            <ProgramStepIcon
-                              name={s.icon}
-                              active={activeStep === i}
-                              className="h-[16px] w-[16px] flex-shrink-0 md:h-[18px] md:w-[18px]"
-                            />
-                            <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
-                              {s.label}
-                            </span>
-                          </div>
-                          <h2 className="text-[38px] md:text-[44px] lg:text-[50px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
-                            {s.title}
-                          </h2>
-                          <p className="text-[14px] md:text-[15px] font-normal leading-[19px] text-white/50 max-w-[400px]">
-                            {s.body}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Right — persistent UI frame */}
-                    <div className="flex w-full flex-1 flex-col items-stretch justify-center md:items-end h-[66%] md:h-full py-0 md:py-[16px]">
-                      {/* Header sits with the frame so it always hugs the screenshot */}
-                      <div className="flex flex-col items-end gap-[3px] pb-[25px] flex-shrink-0 text-right">
-                        <h2 className="text-[17px] md:text-[19px] font-bold tracking-[-0.025em] text-white/55">
-                          Until it translates.
-                        </h2>
-                        <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                          {STEPS[activeStep].num} <span className="text-white/12">/ {String(STEPS.length).padStart(2, '0')}</span>
-                        </span>
-                      </div>
-                      {/* Ambient glow behind frame */}
-                      <div className="relative w-full" style={{ maxHeight: '100%', aspectRatio: '16 / 10' }}>
-                        <div
-                          className="absolute inset-0 rounded-[24px] pointer-events-none"
-                          style={{ background: 'radial-gradient(ellipse at 50% 110%, rgba(179,73,41,0.18) 0%, transparent 65%)' }}
-                        />
-                        {/* Frame */}
-                        <div
-                          className="relative w-full h-full overflow-hidden rounded-[16px]"
-                          style={{
-                            background: '#0c0c0c',
-                            border: '1px solid rgba(255,255,255,0.07)',
-                            boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 100px rgba(0,0,0,0.65), 0 8px 32px rgba(0,0,0,0.4)',
-                          }}
-                        >
-                          {/* Screenshot layers */}
-                          <div className="relative" style={{ height: '100%' }}>
-                            {STEPS.map((s, i) => (
-                              <div
-                                key={s.slug}
-                                className="absolute inset-0 bg-cover"
-                                style={{
-                                  backgroundImage: `url(/${s.image})`,
-                                  backgroundPosition: s.imagePosition ?? 'top',
-                                  backgroundColor: 'rgba(255,255,255,0.025)',
-                                  opacity:   activeStep === i ? 1 : 0,
-                                  transform: `scale(${activeStep === i ? 1 : 1.025})`,
-                                  transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
-                                }}
-                              />
-                            ))}
-                            {/* Bottom fade so screenshot bleeds into darkness */}
-                            <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-
-                </div>
-              </div>
-            </section>
-          );
-        })()}
+        <section id="program" className="relative w-full bg-[#000000]">
+          <ProgramIconStyles />
+          {/* Mobile: no pinning — see ProgramMobile for why. */}
+          <ProgramMobile />
+          {/* md and up: full-bleed panels that slide across as you scroll. */}
+          <ProgramDesktop />
+        </section>
 
         {/* ── Difference ── */}
         {(() => {
@@ -1594,11 +1880,10 @@ export default function Home() {
         <section className="relative flex w-full flex-col items-center px-6 md:px-12 lg:px-[100px] py-[100px] md:py-[130px] bg-[#000000]">
           <blockquote className="w-full max-w-[900px] text-center">
             <p className="text-[22px] md:text-[32px] font-medium italic leading-[1.4] tracking-[-0.02em] text-white/90">
-              &ldquo;The right sort of practice carried out over a sufficient period of time leads to improvement.
-              Nothing else.&rdquo;
+              &ldquo;I went from watching what happened to what could have and should have happened.&rdquo;
             </p>
             <footer className="mt-[24px] text-[13px] md:text-[14px] font-medium tracking-[0.04em] uppercase text-[rgba(179,73,41,0.85)]">
-              — Anders Ericsson
+              — Kobe Bryant
             </footer>
           </blockquote>
         </section>
