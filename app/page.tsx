@@ -10,9 +10,11 @@ import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon
 import HeroCarousel, { type HeroSlide } from "@/components/HeroCarousel";
 import Spline from "@splinetool/react-spline";
 
-// Hero background rotation. Sources live in public/ as `hero-N.webp` (1900w)
-// plus a `-sm` 1000w variant for phones; the originals they were derived from
-// are the `hero_N.png` uploads. To add a shot: export both widths, append here.
+// Hero background rotation. Served files are public/`hero-N.webp` (1900w) plus a
+// `-sm` 1000w variant for phones. The full-res originals they were derived from
+// live in design-assets/hero/, which is gitignored and never deployed — see the
+// note there for the re-export command. To add a shot: export both widths into
+// public/, append here.
 const HERO_SLIDES: HeroSlide[] = [
   { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%' },
   // Tallest source of the three (2:3) and the tightest framing, so it sits back

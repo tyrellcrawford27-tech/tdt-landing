@@ -49,3 +49,9 @@ next-env.d.ts
 /public/Drill Library 3.png
 /public/diagnosis-1.png
 /public/the-100-days.png
+
+# Full-res source images kept for re-export, not served. The site uses the
+# derived webp in public/; regenerate them with sharp, e.g.
+#   sharp(src).resize({width: 1900}).webp({quality: 72}).toFile('public/hero-N.webp')
+#   sharp(src).resize({width: 1000}).webp({quality: 70}).toFile('public/hero-N-sm.webp')
+/design-assets
