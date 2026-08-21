@@ -17,7 +17,7 @@ import Spline from "@splinetool/react-spline";
 // public/, append here.
 const HERO_SLIDES: HeroSlide[] = [
   { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%' },
-  { src: '/hero-5.png', alt: 'Jaiden leading athletes through a training session', objectPosition: '50% 45%' },
+  { src: '/hero-5.png', srcSm: '/hero-5-sm.png', alt: 'Jaiden leading athletes through a training session', objectPosition: '50% 45%' },
   { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%' },
 ];
 
