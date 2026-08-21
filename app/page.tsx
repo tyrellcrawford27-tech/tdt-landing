@@ -771,7 +771,7 @@ function CoachCarousel() {
       onTouchEnd={() => setPaused(false)}
       onTouchCancel={() => setPaused(false)}
       role="img"
-      aria-label="Photos of coach Jaiden Francais training athletes"
+      aria-label="Photos of coach Jaiden Francis training athletes"
     >
       <style>{`
         @keyframes kb-a { from { transform: scale(1.05) translate(0, 0);        } to { transform: scale(1.16) translate(-2.2%, -1.6%); } }
@@ -1557,7 +1557,7 @@ export default function Home() {
               than in games
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              <em className="italic">100 days</em> of intense film review with Coach Jaiden Francais, and drills built off what he finds.
+              <em className="italic">100 days</em> of intense film review with Coach Jaiden Francis, and personalised drills built off what he finds.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
@@ -1656,7 +1656,7 @@ export default function Home() {
                   </button>
                 </div>
                 <p className="text-[24px] font-normal leading-[31px] tracking-[-0.02em] text-[rgba(255,255,255,0.8)] mt-5" style={{ fontFamily: "'Pinyon Script', cursive", ...signatureReveal }}>
-                  Jaiden Francais
+                  Jaiden Francis
                 </p>
               </div>
               <div style={fadeUp(1150)} className="flex flex-col gap-[12px] text-left">

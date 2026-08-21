@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Think Different Training",
   description:
-    "100 days of intense film review with Coach Jaiden Francais and drills built off what he finds — turning practice performance into game performance.",
+    "100 days of intense film review with Coach Jaiden Francis and personalised drills built off what he finds — turning practice performance into game performance.",
   // Square, transparent PNGs — Google's own favicon guidance requires square
   // (the old favicon2.png was 576×671 and never showed up in search).
   // 48px is Google's stated minimum; 512px covers larger contexts (PWA-style

@@ -67,7 +67,7 @@ export default function PrivacyPage() {
       <h2>4. Who We Share Information With</h2>
       <p>We share information only with:</p>
       <ul>
-        <li><strong>Coach (Jaiden Francais)</strong> — for the purpose of providing coaching and film review.</li>
+        <li><strong>Coach (Jaiden Francis)</strong> — for the purpose of providing coaching and film review.</li>
         <li>
           <strong>Service providers</strong> who help us operate the platform, such as our hosting provider (
           <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Supabase</a>),

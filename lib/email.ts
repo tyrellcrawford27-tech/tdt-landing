@@ -58,7 +58,7 @@ export async function sendBookingEmails(opts: {
         subject: `${athleteFirst} applied to Think Different Training`,
         html: `
           <p>Hi ${guardianFirst},</p>
-          <p>${athleteFirst} applied to Think Different Training, a basketball development program run by Jaiden Francais. The next step is a 20-minute call to see if it's the right fit — ${athleteFirst} is booking the time, and you're on it as a guest.</p>
+          <p>${athleteFirst} applied to Think Different Training, a basketball development program run by Jaiden Francis. The next step is a 20-minute call to see if it's the right fit — ${athleteFirst} is booking the time, and you're on it as a guest.</p>
           <p><a href="${bookingUrl}">See the call details</a></p>
         `,
       })
