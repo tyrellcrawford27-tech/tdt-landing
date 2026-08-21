@@ -42,7 +42,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet" />
         {/* Preload key visuals so they're already loading before the user scrolls to them */}
         <link rel="preload" as="image" href="/hero-1.webp" fetchPriority="high" />
-        <link rel="preload" as="image" href="/hero-3.webp" />
+        {/* Second slide, so it must be decoded before the first crossfade. Keep
+            this in step with HERO_SLIDES order — preloading a slide that moved
+            to the back just spends bandwidth on the one needed last. */}
+        <link rel="preload" as="image" href="/hero-4.webp" />
         <link rel="preload" as="image" href="/study-work.webp" />
         <link rel="preload" as="image" href="/drill-true.webp" />
       </head>
