@@ -901,7 +901,7 @@ function ApplyPageInner() {
           textAlign: 'center',
           lineHeight: 1.45,
         }}>
-          We&apos;re looking for the players who already put the work in and can&apos;t understand why it isn&apos;t showing up in games. If that&apos;s you, tell us.
+          Same season, same team, different player by December.
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin
