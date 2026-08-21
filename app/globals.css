@@ -57,17 +57,6 @@ body:has([data-surface='light']) {
   background: var(--surface-light);
 }
 
-/* Hero carousel crop. Inline styles can't carry a media query, so the two
-   framings ride in as custom properties and the breakpoint picks one. */
-.hero-slide {
-  object-position: var(--hero-op, center);
-}
-@media (min-width: 768px) {
-  .hero-slide {
-    object-position: var(--hero-op-md, var(--hero-op, center));
-  }
-}
-
 /* Hero headline: plain white on phones (the gradient's dark tail read as a
    grey wash over the busier hero photos), the white-to-dark fade restored at
    md and up where the hero has more room and the fade reads as intentional
