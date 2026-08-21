@@ -10,17 +10,20 @@ import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon
 import HeroCarousel, { type HeroSlide } from "@/components/HeroCarousel";
 import Spline from "@splinetool/react-spline";
 
+// objectPositionMd lifts each crop on desktop — a wide frame takes a much
+// shallower band out of these portrait sources than a phone does, so the value
+// that frames a subject well at 375px sits too low at 1440px.
 // Hero background rotation. Served files are public/`hero-N.webp` (1900w) plus a
 // `-sm` 1000w variant for phones. The full-res originals they were derived from
 // live in design-assets/hero/, which is gitignored and never deployed — see the
 // note there for the re-export command. To add a shot: export both widths into
 // public/, append here.
 const HERO_SLIDES: HeroSlide[] = [
-  { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%' },
+  { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%', objectPositionMd: '50% 60%' },
   // Tallest source of the three (2:3) and the tightest framing, so it sits back
   // near flat cover and crops higher up the frame than the others.
-  { src: '/hero-3.webp', srcSm: '/hero-3-sm.webp', alt: 'Jaiden mid-huddle, breaking down the next rep with a group of athletes', objectPosition: '50% 5%', zoom: 0.15 },
-  { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%' },
+  { src: '/hero-3.webp', srcSm: '/hero-3-sm.webp', alt: 'Jaiden mid-huddle, breaking down the next rep with a group of athletes', objectPosition: '50% 5%', objectPositionMd: '50% 25%', zoom: 0.15 },
+  { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%', objectPositionMd: '50% 55%' },
 ];
 
 // Program section scroll tuning — one step per PROGRAM_STEP_VH of scroll.

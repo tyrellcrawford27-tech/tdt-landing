@@ -11,6 +11,13 @@ export type HeroSlide = {
   /** object-position for the cover crop, e.g. '50% 35%' to favour faces. */
   objectPosition?: string;
   /**
+   * Overrides objectPosition from md up. A phone's tall frame and a desktop's
+   * wide one crop these portrait sources to completely different bands, so a
+   * single value can't sit right on both — what's a good crop at 375px is
+   * usually too low at 1440px.
+   */
+  objectPositionMd?: string;
+  /**
    * Scales how far above the cover fit this slide's drift sits, so a tightly
    * framed shot can sit back while the rest keep the fuller push-in. 1 is the
    * default range (1.06→1.17); 0 pins the slide flat against cover with no
@@ -156,9 +163,12 @@ export default function HeroCarousel({
             fetchPriority={i === 0 ? 'high' : 'auto'}
             loading={i === 0 ? 'eager' : 'lazy'}
             decoding="async"
-            className="h-full w-full object-cover select-none"
+            // object-position comes from CSS vars, not an inline value, because
+            // the md override needs a media query (see globals.css).
+            className="hero-slide h-full w-full object-cover select-none"
             style={{
-              objectPosition: slide.objectPosition ?? 'center',
+              ['--hero-op' as string]: slide.objectPosition ?? 'center',
+              ['--hero-op-md' as string]: slide.objectPositionMd ?? slide.objectPosition ?? 'center',
               willChange: 'transform',
               // Start where this slide's drift starts, so the first paint and
               // the first frame of the animation are the same framing.
