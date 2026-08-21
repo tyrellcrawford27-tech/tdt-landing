@@ -1597,13 +1597,13 @@ export default function Home() {
                       hands off to the toggle. */}
                   <div className="flex flex-col gap-[18px]">
                     <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
-                      I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts and it's a completely different person out there.
+                      I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts, and I'm watching a completely different player.
                     </p>
                     <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(150) }}>
-                      I kept asking myself why. Because it's not only my job to teach you drills. It's to see you shine.
+                      For a long time I called it nerves. It wasn't nerves. And handing them another drill was never going to tell me what it was — the right drill only exists once you know what's stopping the work from showing up.
                     </p>
                     <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                      So I studied it. And what I found, almost nobody's talking about.
+                      So I studied it. Film, one possession at a time, for years. What I found is in every game you've ever played, and almost nobody is coaching it.
                     </p>
                   </div>
                   {/* The answer to that last line collapses behind the toggle
