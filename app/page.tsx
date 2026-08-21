@@ -1698,8 +1698,16 @@ export default function Home() {
             </div>
 
             <div className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end">
-              <div className="relative w-full aspect-video lg:aspect-auto lg:h-[434px] lg:w-[543px] overflow-hidden rounded-[12px] border border-white/40 bg-[#111111]">
-                <div className="absolute inset-0 bg-cover" style={{ backgroundImage: "url('/coach-2.jpg')", backgroundPosition: 'center 30%' }} />
+              {/* Portrait on phones, landscape from lg. 2/3 is the source's own
+                  aspect, so the mobile frame crops nothing; the lg frame is
+                  landscape and does crop, which is what backgroundPosition
+                  below is set for. */}
+              <div className="relative w-full aspect-[2/3] lg:aspect-auto lg:h-[434px] lg:w-[543px] overflow-hidden rounded-[12px] border border-white/40 bg-[#111111]">
+                {/* Portrait source (2:3) in a landscape frame, so cover crops to a
+                    horizontal band and the Y position is doing real work — 25%
+                    lands the band on his face and upper body rather than the
+                    signage above or the floor below. */}
+                <div className="absolute inset-0 bg-cover" style={{ backgroundImage: "url('/coach-section.webp')", backgroundPosition: 'center 25%' }} />
                 <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_55%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
               </div>
             </div>
