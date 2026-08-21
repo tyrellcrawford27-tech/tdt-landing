@@ -84,24 +84,75 @@ const PROGRAM_MOBILE_STAGE_VH = 50; // page scroll (% of viewport) per stage
 // PROGRAM_MOBILE_STAGE_VH (not this) to change how long the section holds.
 const PROGRAM_MOBILE_TAIL_VH = 100;
 
+// Which stage the page is currently scrolled to. Both the scroll handler and
+// the swipe read through this rather than trusting React state: a swipe that
+// lands before the next render — or part-way through a swipe's own smooth
+// scroll — would otherwise compute its target from a stale step and jump the
+// wrong way.
+function programMobileStep(startEl: HTMLElement | null) {
+  if (!startEl) return 0;
+  // Guard innerHeight — a collapsed viewport reports 0, and 0/0 is NaN, which
+  // would index PROGRAM_STEPS out of bounds.
+  const vh = window.innerHeight || 1;
+  const passed = Math.max(0, -startEl.getBoundingClientRect().top) / vh;
+  return Math.min(
+    PROGRAM_STEPS.length - 1,
+    Math.max(0, Math.floor(passed * (100 / PROGRAM_MOBILE_STAGE_VH))) || 0,
+  );
+}
+
+// Horizontal swipe thresholds for the mobile Program stages. Deliberately
+// strict: this sits inside a vertically-scrolling page, so anything that could
+// plausibly be a scroll must stay a scroll.
+const SWIPE_MIN_PX = 45;    // shorter than this is a tap or a jitter
+const SWIPE_RATIO = 1.3;    // must be this much more sideways than vertical
+const SWIPE_MAX_MS = 600;   // a flick, not a slow drag that wandered
+
 function ProgramMobile() {
   const startRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
+  const touchRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  // Swipes scroll the page to the target stage rather than setting `step`
+  // directly. Scroll position stays the single source of truth, so the swipe
+  // and the scroll-down mechanic can't disagree — and the dots, which read off
+  // `step`, follow for free.
+  const goToStep = (i: number) => {
+    const el = startRef.current;
+    if (!el) return;
+    const clamped = Math.min(PROGRAM_STEPS.length - 1, Math.max(0, i));
+    if (clamped === programMobileStep(el)) return;
+    const vh = window.innerHeight || 1;
+    const startY = el.getBoundingClientRect().top + window.scrollY;
+    // Aim at the middle of the stage's window, not its edge — landing on a
+    // boundary leaves a stray pixel of scroll able to flip it back.
+    const target = startY + (clamped + 0.5) * (PROGRAM_MOBILE_STAGE_VH / 100) * vh;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: Math.round(target), behavior: reduced ? 'auto' : 'smooth' });
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchRef.current = { x: t.clientX, y: t.clientY, t: performance.now() };
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchRef.current;
+    touchRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // Never preventDefault anywhere in this gesture: the page has to keep
+    // scrolling vertically through it. Intent is judged only once, at the end.
+    if (Math.abs(dx) < SWIPE_MIN_PX) return;
+    if (Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+    if (performance.now() - start.t > SWIPE_MAX_MS) return;
+    goToStep(programMobileStep(startRef.current) + (dx < 0 ? 1 : -1));
+  };
 
   useEffect(() => {
-    const onScroll = () => {
-      const el = startRef.current;
-      if (!el) return;
-      // Guard innerHeight — a collapsed viewport reports 0, and 0/0 is NaN,
-      // which would index PROGRAM_STEPS out of bounds.
-      const vh = window.innerHeight || 1;
-      const passed = Math.max(0, -el.getBoundingClientRect().top) / vh;
-      const i = Math.min(
-        PROGRAM_STEPS.length - 1,
-        Math.max(0, Math.floor(passed * (100 / PROGRAM_MOBILE_STAGE_VH))) || 0,
-      );
-      setStep(i);
-    };
+    const onScroll = () => setStep(programMobileStep(startRef.current));
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
@@ -114,7 +165,16 @@ function ProgramMobile() {
     >
       <div ref={startRef} />
 
-      <div className="sticky top-0 h-[100svh] overflow-hidden">
+      {/* touch-action pan-y: vertical scroll and pinch stay native, but the
+          browser stops claiming horizontal drags — without it iOS reads a
+          right-swipe near the edge as back-navigation. */}
+      <div
+        className="sticky top-0 h-[100svh] overflow-hidden"
+        style={{ touchAction: 'pan-y pinch-zoom' }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={() => { touchRef.current = null; }}
+      >
         {PROGRAM_STEPS.map((s, i) => (
           <div
             key={s.slug}
