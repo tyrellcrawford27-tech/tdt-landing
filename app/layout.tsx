@@ -45,7 +45,7 @@ export default function RootLayout({
         {/* Second slide, so it must be decoded before the first crossfade. Keep
             this in step with HERO_SLIDES order — preloading a slide that moved
             to the back just spends bandwidth on the one needed last. */}
-        <link rel="preload" as="image" href="/hero-4.webp" />
+        <link rel="preload" as="image" href="/hero-5.png" />
         <link rel="preload" as="image" href="/study-work.webp" />
         <link rel="preload" as="image" href="/drill-true.webp" />
       </head>
