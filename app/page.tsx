@@ -1557,7 +1557,7 @@ export default function Home() {
               than in games
             </h1>
             <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              <em className="italic">100 days</em> of intense film review with Coach Jaiden Francis, and personalised drills built off what he finds.
+              <em className="italic">100 days</em> of Coach Jaiden Francis breaking down your game and building personalised drills around what you need to improve.
             </p>
             <div className="flex items-center gap-[16px]">
               <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
