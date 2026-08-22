@@ -651,9 +651,6 @@ function ProgramDesktop() {
             {/* Right — this stage's screenshot, travelling with its copy */}
             <div className="flex flex-1 flex-col items-end justify-center h-full py-[16px]">
               <div className="flex flex-col items-end gap-[3px] pb-[25px] flex-shrink-0 text-right">
-                <h2 className="text-[17px] md:text-[19px] font-bold tracking-[-0.025em] text-white/55">
-                  Until it translates.
-                </h2>
                 <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {s.num} <span className="text-white/12">/ {String(PROGRAM_STEPS.length).padStart(2, '0')}</span>
                 </span>
