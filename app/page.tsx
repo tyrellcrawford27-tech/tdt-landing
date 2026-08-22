@@ -483,7 +483,9 @@ function ProgramDesktop() {
       // Outside the staged range the section behaves like any other content.
       if (passed < -0.5 * unit || passed > lastIdx * unit + 0.5 * unit) return;
 
-      const dir = e.deltaY > 0 ? 1 : -1;
+      // Use horizontal scroll (deltaX) if present, otherwise use vertical (deltaY)
+      const scrollDelta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const dir = scrollDelta > 0 ? 1 : -1;
       // Chain off the in-flight target only while one is actually in flight. A
       // glide interrupted before it settles (tab backgrounded mid-tween, so rAF
       // never delivers the final frame) would otherwise leave a stale target
@@ -502,7 +504,7 @@ function ProgramDesktop() {
 
       const now = performance.now();
       const gap = now - lastWheelAt;
-      const delta = Math.abs(e.deltaY);
+      const delta = Math.abs(scrollDelta);
       const shrinking = delta < lastDelta;
       lastWheelAt = now;
       lastDelta = delta;
