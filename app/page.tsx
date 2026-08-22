@@ -1774,7 +1774,7 @@ export default function Home() {
                     horizontal band and the Y position is doing real work — 25%
                     lands the band on his face and upper body rather than the
                     signage above or the floor below. */}
-                <div className="absolute inset-0 bg-cover" style={{ backgroundImage: "url('/coach-section.webp')", backgroundPosition: 'center 25%' }} />
+                <div className="absolute inset-0 bg-cover" style={{ backgroundImage: "url('/coach-section.png')", backgroundPosition: 'center 25%' }} />
                 <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_55%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
               </div>
             </div>
