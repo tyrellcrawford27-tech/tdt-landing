@@ -1604,7 +1604,7 @@ export default function Home() {
           />
 
           {/* Bottom-left content */}
-          <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[120px] md:pb-[80px]">
+          <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[180px] md:pb-[80px]">
             {/* Sits higher in the frame than the headline, where the bottom
                 scrim has only reached ~20% — too thin to carry white type on a
                 bright floor by itself, so it brings its own shadow. */}
