@@ -10,6 +10,8 @@ export type HeroSlide = {
   alt: string;
   /** object-position for the cover crop, e.g. '50% 35%' to favour faces. */
   objectPosition?: string;
+  /** object-position for mobile only (md breakpoint and below). */
+  objectPositionSm?: string;
   /**
    * Scales how far above the cover fit this slide's drift sits, so a tightly
    * framed shot can sit back while the rest keep the fuller push-in. 1 is the
@@ -63,11 +65,20 @@ export default function HeroCarousel({
 }) {
   const [index, setIndex] = useState(0);
   const [reduced, setReduced] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const sync = () => setReduced(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const sync = () => setIsMobile(mq.matches);
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
@@ -158,7 +169,7 @@ export default function HeroCarousel({
             decoding="async"
             className="h-full w-full object-cover select-none"
             style={{
-              objectPosition: slide.objectPosition ?? 'center',
+              objectPosition: isMobile && slide.objectPositionSm ? slide.objectPositionSm : slide.objectPosition ?? 'center',
               willChange: 'transform',
               // Start where this slide's drift starts, so the first paint and
               // the first frame of the animation are the same framing.
