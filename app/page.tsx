@@ -50,7 +50,7 @@ type ProgramStep = {
 const You = ({ children }: { children: React.ReactNode }) => <em className="italic">{children}</em>;
 
 const PROGRAM_STEPS: ProgramStep[] = [
-  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Straight to the problem.", body: <>He's not watching for highlights. He's watching for the possession where <You>you</You> had the answer and didn't see it.</>, image: 'diagnosis-1.webp' },
+  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Straight to the problem.", body: <>He's not watching for highlights. He's watching for the possession where <You>you</You> had the answer and didn't see it.</>, image: 'diagnosis.webp' },
   { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Jaiden pulls what <You>you</You> work on from <You>your</You> film. Then explains one-on-one how to translate it into real games.</>, image: 'drill-true.webp' },
   { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A complete plan that's <You>yours</You> alone to translate into real games.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
 ];
