@@ -18,7 +18,7 @@ import Spline from "@splinetool/react-spline";
 const HERO_SLIDES: HeroSlide[] = [
   { src: '/hero-1.webp', srcSm: '/hero-1-sm.webp', alt: 'Jaiden running a live handling rep at a Rucker Park run-out', objectPosition: '50% 45%' },
   { src: '/hero-6.webp', srcSm: '/hero-6-sm.webp', alt: 'Jaiden leading athletes through a training session', objectPosition: '50% 35%', objectPositionSm: '50% 45%' },
-  { src: '/hero-5.png', srcSm: '/hero-5-sm.png', alt: 'Jaiden leading athletes through a training session', objectPosition: '50% 45%' },
+  { src: '/hero-5.webp', srcSm: '/hero-5-sm.webp', alt: 'Jaiden leading athletes through a training session', objectPosition: '50% 45%' },
   { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%' },
 ];
 
@@ -1244,6 +1244,21 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen">
+
+      {/* ── Preloads ──
+          These live here, not in the root layout, because they are landing-page
+          assets: in the layout they fired on /apply, /privacy, /terms and
+          /dashboard too, none of which render a single <img>. React hoists
+          these into <head> from here, so they still start during HTML parse —
+          they're just scoped to the one route that actually uses them.
+
+          Only the Program shots are listed. The hero needs nothing static: React
+          emits slide 1's preload off the fetchPriority="high" <img> in
+          HeroCarousel, and slide 2 is warmed by the carousel's own effect ~5s
+          (HOLD_MS) before the first crossfade. Both of those carry the srcset,
+          so phones get the -sm file; a plain href preload here could not. */}
+      <link rel="preload" as="image" href="/diagnosis.webp" />
+      <link rel="preload" as="image" href="/drill-true.webp" />
 
       {/* ── Film grain overlay ── */}
       <FilmGrain />

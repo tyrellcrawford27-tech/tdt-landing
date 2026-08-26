@@ -40,14 +40,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet" />
-        {/* Preload key visuals so they're already loading before the user scrolls to them */}
-        <link rel="preload" as="image" href="/hero-1.webp" fetchPriority="high" />
-        {/* Second slide, so it must be decoded before the first crossfade. Keep
-            this in step with HERO_SLIDES order — preloading a slide that moved
-            to the back just spends bandwidth on the one needed last. */}
-        <link rel="preload" as="image" href="/hero-5.png" />
-        <link rel="preload" as="image" href="/study-work.webp" />
-        <link rel="preload" as="image" href="/drill-true.webp" />
+        {/* No image preloads here. This layout wraps every route, so anything
+            preloaded from it downloads on /apply, /privacy, /terms and
+            /dashboard as well — pages that render no images at all. The
+            landing page's own preloads live in app/page.tsx instead. */}
       </head>
       <body className="min-h-full flex flex-col">
         {children}
