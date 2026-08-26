@@ -293,6 +293,29 @@ const OPTIONAL = new Set<keyof FormData>(['heard_about']);
 // but before booking — come straight back to the booking step instead of
 // redoing the whole application.
 const SUBMITTED_KEY = 'tdt-apply-submitted';
+// Both stored entries expire. Without this they lived in localStorage forever,
+// so a draft — or worse, a finished-but-unbooked application — kept resuming
+// months later, long after the visitor had any memory of starting it.
+const DRAFT_TTL_MS     = 7  * 24 * 60 * 60 * 1000; // in-progress answers
+const SUBMITTED_TTL_MS = 14 * 24 * 60 * 60 * 1000; // form done, call not booked
+
+function dropKey(key: string) {
+  try { localStorage.removeItem(key); } catch {}
+}
+
+// Read a stored entry only if it's still within its TTL, deleting it otherwise.
+// An entry with no savedAt was written before stamping existed, so its real age
+// is unknown — treated as expired rather than as immortal.
+function readFresh(key: string, ttlMs: number): Record<string, unknown> | null {
+  let raw: string | null = null;
+  try { raw = localStorage.getItem(key); } catch { return null; }
+  if (!raw) return null;
+  let parsed: Record<string, unknown>;
+  try { parsed = JSON.parse(raw); } catch { dropKey(key); return null; }
+  const savedAt = typeof parsed.savedAt === 'number' ? parsed.savedAt : 0;
+  if (!savedAt || Date.now() - savedAt > ttlMs) { dropKey(key); return null; }
+  return parsed;
+}
 
 // ── Radio button style (shared by standalone radio-grid questions and the
 //    smaller grids inside a group card) ────────────────────────────────────
@@ -360,16 +383,13 @@ function ApplyPageInner() {
   const [attempts, setAttempts]     = useState(0);
   const [shaking, setShaking]       = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
-  // True only when a finished-but-not-yet-booked application is waiting to be
-  // resumed. Must start false — this page is server-prerendered, and
-  // localStorage doesn't exist server-side, so reading it during the initial
-  // render (even lazily) would make the client's first render disagree with
-  // the prerendered HTML and fail hydration. The effect below flips this
-  // right after mount instead, before anything else can render.
-  const [resumeChecking, setResumeChecking] = useState(false);
   const inputRef   = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const advanceRef = useRef<() => void>(() => {});
   const resumeScreenRef = useRef(1);
+  // Set while the server is being asked whether a resumed application has its
+  // call booked yet. "Let's Begin" awaits it so the answer decides the screen,
+  // rather than the check racing the click.
+  const resumePendingRef = useRef<Promise<void> | null>(null);
   // Set when city_state came from the picker. A value the dropdown offered must
   // never be rejected by the validator, independent of the heuristics.
   const cityFromPicker = useRef(false);
@@ -405,69 +425,73 @@ function ApplyPageInner() {
   // that's a different, further-along state handled by the effect below.
   useEffect(() => {
     try {
-      if (localStorage.getItem(SUBMITTED_KEY)) return; // handled by the effect below instead
-      const saved = localStorage.getItem(STORAGE_KEY);
+      // Reads through readFresh, not raw — an expired submitted entry must be
+      // cleared here too, or it would bail this effect out on its way to being
+      // dropped by the next one, and the draft would never be restored.
+      if (readFresh(SUBMITTED_KEY, SUBMITTED_TTL_MS)) return; // handled by the effect below instead
+      const saved = readFresh(STORAGE_KEY, DRAFT_TTL_MS);
       if (saved) {
-        const { form: f, screen: s, version: v } = JSON.parse(saved);
+        const { form: f, screen: s, version: v } = saved as { form: FormData; screen: number; version: number };
         setForm(f);
         if (v === DRAFT_VERSION && s >= 1) {
-          resumeScreenRef.current = s;
+          resumeScreenRef.current = Math.min(s, TOTAL);
         } else {
           // Stale draft from before a question-order change (or from before
           // versioning existed at all) — the saved index can't be trusted to
           // point at the right question anymore, but the typed answers are
           // still good. Resume at the first incomplete required question
           // instead of trusting the index.
-          resumeScreenRef.current = firstIncompleteScreen(questions, f, OPTIONAL);
+          resumeScreenRef.current = Math.min(firstIncompleteScreen(questions, f, OPTIONAL), TOTAL);
         }
       }
     } catch {}
-  }, []);
+  }, [questions, TOTAL]);
 
   // The application form itself is done, but booking the call is a required
   // part of finishing — not a follow-up. On mount, if this browser finished
   // the form but we don't yet know it booked, ask the server (never trust a
-  // client-side claim) and land directly on whichever screen is true: the
-  // booking step if not yet confirmed, or the confirmed screen if it is.
-  // Fails open to the booking screen on any error — a broken status check
-  // must never trap someone who genuinely booked behind an infinite loading
-  // state or an unrelated error.
+  // client-side claim) which screen is true: the booking step if not yet
+  // confirmed, or the confirmed screen if it is.
+  //
+  // This only *arms* the resume — it no longer moves the screen itself. Doing
+  // that put a returning visitor straight onto the calendar with no way back
+  // to the intro or the form, which is the same silent-skip this file already
+  // refuses to do for ordinary drafts (see the effect above). The intro stays
+  // up; "Let's Begin" is what jumps to the resumed screen.
+  //
+  // Fails open to the booking screen on any error — a broken status check must
+  // never trap someone who genuinely booked behind an unrelated error.
   useEffect(() => {
-    let raw: string | null = null;
-    try { raw = localStorage.getItem(SUBMITTED_KEY); } catch {}
-    if (!raw) return; // nothing to resume — stay put, already false from initial render
+    const info = readFresh(SUBMITTED_KEY, SUBMITTED_TTL_MS) as {
+      full_name?: string; email?: string; guardian_email?: string | null;
+    } | null;
+    if (!info?.email) return; // nothing to resume — stay on the intro
 
-    setResumeChecking(true);
-
-    let info: { full_name?: string; email?: string; guardian_email?: string | null };
-    try { info = JSON.parse(raw); } catch { setResumeChecking(false); return; }
-    if (!info.email) { setResumeChecking(false); return; }
-
+    const email = info.email;
     setForm(f => ({
       ...f,
       full_name: info.full_name || f.full_name,
-      email: info.email || f.email,
+      email: email || f.email,
       guardian_email: info.guardian_email || f.guardian_email,
     }));
+    resumeScreenRef.current = TOTAL + 1;
 
-    fetch(`/api/apply/booking-status?email=${encodeURIComponent(info.email)}`)
+    resumePendingRef.current = fetch(`/api/apply/booking-status?email=${encodeURIComponent(email)}`)
       .then(res => (res.ok ? res.json() : null))
       .then(json => {
         if (json?.booked) {
-          try { localStorage.removeItem(SUBMITTED_KEY); } catch {}
-          setScreen(TOTAL + 2);
-        } else {
-          setScreen(TOTAL + 1);
+          dropKey(SUBMITTED_KEY);
+          resumeScreenRef.current = TOTAL + 2;
         }
       })
-      .catch(() => { setScreen(TOTAL + 1); })
-      .finally(() => setResumeChecking(false));
+      .catch(() => {})
+      .finally(() => { resumePendingRef.current = null; });
   }, [TOTAL]);
 
   // Auto-save draft whenever form or screen changes (skip intro + success)
   useEffect(() => {
     if (screen < 1 || screen > TOTAL) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION })); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION, savedAt: Date.now() })); } catch {}
   }, [form, screen, TOTAL]);
 
   // The embed's bookingSuccessfulV2 event is a client-side postMessage — a
@@ -487,7 +511,7 @@ function ApplyPageInner() {
         .then(res => (res.ok ? res.json() : null))
         .then(json => {
           if (cancelled || !json?.booked) return;
-          try { localStorage.removeItem(SUBMITTED_KEY); localStorage.removeItem(STORAGE_KEY); } catch {}
+          dropKey(SUBMITTED_KEY); dropKey(STORAGE_KEY);
           stopPolling();
           setScreen(TOTAL + 2);
         })
@@ -598,7 +622,7 @@ function ApplyPageInner() {
   const VALIDATION_BAD: Partial<Record<keyof FormData, string[]>> = {
     full_name:           ["Include first and last name", "e.g. Marcus Thompson", "FIRST AND LAST NAME."],
     city_state:          ["Needs to be 'City, Province' format", "e.g. Mississauga, Ontario", "CITY, PROVINCE. THAT'S IT."],
-    age:                 ["Age must be between 13 and 30", "Enter a real age", "REAL AGE. 13–30."],
+    age:                 ["Age must be between 13 and 35", "Enter a real age", "REAL AGE. 13–35."],
     email:               ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
     phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     current_team_school: ["Give us a real team or school name", "More than one letter", "TEAM OR SCHOOL NAME."],
@@ -641,7 +665,7 @@ function ApplyPageInner() {
         return v.length < 2 || !/^[a-zA-ZÀ-ÿ\s''\-]+$/.test(v) || isGibberishName(v);
       case 'age': {
         const n = parseInt(v);
-        return isNaN(n) || n < 13 || n > 30;
+        return isNaN(n) || n < 13 || n > 35;
       }
       case 'email':
       case 'guardian_email':
@@ -763,6 +787,7 @@ function ApplyPageInner() {
           full_name: form.full_name.trim(),
           email: form.email,
           guardian_email: form.guardian_email || null,
+          savedAt: Date.now(),
         }));
       } catch {}
       goTo(TOTAL + 1);
@@ -773,7 +798,14 @@ function ApplyPageInner() {
   };
 
   const advance = async () => {
-    if (screen === 0) { goTo(Math.min(resumeScreenRef.current, TOTAL)); return; }
+    if (screen === 0) {
+      // Resuming into the booking step needs the server's answer first, so the
+      // click waits on the in-flight check rather than guessing. Already
+      // resolved (and null) in the ordinary case, including every fresh visit.
+      if (resumePendingRef.current) await resumePendingRef.current;
+      goTo(resumeScreenRef.current);
+      return;
+    }
     if (checkingEmail) return;
     const q = questions[screen - 1];
     // The last screen can be the guardian_aware gate, which — unlike the old
@@ -848,6 +880,18 @@ function ApplyPageInner() {
   };
   const retreat = () => { if (screen > 1) goTo(screen - 1); };
 
+  // Escape hatch off the resumed booking step. Someone who lands there from a
+  // previous session — a different applicant on a shared device, or the same
+  // one starting over — otherwise has no route back into the form at all.
+  const startOver = () => {
+    dropKey(STORAGE_KEY);
+    dropKey(SUBMITTED_KEY);
+    resumeScreenRef.current = 1;
+    resumePendingRef.current = null;
+    setForm(EMPTY);
+    goTo(0);
+  };
+
   // Keep advanceRef pointing to the latest advance closure
   advanceRef.current = advance;
 
@@ -856,13 +900,6 @@ function ApplyPageInner() {
     transform: visible ? 'translateY(0)' : 'translateY(16px)',
     transition: 'opacity 0.2s ease, transform 0.2s ease',
   };
-
-  // ── Resuming ──────────────────────────────────────────────────────────────
-  // Briefly shown only when this browser already finished the form and we're
-  // confirming with the server whether the call is booked yet — never long
-  // enough to matter, but showing the intro's "Let's Begin" copy here would
-  // be wrong for someone who's already done with the application itself.
-  if (resumeChecking) return <div style={{ minHeight: '100dvh', background: BG }} />;
 
   // ── 0: Intro ──────────────────────────────────────────────────────────────
   if (screen === 0) return (
@@ -954,10 +991,25 @@ function ApplyPageInner() {
             Talk soon
           </p>
 
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
             <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
               ← Back to home
             </a>
+            <span style={{ ...text(13, 400, 'rgba(0,0,0,0.18)') }}>·</span>
+            <button
+              type="button"
+              onClick={startOver}
+              style={{
+                ...text(13, 400, 'rgba(0,0,0,0.35)'),
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Start a new application
+            </button>
           </div>
         </div>
       </div>
@@ -1166,11 +1218,11 @@ function ApplyPageInner() {
     // 12-key dialer pad — the same keyboard the phone fields in this form get.
     // A number input also hands back "" for anything it considers malformed, so
     // a stray character silently wipes what was typed; `tel` keeps the raw
-    // string for the 13–30 check in invalid(), and `set` strips non-digits.
+    // string for the 13–35 check in invalid(), and `set` strips non-digits.
     //
     // min/max are gone with it: they only bind on a number input, there is no
     // <form> here to run native validation, and they said 10–80 while the real
-    // rule is 13–30.
+    // rule is 13–35.
     const isNumeric = q.type === 'number';
     return (
       <input
