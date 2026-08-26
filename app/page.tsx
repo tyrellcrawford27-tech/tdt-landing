@@ -2218,10 +2218,6 @@ export default function Home() {
                   question: "Is my son ready for this?",
                   answer: "This is for players who already put the work in and can't understand why it isn't showing up on Friday. If he's still learning to handle the ball, this isn't the right hundred days. If he's good in practice and quiet in games, this was built for him.",
                 },
-                {
-                  question: "What if I don't see the results I want?",
-                  answer: "You get 20 hours of your film studied, 12 hours on live calls with Jaiden, and every drill tied to a possession from your own game. That specificity is what changes things. Nobody else will measure it that way.",
-                },
               ].map((item, index) => {
                 const isOpen = openFaq === index;
                 return (
