@@ -97,7 +97,7 @@ function buildQuestions(): Q[] {
     },
     { section: 'Your game', question: 'Current team or school?', field: 'current_team_school', type: 'school' },
     { section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest. Self-awareness is the first thing Jaiden looks for.' },
-    { section: 'Your game', question: "Drop your Instagram or Twitter (X)", field: 'social_link', type: 'text', placeholder: 'instagram.com/yourusername' },
+    { section: 'Your game', question: "What's your @ on Instagram or Twitter (X)?", field: 'social_link', type: 'text', placeholder: '@yourusername' },
     {
       section: 'The ceiling',
       question: "What's the highest you see this going for you and what makes you believe it?",
@@ -609,7 +609,7 @@ function ApplyPageInner() {
     years_playing:       ["How long have you been playing?", "Pick one, be honest", "YEARS PLAYING. PICK ONE."],
     current_team_school: ["What team or school?", "Team or school name please", "TEAM. OR. SCHOOL."],
     biggest_weakness:    ["Be honest here", "Something, anything", "YOUR WEAKNESS. TELL US."],
-    social_link:         ["Drop your Instagram or Twitter link", "We need to see your account", "LINK. NOW."],
+    social_link:         ["Drop your @ handle", "We need to see your account", "YOUR @. NOW."],
     time_commitment:     ["How much time can you give?", "Pick a time commitment", "PICK ONE!!"],
     guardian_name:       ["Add their name", "Parent or supporter name", "NAME. NOW."],
     guardian_phone:      ["Add their number", "Their phone number please", "THEIR NUMBER. GO."],
@@ -627,7 +627,7 @@ function ApplyPageInner() {
     phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     current_team_school: ["Give us a real team or school name", "More than one letter", "TEAM OR SCHOOL NAME."],
     biggest_weakness:    ["Give more detail than that", "Dig deeper, be specific", "ACTUALLY ANSWER IT."],
-    social_link:         ["That doesn't look like a real link or handle", "Try instagram.com/you or @yourhandle", "REAL LINK OR HANDLE."],
+    social_link:         ["That doesn't look like a real handle", "Just your @, like @yourusername", "REAL HANDLE."],
     guardian_name:       ["That doesn't look like a full name", "Letters only please", "REAL NAME."],
     guardian_phone:      ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
     guardian_email:      ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
@@ -690,7 +690,12 @@ function ApplyPageInner() {
         return v.length < 3;
       case 'social_link': {
         const s = v.trim().toLowerCase();
-        const looksLikeHandle = /^@[a-z0-9._]{2,}$/.test(s);
+        // The @ is optional. The field asks for "@yourusername", but plenty of
+        // people type the username alone and mean exactly the same thing —
+        // rejecting that is the confusion this question is meant to avoid.
+        const looksLikeHandle = /^@?[a-z0-9._]{2,}$/.test(s);
+        // Still accept a pasted profile link, since that's what the question
+        // used to ask for and some applicants will paste one out of habit.
         const looksLikeUrl = /(instagram\.com|twitter\.com|x\.com)\/[a-z0-9._]{2,}/.test(s);
         return !(looksLikeHandle || looksLikeUrl);
       }
