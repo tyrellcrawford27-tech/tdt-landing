@@ -75,7 +75,7 @@ function buildQuestions(): Q[] {
   const qs: Q[] = [
     { section: 'Info', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'First and last name' },
     { section: 'Info', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17' },
-    { section: 'Info', question: 'City, State / Province', field: 'city_state', type: 'location' },
+    { section: 'Info', question: 'Where are you from?', field: 'city_state', type: 'location' },
     {
       section: 'Info', question: 'Where can we reach you?', type: 'group', kind: 'contact',
       subs: [
