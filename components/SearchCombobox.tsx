@@ -11,6 +11,13 @@ import {
   useLayoutEffect, useRef, useState,
 } from 'react';
 
+/** How long the panel survives a blur so an in-flight tap can still land. */
+const CLOSE_GRACE_MS = 260;
+/** Window in which the synthetic click following a touch commit is swallowed. */
+const GHOST_CLICK_MS = 350;
+/** Movement past this between pointerdown and pointerup is a scroll, not a tap. */
+const TAP_SLOP_PX = 10;
+
 import { SURFACE_LIGHT } from '@/lib/theme';
 
 const BG = SURFACE_LIGHT;
@@ -86,6 +93,10 @@ export const SearchCombobox = forwardRef<HTMLInputElement, Props>(
     const rowRefs        = useRef<(HTMLLIElement | null)[]>([]);
     const pointerInside  = useRef(false);
     const lastPointerType= useRef<string>('mouse');
+    const wrapperRef     = useRef<HTMLDivElement>(null);
+    const closeTimer     = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    // Where a touch went down on a row, so pointerup can tell a tap from a scroll.
+    const tapStart       = useRef<{ i: number; x: number; y: number; touch: boolean } | null>(null);
     const lastEmitted    = useRef(value);
     const pendingQuery   = useRef<string | null>(null);
     const slowTimer      = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -146,7 +157,41 @@ export const SearchCombobox = forwardRef<HTMLInputElement, Props>(
 
     const close = useCallback(() => { setOpen(false); setActiveIdx(-1); }, []);
 
+    const cancelScheduledClose = useCallback(() => {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = undefined;
+    }, []);
+
+    // Blur must not close the panel synchronously. On touch the input blurs
+    // while the tap is still in flight, and unmounting the row out from under
+    // a finger means the click never lands on it — which is why no option
+    // could be selected on a phone. Hold the panel open just long enough for
+    // the tap to complete; commit cancels this, and a pointerdown outside
+    // still dismisses instantly (below), so nothing lingers visibly.
+    const scheduleClose = useCallback(() => {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = setTimeout(() => { if (mounted.current) close(); }, CLOSE_GRACE_MS);
+    }, [close]);
+
+    // Swallow the one synthetic click a touch commit leaves behind. Without
+    // this it lands on whatever the panel was covering — and the panel
+    // deliberately overhangs the Go back / Next row.
+    const suppressNextClick = useCallback(() => {
+      const swallow = (ev: MouseEvent) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        cleanup();
+      };
+      const timer = setTimeout(cleanup, GHOST_CLICK_MS);
+      function cleanup() {
+        clearTimeout(timer);
+        document.removeEventListener('click', swallow, true);
+      }
+      document.addEventListener('click', swallow, true);
+    }, []);
+
     const commit = useCallback((row: ComboRow) => {
+      cancelScheduledClose();
       setQuery(row.value);
       setSelected(row.value);
       lastEmitted.current = row.value;
@@ -161,7 +206,7 @@ export const SearchCombobox = forwardRef<HTMLInputElement, Props>(
         const n = row.value.length;
         inputRef.current?.setSelectionRange(n, n);
       }
-    }, [onChange, onCommit, announce]);
+    }, [onChange, onCommit, announce, cancelScheduledClose]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const v = e.target.value;
@@ -284,11 +329,26 @@ export const SearchCombobox = forwardRef<HTMLInputElement, Props>(
       return () => document.removeEventListener('pointerup', up, true);
     }, [open]);
 
+    // A press that starts outside dismisses right away, so deferring the blur
+    // close never leaves the panel hanging around after a tap elsewhere.
+    useEffect(() => {
+      if (!open) return;
+      const down = (e: PointerEvent) => {
+        if (wrapperRef.current?.contains(e.target as Node)) return;
+        cancelScheduledClose();
+        close();
+      };
+      document.addEventListener('pointerdown', down, true);
+      return () => document.removeEventListener('pointerdown', down, true);
+    }, [open, close, cancelScheduledClose]);
+
+    useEffect(() => () => clearTimeout(closeTimer.current), []);
+
     // The panel overhangs the Go back / Next row, which lives outside the card.
     // Lifting the whole wrapper — not just the panel — keeps it on top even
     // while the open animation has the panel on its own compositor layer.
     return (
-      <div style={{ position: 'relative', width: '100%', zIndex: open ? 300 : 'auto' }}>
+      <div ref={wrapperRef} style={{ position: 'relative', width: '100%', zIndex: open ? 300 : 'auto' }}>
         <span id={hintId} style={SR_ONLY}>{hintText}</span>
 
         <input
@@ -297,8 +357,8 @@ export const SearchCombobox = forwardRef<HTMLInputElement, Props>(
           value={query}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onFocus={reopenOnFocus}
-          onBlur={() => { if (!pointerInside.current) close(); }}
+          onFocus={() => { cancelScheduledClose(); reopenOnFocus(); }}
+          onBlur={() => { if (!pointerInside.current) scheduleClose(); }}
           placeholder={placeholder}
           role="combobox"
           aria-expanded={showPanel}
@@ -368,6 +428,26 @@ export const SearchCombobox = forwardRef<HTMLInputElement, Props>(
                   role="option"
                   aria-selected={i === activeIdx}
                   onPointerMove={() => { if (activeIdx !== i) setActiveIdx(i); }}
+                  onPointerDown={e => {
+                    tapStart.current = {
+                      i, x: e.clientX, y: e.clientY, touch: e.pointerType === 'touch',
+                    };
+                  }}
+                  // Touch commits here rather than waiting for click. The
+                  // click after a tap is unreliable on mobile: the keyboard
+                  // retracting mid-gesture scrolls the row out from under the
+                  // finger, and a click needs press and release on the same
+                  // element. Guarded by slop so scrolling the list never
+                  // selects, and by suppressNextClick so the follow-up click
+                  // can't fall through to the buttons underneath.
+                  onPointerUp={e => {
+                    const t = tapStart.current;
+                    tapStart.current = null;
+                    if (!t || !t.touch || t.i !== i) return;
+                    if (Math.hypot(e.clientX - t.x, e.clientY - t.y) > TAP_SLOP_PX) return;
+                    suppressNextClick();
+                    commit(row);
+                  }}
                   onClick={() => commit(row)}
                   className="tdt-loc-row"
                   style={{
