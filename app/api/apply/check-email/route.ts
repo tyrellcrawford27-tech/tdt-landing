@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
+import { escapeLike } from '@/lib/escapeLike';
 
 // Lightweight duplicate-email check used by the apply form at the email step,
 // so an applicant who already applied is stopped right away instead of after
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await admin
       .from('applications')
       .select('id, time_commitment')
-      .ilike('email', email)
+      .ilike('email', escapeLike(email))
       .limit(1);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });

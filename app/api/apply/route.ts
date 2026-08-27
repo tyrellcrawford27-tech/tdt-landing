@@ -1,7 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
+import { escapeLike } from '@/lib/escapeLike';
 import { sendBookingEmails } from '@/lib/email';
 import { getEarlyPricingSpots } from '@/lib/earlyPricing';
+
+// This route is public and unauthenticated, and it used to spread the raw
+// request body straight into the insert — so a caller could set ANY column,
+// including status, call_booked_at, reviewer_notes and submitted_at. Setting
+// submitted_at to a future date pinned a forged row to the top of the coach's
+// queue; setting call_booked_at forged a confirmed booking.
+//
+// Everything written now has to be named here. This is deliberately a positive
+// allowlist rather than a denylist of known-dangerous columns: new columns
+// should default to not-client-writable, not the reverse.
+const WRITABLE_FIELDS = [
+  'athlete_name', 'athlete_email', 'athlete_phone',
+  'first_name', 'last_name', 'email', 'phone',
+  'device_access', 'age', 'city',
+  'position', 'years_playing',
+  'current_team', 'current_team_school',
+  'biggest_weakness', 'goal', 'social_link', 'time_commitment',
+  'parent_name', 'guardian_name',
+  'parent_phone', 'guardian_phone',
+  'parent_email', 'guardian_email',
+  'parent_aware', 'guardian_aware',
+  'heard_about',
+] as const;
+
+function pickWritable(body: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of WRITABLE_FIELDS) {
+    if (k in body) out[k] = body[k];
+  }
+  return out;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,11 +58,22 @@ export async function POST(req: NextRequest) {
     }
 
     const email = typeof body.email === 'string' ? body.email.trim() : '';
+
+    // Server-owned columns. The client never gets to set these, and
+    // early_pricing is whatever the re-check above decided, not what was sent.
+    const record = {
+      ...pickWritable(body),
+      email,
+      early_pricing: body.early_pricing || null,
+      submitted_at: new Date().toISOString(),
+      status: 'pending',
+    };
+
     if (email) {
       const { data: existing, error: lookupError } = await admin
         .from('applications')
         .select('id, time_commitment')
-        .ilike('email', email)
+        .ilike('email', escapeLike(email))
         .limit(1);
       if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 400 });
 
@@ -47,8 +90,8 @@ export async function POST(req: NextRequest) {
       }
 
       const { error } = existingRow
-        ? await admin.from('applications').update(body).eq('id', existingRow.id)
-        : await admin.from('applications').insert([body]);
+        ? await admin.from('applications').update(record).eq('id', existingRow.id)
+        : await admin.from('applications').insert([record]);
 
       if (error) {
         // 23505 = Postgres unique_violation - covers the race where two submissions
@@ -62,7 +105,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
     } else {
-      const { error } = await admin.from('applications').insert([body]);
+      const { error } = await admin.from('applications').insert([record]);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
+import { escapeLike } from '@/lib/escapeLike';
 
 // Fired once an applicant has given contact info but before they finish the
 // form, so someone who abandons partway through is still a reachable lead
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
     const { data: existing, error: lookupError } = await admin
       .from('applications')
       .select('id, time_commitment')
-      .ilike('email', email)
+      .ilike('email', escapeLike(email))
       .limit(1);
     if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 400 });
 

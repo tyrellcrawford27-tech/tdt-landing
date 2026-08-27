@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
+import { escapeLike } from '@/lib/escapeLike';
 
 // Read-only status check the apply flow uses to find out, server-side,
 // whether an applicant who already submitted has a confirmed booking yet.
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await admin
       .from('applications')
       .select('time_commitment, call_booked_at')
-      .ilike('email', email)
+      .ilike('email', escapeLike(email))
       .limit(1);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });

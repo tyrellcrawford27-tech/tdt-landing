@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase';
+import { escapeLike } from '@/lib/escapeLike';
 
 // Cal.com signs the exact raw JSON string it POSTs with HMAC-SHA256, header
 // `X-Cal-Signature-256`. Verify against the raw body bytes, not a re-parsed
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   const { data: existing, error: lookupError } = await admin
     .from('applications')
     .select('id, call_booked_at')
-    .ilike('email', email)
+    .ilike('email', escapeLike(email))
     .not('time_commitment', 'is', null) // only a completed application can be "booked"
     .limit(1);
 

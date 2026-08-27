@@ -6,10 +6,12 @@ import { SURFACE_LIGHT, SURFACE_LIGHT_RGB } from '@/lib/theme';
 
 const BG    = SURFACE_LIGHT;
 const TERRA = '#B34929';
-const PASS  = 'tdt2025';
+// The password is no longer compared here — it used to be a literal in this
+// client component, which shipped it in the public JS bundle. What the coach
+// types is now sent to the server and checked there (lib/dashboardAuth.ts).
 
 type App = {
-  id: number;
+  id: string; // uuid, not a serial int
   first_name: string;
   last_name: string;
   age: number | null;
@@ -33,6 +35,7 @@ type App = {
   parent_aware: string | null;
   heard_about: string | null;
   submitted_at: string;
+  call_booked_at: string | null;
   status: string;
 };
 
@@ -65,28 +68,40 @@ export default function Dashboard() {
 
   const fullName = (a: App) => [a.first_name, a.last_name].filter(Boolean).join(' ') || '—';
 
-  const login = () => {
-    if (passInput === PASS) { setAuthed(true); loadApps(); }
+  // The password travels on every request; the server is the only thing that
+  // decides whether it's right. A wrong password comes back as a 401 from the
+  // real fetch, which is what drives the error state here.
+  const login = async () => {
+    setLoading(true); setFetchErr(null);
+    const ok = await loadApps(passInput);
+    setLoading(false);
+    if (ok) setAuthed(true);
     else { setPassErr(true); setTimeout(() => setPassErr(false), 1200); }
   };
 
-  const loadApps = async () => {
+  const loadApps = async (password: string): Promise<boolean> => {
     setLoading(true); setFetchErr(null);
     try {
-      const res  = await fetch('/api/applications');
+      const res  = await fetch('/api/applications', {
+        headers: { 'x-dashboard-password': password },
+      });
+      if (res.status === 401) { setLoading(false); return false; }
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setApps(json.data || []);
+      setLoading(false);
+      return true;
     } catch (e: unknown) {
       setFetchErr(e instanceof Error ? e.message : 'Failed to load applications');
+      setLoading(false);
+      return false;
     }
-    setLoading(false);
   };
 
-  const updateStatus = async (id: number, status: string) => {
+  const updateStatus = async (id: string, status: string) => {
     await fetch('/api/applications', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-dashboard-password': passInput },
       body: JSON.stringify({ id, status }),
     });
     setApps(prev => prev.map(a => a.id === id ? { ...a, status } : a));
@@ -95,6 +110,9 @@ export default function Dashboard() {
 
   const displayed = apps.filter(a => filter === 'all' || a.status === filter);
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+  // Local time, e.g. "10:49 p.m." — shown under the date on each applicant row
+  // so the coach can see exactly when an application came in.
+  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
 
   if (!authed) return (
     <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -168,7 +186,20 @@ export default function Dashboard() {
                     {[app.position, app.city, app.age ? `${app.age} yrs` : null].filter(Boolean).join(' · ')}
                   </p>
                 </div>
-                <p style={{ fontSize: 12, color: 'rgba(0,0,0,0.25)', letterSpacing: '-0.01em', flexShrink: 0, margin: 0 }}>{app.submitted_at ? fmt(app.submitted_at) : '—'}</p>
+                {/* Booking is a required step but nothing writes call_booked_at
+                    until the Cal.com webhook is live, so this reads "no call"
+                    for everyone today — it's a prompt to chase, not a gate. */}
+                {!app.call_booked_at && (
+                  <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.02em', padding: '2px 7px', borderRadius: 20, flexShrink: 0, background: 'rgba(179,73,41,0.09)', color: TERRA }}>
+                    no call
+                  </span>
+                )}
+                <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                  <p style={{ fontSize: 12, color: 'rgba(0,0,0,0.25)', letterSpacing: '-0.01em', margin: 0 }}>{app.submitted_at ? fmt(app.submitted_at) : '—'}</p>
+                  {app.submitted_at && (
+                    <p style={{ fontSize: 10, color: 'rgba(0,0,0,0.22)', letterSpacing: '-0.01em', margin: '1px 0 0' }}>{fmtTime(app.submitted_at)}</p>
+                  )}
+                </div>
               </div>
             );
           })}
