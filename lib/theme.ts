@@ -9,8 +9,8 @@
  *
  * Two places can't import this and must be changed in step:
  *   - `--surface-light` in app/globals.css (paints <body> for the light routes)
- *   - `themeColor` in app/apply/layout.tsx and app/dashboard/layout.tsx
- *     (a viewport export only accepts a literal)
+ *   - `themeColor` in app/apply/layout.tsx (a viewport export only
+ *     accepts a literal)
  *
  * Tailwind arbitrary values in app/page.tsx (`bg-[#FBF6F2]`) are literals too.
  */

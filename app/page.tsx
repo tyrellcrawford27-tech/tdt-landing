@@ -1190,8 +1190,8 @@ export default function Home() {
     document.documentElement.style.setProperty('--page-surface', chromeSurface);
   }, [chromeSurface]);
 
-  // Hand the chrome back on the way out. /apply and /dashboard declare their own
-  // cream, but an inline --page-surface left on <html> would outrank it.
+  // Hand the chrome back on the way out. /apply declares its own cream, but
+  // an inline --page-surface left on <html> would outrank it.
   useEffect(() => () => {
     document.documentElement.style.removeProperty('--page-surface');
   }, []);
@@ -1247,8 +1247,8 @@ export default function Home() {
 
       {/* ── Preloads ──
           These live here, not in the root layout, because they are landing-page
-          assets: in the layout they fired on /apply, /privacy, /terms and
-          /dashboard too, none of which render a single <img>. React hoists
+          assets: in the layout they fired on /apply, /privacy and /terms
+          too, none of which render a single <img>. React hoists
           these into <head> from here, so they still start during HTML parse —
           they're just scoped to the one route that actually uses them.
 

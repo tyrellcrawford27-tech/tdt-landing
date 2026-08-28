@@ -12,7 +12,7 @@ import { escapeLike } from '@/lib/escapeLike';
 // can't be tagged with its own 'draft' status. Instead it's identified by
 // missing time_commitment, the last field the form collects before submit —
 // that's also what excludes it from the duplicate-application check and the
-// coach's dashboard (see app/api/applications/route.ts).
+// coach dashboard's feed in the member app.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

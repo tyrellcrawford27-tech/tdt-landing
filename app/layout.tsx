@@ -41,8 +41,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet" />
         {/* No image preloads here. This layout wraps every route, so anything
-            preloaded from it downloads on /apply, /privacy, /terms and
-            /dashboard as well — pages that render no images at all. The
+            preloaded from it downloads on /apply, /privacy and /terms as
+            well — pages that render no images at all. The
             landing page's own preloads live in app/page.tsx instead. */}
       </head>
       <body className="min-h-full flex flex-col">
