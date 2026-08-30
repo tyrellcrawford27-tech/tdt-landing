@@ -3,10 +3,14 @@
 :root {
   --background: #000000;
   --foreground: #171717;
+  --brand-terra: #B34929;
+  --ink-warm: #1A0F0A;
   /* The cream the apply flow and dashboard are built on. Kept in step by hand
      with the themeColor in those routes' layout.tsx — a viewport export only
      accepts a literal, so it can't read this. */
   --surface-light: #FBF6F2;
+  --menu-glass-start: rgba(251, 246, 242, 0.98);
+  --menu-glass-end: rgba(239, 231, 225, 0.94);
 }
 
 @theme inline {
@@ -133,4 +137,3 @@ section[id] {
   color: #E0703F;
   font-weight: 600;
 }
-

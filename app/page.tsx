@@ -776,6 +776,15 @@ const NAV_LINKS = [
   { id: 'faq', label: 'FAQ' },
 ] as const;
 
+// The comparison table is an especially useful orientation point on smaller
+// screens, so mobile exposes it directly without adding another desktop item.
+const MOBILE_NAV_LINKS = [
+  { id: 'coach', label: 'The Coach' },
+  { id: 'program', label: 'Program' },
+  { id: 'difference', label: 'Difference' },
+  { id: 'faq', label: 'FAQ' },
+] as const;
+
 const SECTION_LABELS: Record<string, string> = {
   coach: 'Meet the Coach',
   program: 'The Program',
@@ -901,53 +910,6 @@ function CoachCarousel() {
   );
 }
 
-// Toronto, always — this isn't "the visitor's local time," it's "when Jaiden
-// is around." Quiet hours (11pm–8am) are guesswork about a coach's sleep
-// schedule, not a promise; the point is signaling "don't expect a reply
-// tonight," not being precise to the minute.
-const HOME_TIMEZONE = 'America/Toronto';
-const QUIET_START_HOUR = 23;
-const QUIET_END_HOUR = 8;
-
-// `active` gates the interval — this is called unconditionally from the top
-// of Home(), and Home() is a big component with its own scroll/video/Spline
-// work, so ticking every 15s forever (including the ~100% of the time the
-// menu is closed) would re-render the whole thing for no visible benefit.
-// Only pay for it while the clock is actually on screen.
-function useLocalTime(timeZone: string, active: boolean) {
-  function calc() {
-    const now = new Date();
-    const hour = parseInt(
-      new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', hour12: false }).format(now),
-      10
-    );
-    const time = new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: '2-digit', hour12: true })
-      .format(now)
-      .toLowerCase()
-      .replace(/\s+/g, '');
-    // Computed, not hardcoded — a fixed "EST" label would read wrong for half
-    // the year once daylight saving flips it to EDT.
-    const zone = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'short' })
-      .formatToParts(now)
-      .find(p => p.type === 'timeZoneName')?.value ?? '';
-    const asleep = hour >= QUIET_START_HOUR || hour < QUIET_END_HOUR;
-    return { time, zone, asleep };
-  }
-  // calc() is cheap (a couple Intl.format calls) and pure, so it's called
-  // fresh on every render rather than cached in state — that's what keeps
-  // this correct the instant the menu opens, with no separate "refresh on
-  // open" step to get right. The interval below exists only to force a
-  // render every 15s while open; it never computes or holds the value
-  // itself, which is what keeps this out of state-in-effect territory.
-  const [, forceTick] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    const id = setInterval(() => forceTick(n => n + 1), 15000);
-    return () => clearInterval(id);
-  }, [active]);
-  return calc();
-}
-
 const LAUNCH_DATE = new Date('2026-09-07T00:00:00');
 
 function useCountdown() {
@@ -1037,7 +999,6 @@ export default function Home() {
   const [tp, setTp] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const localTime = useLocalTime(HOME_TIMEZONE, menuOpen);
   const [navHovered, setNavHovered] = useState(false);
   const applyBtnRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -1264,7 +1225,7 @@ export default function Home() {
       <FilmGrain />
       {launched && <LaunchReveal onClose={() => setLaunched(false)} />}
 
-      {/* ── Mobile full-screen menu overlay ── */}
+      {/* ── Mobile frosted-glass menu ── */}
       <div
         id="mobile-menu"
         role="dialog"
@@ -1275,157 +1236,124 @@ export default function Home() {
         // on an invisible close button.
         inert={!menuOpen}
         aria-hidden={!menuOpen}
-        className={`fixed inset-0 z-[100] flex flex-col lg:hidden transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-[100] flex flex-col overflow-hidden lg:hidden transition-opacity duration-300 ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         style={{
-          backgroundColor: 'rgba(0,0,0,0.65)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          // Keep touch drags on the overlay from rubber-banding the page behind
-          // the glass; the nav inside re-enables vertical panning for itself.
+          backgroundColor: 'rgba(5,4,3,0.36)',
+          backdropFilter: 'blur(30px) saturate(0.72)',
+          WebkitBackdropFilter: 'blur(30px) saturate(0.72)',
           overscrollBehavior: 'contain',
           touchAction: 'none',
-          paddingTop: 'env(safe-area-inset-top)',
+          paddingTop: 'calc(10px + env(safe-area-inset-top))',
         }}
-        // Tapping any dead space dismisses, like a sheet — only taps that land on
-        // a link or button survive.
-        onClick={(e) => { if (!(e.target as HTMLElement).closest('a,button')) setMenuOpen(false); }}
+        onClick={() => setMenuOpen(false)}
       >
-        {/* Top bar — mirrors the header: logo left, close right */}
-        <div className="flex h-[64px] items-center justify-between px-6">
-          <div className="flex h-[38px] w-[34px] items-center justify-center">
-            <TDTLogo letterColor="rgb(255,255,255)" />
-          </div>
-          <button
-            ref={menuCloseRef}
-            onClick={() => setMenuOpen(false)}
-            className="-mr-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white/70 active:bg-white/10"
-            aria-label="Close menu"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6L18 18M6 18L18 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Links — numbered, staggered entrance. The nav is its own scroll
-            container so short landscape viewports can still reach every link;
-            my-auto on the inner wrapper centers when there's room but keeps the
-            top reachable when content overflows (justify-center wouldn't). */}
-        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
-          <div className="my-auto">
-          {NAV_LINKS.map(({ id, label }, i) => (
-            // The divider and the tap highlight can't share one rounded box: a
-            // border-radius on an element that only has a border-b still rounds
-            // the corners the line passes through, so the divider visibly curves
-            // at both ends instead of running straight. Split them — this outer
-            // row draws the straight border and carries the entrance animation;
-            // the inner <a> gets its own rounded corners for the active-state
-            // highlight only, which never touches the divider's geometry.
-            <div
-              key={id}
-              className="border-b border-white/[0.08] last:border-b-0 -mx-3"
-              style={{
-                opacity: menuOpen ? 1 : 0,
-                transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
-                transition: menuOpen
-                  ? `opacity 0.45s cubic-bezier(0.16,1,0.3,1) ${120 + i * 70}ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) ${120 + i * 70}ms`
-                  : 'opacity 0.2s ease, transform 0.2s ease',
-              }}
-            >
-              <a
-                href={`#${id}`}
-                className="flex cursor-pointer items-baseline gap-[16px] py-[18px] px-3 rounded-[12px] active:bg-white/[0.06]"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMenuOpen(false);
-                  // Jump instantly while the overlay is still fading — the fade masks
-                  // the jump, and an instant scroll can't be cancelled mid-flight by
-                  // main-thread jank the way a long smooth scroll can (which stranded
-                  // taps short of their section). The body scroll-lock lifts in the
-                  // menu-close effect, so poll for that instead of racing it with a
-                  // fixed delay: scrollTo is a silent no-op while the lock is on.
-                  // setTimeout rather than requestAnimationFrame: rAF freezes when the
-                  // page is hidden or throttled, which would swallow the tap entirely.
-                  const jump = (triesLeft: number) => {
-                    if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
-                    const el = document.getElementById(id);
-                    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
-                  };
-                  setTimeout(() => jump(30), 16);
-                }}
-              >
-                <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  0{i + 1}
-                </span>
-                <span className="text-[30px] font-medium tracking-[-0.02em] text-white/90">{label}</span>
-              </a>
-            </div>
-          ))}
-          </div>
-        </nav>
-
-        {/* Location + contact — who you're actually reaching, and roughly
-            whether they're awake, before you commit to typing an email. */}
         <div
-          className="flex w-full flex-col gap-[16px] px-8 pt-[6px] pb-[36px] flex-shrink-0"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
           style={{
+            background: 'radial-gradient(circle at 18% 12%, rgba(255,255,255,0.14), transparent 36%), radial-gradient(circle at 82% 78%, rgba(179,73,41,0.16), transparent 42%)',
+          }}
+        />
+
+        {/* The warm glass sheet keeps the menu itself crisp while the live page
+            remains visible as a soft, cinematic field around it. */}
+        <div
+          data-mobile-menu-panel
+          className="relative z-10 mx-[10px] flex min-h-0 flex-[1_1_auto] flex-col overflow-hidden rounded-[30px] border border-white/70"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxHeight: 'min(68dvh, 620px)',
+            minHeight: '360px',
+            background: 'linear-gradient(145deg, var(--menu-glass-start), var(--menu-glass-end))',
+            backdropFilter: 'blur(34px) saturate(1.08)',
+            WebkitBackdropFilter: 'blur(34px) saturate(1.08)',
+            boxShadow: '0 28px 80px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,1)',
+            color: 'var(--ink-warm)',
             opacity: menuOpen ? 1 : 0,
-            transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
+            transform: menuOpen ? 'translateY(0) scale(1)' : 'translateY(-14px) scale(0.985)',
             transition: menuOpen
-              ? 'opacity 0.45s cubic-bezier(0.16,1,0.3,1) 340ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) 340ms'
-              : 'opacity 0.2s ease, transform 0.2s ease',
+              ? 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1)'
+              : 'opacity 0.22s ease, transform 0.28s ease',
           }}
         >
-          <div className="flex flex-col gap-[4px]">
-            <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]">LOCATION</span>
-            <span className="text-[14px] font-medium tracking-[-0.02em] text-white/70" style={{ fontVariantNumeric: 'tabular-nums' }}>
-              Toronto, {localTime.zone} — {localTime.time}{localTime.asleep ? ' 💤' : ''}
+          <div className="flex h-[72px] flex-shrink-0 items-center justify-between px-5">
+            <div className="flex h-[42px] w-[38px] items-center justify-center">
+              <TDTLogo letterColor="rgb(26,15,10)" />
+            </div>
+            <span className="text-[9px] font-semibold uppercase tracking-[0.03em] text-[#1A0F0A]/50">
+              Menu
             </span>
+            <button
+              ref={menuCloseRef}
+              onClick={() => setMenuOpen(false)}
+              className="-mr-1 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-black/[0.08] bg-white/65 text-[#1A0F0A]/80 shadow-[0_4px_16px_rgba(26,15,10,0.06)] outline-none transition-colors active:bg-black/[0.06] focus-visible:ring-2 focus-visible:ring-[#B34929]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F4EDE8]"
+              aria-label="Close menu"
+            >
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
+                <path d="M6.5 6.5L17.5 17.5M6.5 17.5L17.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
           </div>
 
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex flex-col gap-[4px]">
-              <span className="text-[11px] font-semibold tracking-[0.1em] text-[#B34929]">CONTACT</span>
-              <a
-                href="mailto:jaiden@thinkdifferenttraining.com"
-                className="text-[14px] font-medium tracking-[-0.02em] text-white/70 transition-colors hover:text-white"
-              >
-                jaiden@thinkdifferenttraining.com
-              </a>
+          <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-5" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
+            <div className="my-auto flex flex-col">
+              {MOBILE_NAV_LINKS.map(({ id, label }, i) => (
+                <a
+                  key={id}
+                  href={`#${id}`}
+                  className="group relative grid min-h-[78px] grid-cols-[28px_1fr_28px] items-center border-b border-black/[0.11] text-[#1A0F0A] last:border-b-0 active:bg-black/[0.04]"
+                  style={{
+                    opacity: menuOpen ? 1 : 0,
+                    transform: menuOpen ? 'translateY(0)' : 'translateY(18px)',
+                    transition: menuOpen
+                      ? `opacity 0.5s cubic-bezier(0.16,1,0.3,1) ${120 + i * 75}ms, transform 0.55s cubic-bezier(0.16,1,0.3,1) ${120 + i * 75}ms`
+                      : 'opacity 0.15s ease, transform 0.2s ease',
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    const jump = (triesLeft: number) => {
+                      if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
+                      const el = document.getElementById(id);
+                      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
+                    };
+                    setTimeout(() => jump(30), 16);
+                  }}
+                >
+                  <span className="text-[10px] font-semibold tracking-normal text-[var(--brand-terra)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    0{i + 1}
+                  </span>
+                  <span className="text-center text-[clamp(30px,9vw,42px)] font-medium leading-none tracking-[-0.045em]">
+                    {label}
+                  </span>
+                  <span className="mx-auto h-px w-3 bg-[#1A0F0A]/25 transition-all duration-300 group-active:w-5" />
+                </a>
+              ))}
             </div>
-            <a
-              href="https://www.instagram.com/thinkdifferent_training/?hl=en"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Think Different Training on Instagram"
-              className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white active:bg-white/10"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.8" />
-                <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.8" />
-                <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
-              </svg>
-            </a>
-          </div>
+          </nav>
         </div>
 
-        {/* Bottom actions */}
+        {/* Actions float over the blurred page instead of competing with the
+            navigation sheet. Safe-area padding keeps Apply above iOS chrome. */}
         <div
-          className="flex w-full flex-col items-center gap-[18px] px-6"
+          className="relative z-10 mt-auto flex w-full flex-shrink-0 flex-col items-center gap-[12px] px-5 pt-5"
+          onClick={(e) => e.stopPropagation()}
           style={{
             opacity: menuOpen ? 1 : 0,
             transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
             transition: menuOpen
-              ? 'opacity 0.45s cubic-bezier(0.16,1,0.3,1) 420ms, transform 0.45s cubic-bezier(0.16,1,0.3,1) 420ms'
+              ? 'opacity 0.5s cubic-bezier(0.16,1,0.3,1) 330ms, transform 0.55s cubic-bezier(0.16,1,0.3,1) 330ms'
               : 'opacity 0.2s ease, transform 0.2s ease',
-            // Clear the home indicator on notched phones
-            paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))',
+            paddingBottom: 'calc(18px + env(safe-area-inset-bottom))',
           }}
         >
-          {/* -my-3 cancels the 44px hit area's extra height inside the gap so
-              visual spacing is unchanged */}
-          <a href="https://app.thinkdifferenttraining.com/access" className="-my-3 flex min-h-[44px] items-center px-6 text-[14px] text-white/60">Log In</a>
-          <CTAButton href="/apply" className="w-full h-[48px] text-[15px]">
+          <a
+            href="https://app.thinkdifferenttraining.com/access"
+            className="flex min-h-[46px] w-full items-center justify-center rounded-full border border-white/[0.24] bg-white/[0.10] text-[15px] text-white/90 backdrop-blur-xl transition-colors active:bg-white/[0.16]"
+          >
+            Log In
+          </a>
+          <CTAButton href="/apply" className="h-[54px] w-full text-[16px] shadow-[0_14px_35px_rgba(0,0,0,0.28)]">
             Apply
           </CTAButton>
         </div>

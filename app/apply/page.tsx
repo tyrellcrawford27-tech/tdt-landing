@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, Fragment, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
@@ -924,6 +925,14 @@ function ApplyPageInner() {
         }
       `}</style>
 
+      <Link
+        href="/"
+        aria-label="Back to website"
+        style={{ position: 'fixed', top: 20, left: 24, ...text(13, 400, 'rgba(0,0,0,0.32)'), textDecoration: 'none', letterSpacing: '0.01em', zIndex: 50 }}
+      >
+        ← Learn More
+      </Link>
+
       {earlyPricing && (
         <div style={{ opacity: 0.55, ...fadeStyle }}>
           <EarlyBirdIcon size={20} color={TERRA} />
@@ -943,7 +952,7 @@ function ApplyPageInner() {
           textAlign: 'center',
           lineHeight: 1.45,
         }}>
-          Same season, same team, different player by December.
+          Every journey toward excellence begins with a single step.
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin
@@ -1299,9 +1308,13 @@ function ApplyPageInner() {
       </div>
 
       {/* Back link */}
-      <a href="/" style={{ position: 'fixed', top: 20, left: 24, ...text(13, 400, 'rgba(0,0,0,0.32)'), textDecoration: 'none', letterSpacing: '0.01em', zIndex: 50 }}>
-        ← tdt
-      </a>
+      <Link
+        href="/"
+        aria-label="Back to website"
+        style={{ position: 'fixed', top: 20, left: 24, ...text(13, 400, 'rgba(0,0,0,0.32)'), textDecoration: 'none', letterSpacing: '0.01em', zIndex: 50 }}
+      >
+        ← Learn More
+      </Link>
 
       {/* Question */}
       <div className="tdt-outer" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 100px' }}>
