@@ -85,9 +85,9 @@ function buildQuestions(): Q[] {
       ],
     },
     {
-      section: 'Info', question: 'Do you have consistent access to a laptop or computer?', field: 'device_access', type: 'radio-grid',
-      subtext: "Phone's fine — film review is just easier on a bigger screen.",
-      options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'],
+      section: 'Info', question: 'What device do you usually use to review film?', field: 'device_access', type: 'radio-grid',
+      subtext: "Any of these will work. We'll help you get set up.",
+      options: ['Laptop or desktop', 'iPad or tablet', 'Phone', "I'm not sure yet"],
     },
     {
       section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
@@ -605,7 +605,7 @@ function ApplyPageInner() {
     city_state:          ["Where are you based?", "City and province/state please", "WHERE ARE YOU FROM?!"],
     email:               ["We'll need your email", "Email address please", "YOUR EMAIL. NOW."],
     phone:               ["Add a phone number", "Phone number, please", "PHONE NUMBER!!"],
-    device_access:       ["Do you have a laptop or computer?", "Pick one", "PICK ONE!!"],
+    device_access:       ["What device do you use?", "Pick one", "PICK ONE!!"],
     position:            ["Pick your position", "Choose one", "PICK. A. POSITION."],
     years_playing:       ["How long have you been playing?", "Pick one, be honest", "YEARS PLAYING. PICK ONE."],
     current_team_school: ["What team or school?", "Team or school name please", "TEAM. OR. SCHOOL."],
