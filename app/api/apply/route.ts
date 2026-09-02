@@ -3,6 +3,11 @@ import { createAdminClient } from '@/lib/supabase';
 import { escapeLike } from '@/lib/escapeLike';
 import { sendBookingEmails } from '@/lib/email';
 import { getEarlyPricingSpots } from '@/lib/earlyPricing';
+import {
+  APPLICATION_FORM_VERSION,
+  APPLICATION_QUESTION_COUNT,
+  APPLICATION_QUESTIONS,
+} from '@/lib/applicationProgress';
 
 // This route is public and unauthenticated, and it used to spread the raw
 // request body straight into the insert — so a caller could set ANY column,
@@ -17,7 +22,7 @@ const WRITABLE_FIELDS = [
   'athlete_name', 'athlete_email', 'athlete_phone',
   'first_name', 'last_name', 'email', 'phone',
   'device_access', 'age', 'city',
-  'position', 'years_playing',
+  'position', 'years_playing', 'years_playing_answer',
   'current_team', 'current_team_school',
   'biggest_weakness', 'goal', 'social_link', 'time_commitment',
   'parent_name', 'guardian_name',
@@ -26,6 +31,7 @@ const WRITABLE_FIELDS = [
   'parent_aware', 'guardian_aware',
   'heard_about',
 ] as const;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function pickWritable(body: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -58,6 +64,10 @@ export async function POST(req: NextRequest) {
     }
 
     const email = typeof body.email === 'string' ? body.email.trim() : '';
+    const draftKey = typeof body.draft_key === 'string' && UUID.test(body.draft_key)
+      ? body.draft_key
+      : null;
+    const finalQuestion = APPLICATION_QUESTIONS[APPLICATION_QUESTIONS.length - 1];
 
     // Server-owned columns. The client never gets to set these, and
     // early_pricing is whatever the re-check above decided, not what was sent.
@@ -67,22 +77,63 @@ export async function POST(req: NextRequest) {
       early_pricing: body.early_pricing || null,
       submitted_at: new Date().toISOString(),
       status: 'pending',
+      application_state: 'submitted',
+      form_version: APPLICATION_FORM_VERSION,
+      total_questions: APPLICATION_QUESTION_COUNT,
+      current_question_key: finalQuestion.key,
+      current_question_label: finalQuestion.label,
+      current_question_number: finalQuestion.number,
+      last_answered_question_key: finalQuestion.key,
+      last_answered_question_label: finalQuestion.label,
+      last_answered_question_number: finalQuestion.number,
+      last_answered_at: new Date().toISOString(),
+      progress_updated_at: new Date().toISOString(),
     };
 
     if (email) {
-      const { data: existing, error: lookupError } = await admin
-        .from('applications')
-        .select('id, time_commitment')
-        .ilike('email', escapeLike(email))
-        .limit(1);
-      if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 400 });
+      // A draft key is the durable identity of this browser's application.
+      // Fall back to the legacy email lookup for drafts started before live
+      // progress existed, so existing in-progress applications still finish
+      // in place after this deploy.
+      const { data: draftRows, error: draftLookupError } = draftKey
+        ? await admin.from('applications').select('id, time_commitment, application_state').eq('draft_key', draftKey).limit(1)
+        : { data: null, error: null };
+      if (draftLookupError) return NextResponse.json({ error: draftLookupError.message }, { status: 400 });
 
-      const existingRow = existing && existing.length > 0 ? existing[0] : null;
+      // The draft key must not become a duplicate-email bypass. Check the
+      // submitted rows independently and exclude only this exact draft row.
+      const { data: emailRows, error: emailLookupError } = await admin
+        .from('applications')
+        .select('id, time_commitment, application_state')
+        .ilike('email', escapeLike(email))
+        .limit(10);
+      if (emailLookupError) return NextResponse.json({ error: emailLookupError.message }, { status: 400 });
+
+      const draftRow = draftRows?.[0] ?? null;
+      const existingRow = draftRow ?? emailRows?.find(row =>
+        row.application_state == null && !row.time_commitment
+      ) ?? null;
+      const conflictingSubmission = emailRows?.some(row =>
+        row.id !== draftRow?.id && (
+          row.application_state === 'submitted' ||
+          (row.application_state == null && row.time_commitment)
+        )
+      );
+      if (conflictingSubmission) {
+        return NextResponse.json(
+          { error: 'An application with this email has already been submitted.' },
+          { status: 409 }
+        );
+      }
+
       // time_commitment is the last field collected before submit, so an
       // existing row missing it is this same applicant's own partial save
       // from earlier in the form (see /api/apply/save-progress) — finish it
       // in place instead of treating it as a duplicate application.
-      if (existingRow && existingRow.time_commitment) {
+      if (existingRow && (
+        existingRow.application_state === 'submitted' ||
+        (existingRow.application_state == null && existingRow.time_commitment)
+      )) {
         return NextResponse.json(
           { error: 'An application with this email has already been submitted.' },
           { status: 409 }
@@ -91,7 +142,7 @@ export async function POST(req: NextRequest) {
 
       const { error } = existingRow
         ? await admin.from('applications').update(record).eq('id', existingRow.id)
-        : await admin.from('applications').insert([record]);
+        : await admin.from('applications').insert([{ ...record, draft_key: draftKey }]);
 
       if (error) {
         // 23505 = Postgres unique_violation - covers the race where two submissions

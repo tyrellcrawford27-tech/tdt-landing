@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Fragment, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
@@ -10,6 +10,10 @@ import { preloadCities } from '@/lib/cities';
 import { preloadSchools } from '@/lib/schoolsIndex';
 import { loadGeoHint } from '@/lib/geo';
 import { SURFACE_LIGHT } from '@/lib/theme';
+import {
+  APPLICATION_FORM_VERSION,
+  type ApplicationQuestionKey,
+} from '@/lib/applicationProgress';
 import Cal, { getCalApi } from '@calcom/embed-react';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
@@ -57,14 +61,15 @@ type SubField =
   | { field: keyof FormData; kind: 'text' | 'email' | 'tel'; label: string; placeholder: string }
   | { field: keyof FormData; kind: 'radio-grid'; label: string; options: string[] };
 
-type Q =
+type Q = { key: ApplicationQuestionKey } & (
   | { section: string; question: string; field: keyof FormData; type: 'text' | 'email' | 'tel' | 'number'; placeholder: string }
   | { section: string; question: string; field: keyof FormData; type: 'textarea'; placeholder: string }
   | { section: string; question: string; field: keyof FormData; type: 'location' }
   | { section: string; question: string; field: keyof FormData; type: 'school' }
   | { section: string; question: string; field: keyof FormData; type: 'radio-grid'; subtext?: string; options: string[] }
   | { section: string; question: string; field: keyof FormData; type: 'choice'; options: string[] }
-  | { section: string; question: string; type: 'group'; kind: 'contact' | 'game' | 'parent'; subtext?: string; subs: SubField[] };
+  | { section: string; question: string; type: 'group'; kind: 'contact' | 'game' | 'parent'; subtext?: string; subs: SubField[] }
+);
 
 // Every applicant now books a discovery call as the closing step, and the
 // call recovers what the "why" essays used to ask for far better than a text
@@ -73,39 +78,39 @@ type Q =
 // parent who actually pays, looped in before the call happens.
 function buildQuestions(): Q[] {
   const qs: Q[] = [
-    { section: 'Info', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'First and last name' },
-    { section: 'Info', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17' },
-    { section: 'Info', question: 'Where are you from?', field: 'city_state', type: 'location' },
+    { key: 'full_name', section: 'Info', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'First and last name' },
+    { key: 'age', section: 'Info', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17' },
+    { key: 'city_state', section: 'Info', question: 'Where are you from?', field: 'city_state', type: 'location' },
     {
-      section: 'Info', question: 'Where can we reach you?', type: 'group', kind: 'contact',
+      key: 'contact', section: 'Info', question: 'Where can we reach you?', type: 'group', kind: 'contact',
       subs: [
         { field: 'email', kind: 'email', label: 'Email', placeholder: 'you@email.com' },
         { field: 'phone', kind: 'tel', label: 'Phone number', placeholder: '416-605-2033' },
       ],
     },
     {
-      section: 'Info', question: 'Do you have consistent access to a laptop or computer?', field: 'device_access', type: 'radio-grid',
+      key: 'device_access', section: 'Info', question: 'Do you have consistent access to a laptop or computer?', field: 'device_access', type: 'radio-grid',
       subtext: "Phone's fine — film review is just easier on a bigger screen.",
       options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'],
     },
     {
-      section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
+      key: 'game', section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
       subs: [
         { field: 'position', kind: 'radio-grid', label: 'Position', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
         { field: 'years_playing', kind: 'radio-grid', label: 'Years playing competitively', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
       ],
     },
-    { section: 'Your game', question: 'Current team or school?', field: 'current_team_school', type: 'school' },
-    { section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest. Self-awareness is the first thing Jaiden looks for.' },
-    { section: 'Your game', question: "What's your @ on Instagram or Twitter (X)?", field: 'social_link', type: 'text', placeholder: '@yourusername' },
+    { key: 'current_team_school', section: 'Your game', question: 'Current team or school?', field: 'current_team_school', type: 'school' },
+    { key: 'biggest_weakness', section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest. Self-awareness is the first thing Jaiden looks for.' },
+    { key: 'social_link', section: 'Your game', question: "What's your @ on Instagram or Twitter (X)?", field: 'social_link', type: 'text', placeholder: '@yourusername' },
     {
-      section: 'The ceiling',
+      key: 'goal', section: 'The ceiling',
       question: "What's the highest you see this going for you and what makes you believe it?",
       field: 'goal',
       type: 'textarea',
       placeholder: 'Be honest pro, D1, or wherever you truly see it. Then tell me why.',
     },
-    { section: 'Your commitment', question: 'How much time can you realistically commit per day?', field: 'time_commitment', type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
+    { key: 'time_commitment', section: 'Your commitment', question: 'How much time can you realistically commit per day?', field: 'time_commitment', type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
   ];
 
   // The buyer is the parent on the overwhelming majority of applications, and
@@ -114,7 +119,7 @@ function buildQuestions(): Q[] {
   // audience, and even an adult applicant usually has a parent in the decision.
   qs.push(
     {
-      section: 'Parent / Supporter', question: "Who's the parent or supporter we're looping in?", type: 'group', kind: 'parent',
+      key: 'guardian', section: 'Parent / Supporter', question: "Who's the parent or supporter we're looping in?", type: 'group', kind: 'parent',
       subtext: "Whoever's helping you make this decision. We'll keep them in the loop.",
       subs: [
         { field: 'guardian_name', kind: 'text', label: 'Their name', placeholder: 'Full name' },
@@ -122,12 +127,12 @@ function buildQuestions(): Q[] {
         { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'their@email.com' },
       ],
     },
-    { section: 'Parent / Supporter', question: "Have you told them you're applying?", field: 'guardian_aware', type: 'choice', options: ['Yes', 'No'] },
+    { key: 'guardian_aware', section: 'Parent / Supporter', question: "Have you told them you're applying?", field: 'guardian_aware', type: 'choice', options: ['Yes', 'No'] },
   );
 
   // Always the last question — where the lead actually came from.
   qs.push({
-    section: 'One more thing',
+    key: 'heard_about', section: 'One more thing',
     question: 'How did you hear about this?',
     field: 'heard_about',
     type: 'radio-grid',
@@ -275,13 +280,14 @@ function GoBackButton({ onClick }: { onClick: () => void }) {
 }
 
 const STORAGE_KEY = 'tdt-apply-draft';
+const DRAFT_KEY_STORAGE = 'tdt-apply-draft-key';
 // Bump this whenever buildQuestions()'s order changes. A stored draft whose
 // version doesn't match has its screen index discarded (its typed answers
 // are kept) and gets re-resumed at the first incomplete required question
 // instead — a raw array index from a prior question order can silently
 // point at the wrong question, or skip one, after a reorder. See the restore
 // effect below and firstIncompleteScreen() above.
-const DRAFT_VERSION = 2;
+const DRAFT_VERSION = APPLICATION_FORM_VERSION;
 // Attribution is the one non-load-bearing field left — it's also the very
 // last screen before Submit, so any bug in its validation would block every
 // application behind it. Not worth that risk for a "how'd you hear about
@@ -315,6 +321,47 @@ function readFresh(key: string, ttlMs: number): Record<string, unknown> | null {
   const savedAt = typeof parsed.savedAt === 'number' ? parsed.savedAt : 0;
   if (!savedAt || Date.now() - savedAt > ttlMs) { dropKey(key); return null; }
   return parsed;
+}
+
+function yearsPlayingValue(value: string): number | null {
+  if (!value) return null;
+  if (value.toLowerCase().includes('less')) return 0;
+  return parseInt(value.match(/\d+/)?.[0] ?? '0');
+}
+
+/** Canonical database fields. The server still allowlists them per question. */
+function progressAnswers(form: FormData): Record<string, unknown> {
+  const [firstName, ...lastName] = form.full_name.trim().split(/\s+/);
+  return {
+    athlete_name: form.full_name,
+    first_name: firstName || '',
+    last_name: lastName.join(' '),
+    age: form.age ? parseInt(form.age) : null,
+    city: form.city_state,
+    email: form.email,
+    athlete_email: form.email,
+    phone: form.phone,
+    athlete_phone: form.phone,
+    device_access: form.device_access,
+    position: form.position,
+    years_playing: yearsPlayingValue(form.years_playing),
+    years_playing_answer: form.years_playing,
+    current_team: form.current_team_school,
+    current_team_school: form.current_team_school,
+    biggest_weakness: form.biggest_weakness,
+    social_link: form.social_link,
+    goal: form.goal,
+    time_commitment: form.time_commitment,
+    parent_name: form.guardian_name,
+    guardian_name: form.guardian_name,
+    parent_phone: form.guardian_phone,
+    guardian_phone: form.guardian_phone,
+    parent_email: form.guardian_email,
+    guardian_email: form.guardian_email,
+    parent_aware: form.guardian_aware,
+    guardian_aware: form.guardian_aware,
+    heard_about: form.heard_about,
+  };
 }
 
 // ── Radio button style (shared by standalone radio-grid questions and the
@@ -393,12 +440,75 @@ function ApplyPageInner() {
   // Set when city_state came from the picker. A value the dropdown offered must
   // never be rejected by the validator, independent of the heuristics.
   const cityFromPicker = useRef(false);
+  const draftKeyRef = useRef<string | null>(null);
+  const progressQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const latestProgressRef = useRef<{ question: Q; snapshot: FormData } | null>(null);
+
+  const ensureDraftKey = useCallback(() => {
+    if (draftKeyRef.current) return draftKeyRef.current;
+    try {
+      const stored = localStorage.getItem(DRAFT_KEY_STORAGE);
+      if (stored) return (draftKeyRef.current = stored);
+      const created = crypto.randomUUID();
+      localStorage.setItem(DRAFT_KEY_STORAGE, created);
+      draftKeyRef.current = created;
+      return created;
+    } catch {
+      return (draftKeyRef.current = crypto.randomUUID());
+    }
+  }, []);
 
   // Every applicant answers the parent block, so the question list is fixed —
   // no age branching, and therefore no way for a back-edit to the age field to
   // resize the flow underneath someone mid-application.
   const questions = useMemo(() => buildQuestions(), []);
   const TOTAL = questions.length;
+
+  const enqueueProgress = useCallback((question: Q, completed: boolean, snapshot: FormData) => {
+    const draftKey = ensureDraftKey();
+    const request = progressQueueRef.current
+      .catch(() => {})
+      .then(async () => {
+        const body = JSON.stringify({
+          draft_key: draftKey,
+          question_key: question.key,
+          completed,
+          answers: progressAnswers(snapshot),
+          identity: {
+            athlete_name: snapshot.full_name,
+            athlete_email: snapshot.email,
+            email: snapshot.email,
+          },
+        });
+        let lastStatus = 0;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          try {
+            const response = await fetch('/api/apply/save-progress', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body,
+              keepalive: true,
+            });
+            lastStatus = response.status;
+            if (response.ok) return;
+          } catch {
+            // A full snapshot is retried below. The queue keeps write order so
+            // an older retry can never overwrite a newer answer.
+          }
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 250 : 750));
+          }
+        }
+        throw new Error(`Progress save failed${lastStatus ? ` (${lastStatus})` : ''}`);
+      })
+      .catch(error => {
+        // The next queued snapshot contains every answer collected so far, so
+        // a transient failure self-heals on the next keystroke or screen.
+        console.warn('[apply] progress save failed', error);
+      });
+    progressQueueRef.current = request;
+    return request;
+  }, [ensureDraftKey]);
 
   // Warm the city index while the applicant reads the intro screen, so question
   // 03 is instant even on a slow connection. Both calls are idempotent.
@@ -443,6 +553,8 @@ function ApplyPageInner() {
           // instead of trusting the index.
           resumeScreenRef.current = Math.min(firstIncompleteScreen(questions, f, OPTIONAL), TOTAL);
         }
+      } else {
+        dropKey(DRAFT_KEY_STORAGE);
       }
     } catch {}
   }, [questions, TOTAL]);
@@ -493,6 +605,61 @@ function ApplyPageInner() {
     if (screen < 1 || screen > TOTAL) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION, savedAt: Date.now() })); } catch {}
   }, [form, screen, TOTAL]);
+
+  // Save while they type/select, not just when they eventually submit. A short
+  // debounce avoids one database write per keystroke while still preserving a
+  // half-written answer if the tab closes on the current question.
+  useEffect(() => {
+    if (screen < 1 || screen > TOTAL) {
+      latestProgressRef.current = null;
+      return;
+    }
+    const question = questions[screen - 1];
+    // The table historically requires athlete_name. Do not create an empty row
+    // merely because somebody opened Q1; the first typed character starts it.
+    if (question.key === 'full_name' && !form.full_name.trim()) {
+      latestProgressRef.current = null;
+      return;
+    }
+    latestProgressRef.current = { question, snapshot: form };
+    const timer = setTimeout(() => {
+      void enqueueProgress(question, false, form);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [form, screen, TOTAL, questions, enqueueProgress]);
+
+  // If someone closes or backgrounds the tab inside the short typing debounce,
+  // send the latest snapshot with the browser's unload-safe transport. The
+  // server treats this as the same idempotent draft update as the normal save.
+  useEffect(() => {
+    const flushLatest = () => {
+      const latest = latestProgressRef.current;
+      if (!latest) return;
+      if (latest.question.key === 'full_name' && !latest.snapshot.full_name.trim()) return;
+      const draftKey = ensureDraftKey();
+      const body = JSON.stringify({
+        draft_key: draftKey,
+        question_key: latest.question.key,
+        completed: false,
+        answers: progressAnswers(latest.snapshot),
+        identity: {
+          athlete_name: latest.snapshot.full_name,
+          athlete_email: latest.snapshot.email,
+          email: latest.snapshot.email,
+        },
+      });
+      navigator.sendBeacon('/api/apply/save-progress', new Blob([body], { type: 'application/json' }));
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushLatest();
+    };
+    window.addEventListener('pagehide', flushLatest);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('pagehide', flushLatest);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [ensureDraftKey]);
 
   // The embed's bookingSuccessfulV2 event is a client-side postMessage — a
   // hint that booking probably just succeeded, not proof (the same reasoning
@@ -711,34 +878,10 @@ function ApplyPageInner() {
   };
 
 
-  // Fire-and-forget partial save the moment we have contact info, so an
-  // applicant who abandons the form later is still a reachable lead instead
-  // of a total loss. Safe to call more than once — the backend upserts by
-  // email, so a later correction just updates the same draft row.
-  const saveProgress = () => {
-    const payload = {
-      email: form.email,
-      phone: form.phone,
-      first_name: form.full_name.trim().split(/\s+/)[0] || '',
-      last_name: form.full_name.trim().split(/\s+/).slice(1).join(' '),
-      athlete_name: form.full_name.trim(),
-      athlete_email: form.email,
-      athlete_phone: form.phone,
-      age: form.age ? parseInt(form.age) : null,
-      city: form.city_state,
-      submitted_at: new Date().toISOString(),
-    };
-    fetch('/api/apply/save-progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      keepalive: true,
-    }).catch(() => { /* best-effort — final submit is still the source of truth */ });
-  };
-
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
+    await progressQueueRef.current;
     const [firstName, ...nameParts] = form.full_name.trim().split(/\s+/);
     const lastName = nameParts.join(' ');
     const payload = {
@@ -753,9 +896,8 @@ function ApplyPageInner() {
       age:          form.age ? parseInt(form.age) : null,
       city:         form.city_state,
       position:     form.position,
-      years_playing: form.years_playing
-                      ? (form.years_playing.toLowerCase().includes('less') ? 0 : parseInt(form.years_playing.match(/\d+/)?.[0] ?? '0'))
-                      : null,
+      years_playing: yearsPlayingValue(form.years_playing),
+      years_playing_answer: form.years_playing,
       current_team:        form.current_team_school,
       current_team_school: form.current_team_school,
       biggest_weakness:    form.biggest_weakness,
@@ -772,8 +914,7 @@ function ApplyPageInner() {
       guardian_aware:      form.guardian_aware || null,
       heard_about:         form.heard_about || null,
       early_pricing:     earlyPricing || null,
-      submitted_at:      new Date().toISOString(),
-      status:            'pending',
+      draft_key:         ensureDraftKey(),
     };
     try {
       const res  = await fetch('/api/apply', {
@@ -785,6 +926,7 @@ function ApplyPageInner() {
       if (!res.ok) throw new Error(json.error || 'Submission failed');
       try {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(DRAFT_KEY_STORAGE);
         // The form is done, but the application isn't — booking is what's
         // left. Keep just enough to resume straight into the booking step
         // (or the confirmed screen) if this tab closes before that happens.
@@ -816,7 +958,11 @@ function ApplyPageInner() {
     // The last screen can be the guardian_aware gate, which — unlike the old
     // form's optional last question — has a hard validation rule. Submit only
     // fires after that rule (and everything else below) passes.
-    const finish = () => { if (screen === TOTAL) handleSubmit(); else goTo(screen + 1); };
+    const finish = async () => {
+      await enqueueProgress(q, true, form);
+      if (screen === TOTAL) await handleSubmit();
+      else goTo(screen + 1);
+    };
 
     if (q.type === 'group') {
       for (const sub of q.subs) {
@@ -852,8 +998,7 @@ function ApplyPageInner() {
           setCheckingEmail(false);
         }
       }
-      if (q.kind === 'contact') saveProgress();
-      finish();
+      await finish();
       return;
     }
 
@@ -881,7 +1026,7 @@ function ApplyPageInner() {
       triggerShake();
       return;
     }
-    finish();
+    await finish();
   };
   const retreat = () => { if (screen > 1) goTo(screen - 1); };
 
@@ -891,6 +1036,8 @@ function ApplyPageInner() {
   const startOver = () => {
     dropKey(STORAGE_KEY);
     dropKey(SUBMITTED_KEY);
+    dropKey(DRAFT_KEY_STORAGE);
+    draftKeyRef.current = null;
     resumeScreenRef.current = 1;
     resumePendingRef.current = null;
     setForm(EMPTY);

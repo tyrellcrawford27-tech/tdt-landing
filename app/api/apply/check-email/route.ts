@@ -14,16 +14,22 @@ export async function GET(req: NextRequest) {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from('applications')
-      .select('id, time_commitment')
+      .select('id, time_commitment, application_state')
       .ilike('email', escapeLike(email))
-      .limit(1);
+      .limit(10);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     // time_commitment is the last field collected before submit. A row
     // missing it is this same applicant's own in-progress partial save (see
     // /api/apply/save-progress), not a real prior application — it must not
     // block them from continuing to fill out and submit this form.
-    const exists = !!(data && data.length > 0 && data[0].time_commitment);
+    // There may be both an abandoned draft and an older submitted row for the
+    // same email. Looking at only the first match can let the draft mask the
+    // real submission, so inspect every bounded match.
+    const exists = data?.some(row => (
+      row.application_state === 'submitted' ||
+      (row.application_state == null && !!row.time_commitment)
+    )) ?? false;
     return NextResponse.json({ exists });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Server error';

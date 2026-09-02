@@ -17,14 +17,16 @@ export async function GET(req: NextRequest) {
       .from('applications')
       .select('time_commitment, call_booked_at')
       .ilike('email', escapeLike(email))
-      .limit(1);
+      .limit(10);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    const row = data && data.length > 0 ? data[0] : null;
+    // A person can have an older draft and a submitted application with the
+    // same email. Never let whichever row PostgREST returns first mask the
+    // submitted/booking state that actually matters here.
     return NextResponse.json({
-      submitted: !!(row && row.time_commitment),
-      booked: !!(row && row.call_booked_at),
+      submitted: data?.some(row => !!row.time_commitment) ?? false,
+      booked: data?.some(row => !!row.call_booked_at) ?? false,
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Server error';
