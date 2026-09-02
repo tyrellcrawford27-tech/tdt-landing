@@ -1,0 +1,10 @@
+# Original high-resolution exports. The landing pages use the optimized JPG/WebP
+# counterparts, so keeping these out of Vercel's source upload does not affect
+# any deployed page.
+public/coach-1.jpg.png
+public/coach-2.jpg.png
+public/coach-3.jpg.png
+public/coach-4.jpg.png
+public/coach-5.jpg.png
+public/hero.png
+public/heroimage.png
