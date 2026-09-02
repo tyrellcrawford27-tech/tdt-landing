@@ -5,7 +5,6 @@ import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
-import { LaunchReveal } from "@/components/LaunchReveal";
 import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon";
 import HeroCarousel, { type HeroSlide } from "@/components/HeroCarousel";
 import Spline from "@splinetool/react-spline";
@@ -910,86 +909,6 @@ function CoachCarousel() {
   );
 }
 
-const LAUNCH_DATE = new Date('2026-09-07T00:00:00');
-
-function useCountdown() {
-  function calc() {
-    const diff = Math.max(0, LAUNCH_DATE.getTime() - Date.now());
-    return {
-      days:    Math.floor(diff / 86400000),
-      hours:   Math.floor((diff / 3600000) % 24),
-      minutes: Math.floor((diff / 60000) % 60),
-      seconds: Math.floor((diff / 1000) % 60),
-    };
-  }
-  const [t, setT] = useState(calc);
-  useEffect(() => {
-    const id = setInterval(() => setT(calc()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return t;
-}
-
-function CountdownEyebrow({ onLaunch }: { onLaunch?: () => void }) {
-  const { days, hours, minutes, seconds } = useCountdown();
-  const fired = useRef(false);
-  useEffect(() => {
-    if (!fired.current && days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
-      fired.current = true;
-      onLaunch?.();
-    }
-  }, [days, hours, minutes, seconds, onLaunch]);
-  const units = [
-    { v: days,    l: 'd' },
-    { v: hours,   l: 'h' },
-    { v: minutes, l: 'm' },
-    { v: seconds, l: 's' },
-  ];
-
-  return (
-    <div
-      className="inline-flex items-center rounded-full mb-6 select-none"
-      style={{
-        border: '1px solid rgba(255,255,255,0.10)',
-        background: 'rgba(255,255,255,0.05)',
-        backdropFilter: 'blur(14px)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 20px rgba(0,0,0,0.25)',
-      }}
-    >
-      {/* Left — label with live dot */}
-      <div className="flex items-center gap-[7px] pl-[11px] pr-[9px] py-[6px]">
-        <span className="relative flex h-[5px] w-[5px] flex-shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: '#B34929' }} />
-          <span className="relative inline-flex h-[5px] w-[5px] rounded-full" style={{ backgroundColor: '#B34929' }} />
-        </span>
-        <span className="text-[9.5px] font-medium tracking-[-0.02em] whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          Cohort 1 · Sept 7
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div className="w-px self-stretch" style={{ background: 'rgba(255,255,255,0.09)', margin: '5px 0' }} />
-
-      {/* Right — countdown units */}
-      <div className="flex items-center gap-[11px] pl-[11px] pr-[13px] py-[6px]">
-        {units.map(({ v, l }) => (
-          <div key={l} className="flex items-baseline gap-[2px]">
-            <span
-              className="text-[12.5px] font-semibold leading-none text-white"
-              style={{ fontVariantNumeric: 'tabular-nums', fontFeatureSettings: '"tnum"', letterSpacing: '-0.01em' }}
-            >
-              {String(v).padStart(2, '0')}
-            </span>
-            <span className="text-[8.5px] font-medium leading-none" style={{ color: 'rgba(255,255,255,0.30)' }}>
-              {l}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Early-pricing popover ─────────────────────────────────────────────────────
 // Liquid-glass card that morphs out of the "Questions about pricing?" link.
 // The goo layer (SVG alpha-threshold filter) makes the neck pinch off from the
@@ -1028,7 +947,6 @@ export default function Home() {
   }, []);
   const [tableVisible, setTableVisible] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [launched, setLaunched] = useState(false);
 
   const transitionZoneRef = useRef<HTMLDivElement>(null);
   const coachContentRef = useRef<HTMLDivElement>(null);
@@ -1223,7 +1141,6 @@ export default function Home() {
 
       {/* ── Film grain overlay ── */}
       <FilmGrain />
-      {launched && <LaunchReveal onClose={() => setLaunched(false)} />}
 
       {/* ── Mobile frosted-glass menu ── */}
       <div
@@ -1551,13 +1468,6 @@ export default function Home() {
             {/* Sits higher in the frame than the headline, where the bottom
                 scrim has only reached ~20% — too thin to carry white type on a
                 bright floor by itself, so it brings its own shadow. */}
-            <p
-              className="mb-[9px] text-[10px] md:text-[11px] font-medium tracking-[0.01em] text-white/95"
-              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6), 0 1px 14px rgba(0,0,0,0.35)' }}
-            >
-              Prep School Edition
-            </p>
-            <CountdownEyebrow />
             {/* Plain white here; the white→dark gradient fill is reapplied at
                 md and up by .hero-headline in globals.css. It can't stay inline
                 because it needs a media query to come off on phones. */}
