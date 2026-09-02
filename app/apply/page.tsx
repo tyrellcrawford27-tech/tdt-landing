@@ -959,7 +959,11 @@ function ApplyPageInner() {
     // form's optional last question — has a hard validation rule. Submit only
     // fires after that rule (and everything else below) passes.
     const finish = async () => {
-      await enqueueProgress(q, true, form);
+      // Never make the applicant wait for a network round-trip before seeing
+      // the next question. enqueueProgress serializes, retries, and keeps the
+      // full snapshot; the next save (and the pagehide beacon) will repair a
+      // transient failure without blocking the form's flow.
+      void enqueueProgress(q, true, form);
       if (screen === TOTAL) await handleSubmit();
       else goTo(screen + 1);
     };
