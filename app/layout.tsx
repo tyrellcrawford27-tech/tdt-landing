@@ -6,11 +6,6 @@ export const metadata: Metadata = {
   title: "Think Different Training",
   description:
     "100 days of Coach Jaiden Francis breaking down your game and building personalised drills around what you need to improve.",
-  // Use the current TDT-branded square favicon across browser contexts.
-  icons: {
-    icon: { url: "/TDT Favicon Exact Rounded.png", sizes: "1254x1254", type: "image/png" },
-    apple: "/apple-touch-icon.png",
-  },
 };
 
 // Black browser chrome + edge-to-edge rendering so notched phones show the

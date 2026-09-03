@@ -87,7 +87,7 @@ function buildQuestions(): Q[] {
     {
       section: 'Info', question: 'What device do you usually use to review film?', field: 'device_access', type: 'radio-grid',
       subtext: "Any of these will work. We'll help you get set up.",
-      options: ['Laptop or desktop', 'iPad or tablet', 'Phone', "I'm not sure yet"],
+      options: ['Laptop or desktop', 'iPad or tablet', 'Phone', "I don't want film yet"],
     },
     {
       section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
