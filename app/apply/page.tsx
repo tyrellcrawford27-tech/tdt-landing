@@ -178,6 +178,15 @@ function formatPhone(raw: string): string {
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
+function generateDraftKey(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  const randomPart = Math.random().toString(16).slice(2);
+  const timePart = Date.now().toString(16);
+  return `${timePart}-${randomPart}-${Math.floor(Math.random() * 1_000_000).toString(16)}`;
+}
+
 // ── Shared text style (PP Neue Montreal is the root font) ─────────────────────
 const text = (size: number, weight: number, color: string, extra?: React.CSSProperties): React.CSSProperties => ({
   fontFamily: 'inherit',
@@ -449,12 +458,12 @@ function ApplyPageInner() {
     try {
       const stored = localStorage.getItem(DRAFT_KEY_STORAGE);
       if (stored) return (draftKeyRef.current = stored);
-      const created = crypto.randomUUID();
+      const created = generateDraftKey();
       localStorage.setItem(DRAFT_KEY_STORAGE, created);
       draftKeyRef.current = created;
       return created;
     } catch {
-      return (draftKeyRef.current = crypto.randomUUID());
+      return (draftKeyRef.current = generateDraftKey());
     }
   }, []);
 
