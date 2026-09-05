@@ -15,6 +15,7 @@ import {
   APPLICATION_FORM_VERSION,
   type ApplicationQuestionKey,
 } from '@/lib/applicationProgress';
+import { createProgressQueue } from '@/lib/progressQueue';
 import Cal, { getCalApi } from '@calcom/embed-react';
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
@@ -451,7 +452,9 @@ function ApplyPageInner() {
   // never be rejected by the validator, independent of the heuristics.
   const cityFromPicker = useRef(false);
   const draftKeyRef = useRef<string | null>(null);
-  const progressQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const progressRevisionRef = useRef(0);
+  const lastAnsweredKeyRef = useRef<string | null>(null);
+  const [progressSaveFailed, setProgressSaveFailed] = useState(false);
   const latestProgressRef = useRef<{ question: Q; snapshot: FormData } | null>(null);
 
   const ensureDraftKey = useCallback(() => {
@@ -474,51 +477,47 @@ function ApplyPageInner() {
   const questions = useMemo(() => buildQuestions(), []);
   const TOTAL = questions.length;
 
-  const enqueueProgress = useCallback((question: Q, completed: boolean, snapshot: FormData) => {
-    const draftKey = ensureDraftKey();
-    const request = progressQueueRef.current
-      .catch(() => {})
-      .then(async () => {
-        const body = JSON.stringify({
-          draft_key: draftKey,
-          question_key: question.key,
-          completed,
-          answers: progressAnswers(snapshot),
-          identity: {
-            athlete_name: snapshot.full_name,
-            athlete_email: snapshot.email,
-            email: snapshot.email,
-          },
+  const nextProgressRevision = useCallback(() => {
+    // Persist across reloads and tabs. Reusing an older sequence would make a
+    // resumed draft's answers look stale to the server.
+    let stored = 0;
+    try { stored = Number(localStorage.getItem('tdt_progress_revision')) || 0; } catch {}
+    const revision = Math.max(Date.now(), stored + 1, progressRevisionRef.current + 1);
+    progressRevisionRef.current = revision;
+    try { localStorage.setItem('tdt_progress_revision', String(revision)); } catch {}
+    return revision;
+  }, []);
+
+  const progressQueue = useMemo(() => createProgressQueue<string>(async body => {
+    let lastStatus = 0;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const response = await fetch('/api/apply/save-progress', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body, keepalive: true, signal: AbortSignal.timeout(5_000),
         });
-        let lastStatus = 0;
-        for (let attempt = 0; attempt < 3; attempt += 1) {
-          try {
-            const response = await fetch('/api/apply/save-progress', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body,
-              keepalive: true,
-            });
-            lastStatus = response.status;
-            if (response.ok) return;
-          } catch {
-            // A full snapshot is retried below. The queue keeps write order so
-            // an older retry can never overwrite a newer answer.
-          }
-          if (attempt < 2) {
-            await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 250 : 750));
-          }
-        }
-        throw new Error(`Progress save failed${lastStatus ? ` (${lastStatus})` : ''}`);
-      })
-      .catch(error => {
-        // The next queued snapshot contains every answer collected so far, so
-        // a transient failure self-heals on the next keystroke or screen.
-        console.warn('[apply] progress save failed', error);
-      });
-    progressQueueRef.current = request;
-    return request;
-  }, [ensureDraftKey]);
+        lastStatus = response.status;
+        if (response.ok) { setProgressSaveFailed(false); return; }
+        // Validation errors will not improve by sending the identical body.
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) break;
+      } catch { /* Retry a temporary connection failure. */ }
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 250 : 750));
+    }
+    throw new Error(`Progress save failed${lastStatus ? ` (${lastStatus})` : ''}`);
+  }, error => {
+    console.warn('[apply] progress save failed', error);
+    setProgressSaveFailed(true);
+  }), []);
+
+  const enqueueProgress = useCallback((question: Q, completed: boolean, snapshot: FormData) => {
+    if (completed) lastAnsweredKeyRef.current = question.key;
+    return progressQueue.enqueue(JSON.stringify({
+      draft_key: ensureDraftKey(), revision: nextProgressRevision(),
+      last_answered_question_key: lastAnsweredKeyRef.current,
+      question_key: question.key, completed, answers: progressAnswers(snapshot),
+      identity: { athlete_name: snapshot.full_name, athlete_email: snapshot.email, email: snapshot.email },
+    }));
+  }, [ensureDraftKey, nextProgressRevision, progressQueue]);
 
   // Warm the city index while the applicant reads the intro screen, so question
   // 03 is instant even on a slow connection. Both calls are idempotent.
@@ -649,6 +648,8 @@ function ApplyPageInner() {
       const draftKey = ensureDraftKey();
       const body = JSON.stringify({
         draft_key: draftKey,
+        revision: nextProgressRevision(),
+        last_answered_question_key: lastAnsweredKeyRef.current,
         question_key: latest.question.key,
         completed: false,
         answers: progressAnswers(latest.snapshot),
@@ -669,7 +670,20 @@ function ApplyPageInner() {
       window.removeEventListener('pagehide', flushLatest);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [ensureDraftKey]);
+  }, [ensureDraftKey, nextProgressRevision]);
+
+  useEffect(() => {
+    const retry = () => {
+      const latest = latestProgressRef.current;
+      if (latest && navigator.onLine) void enqueueProgress(latest.question, false, latest.snapshot);
+    };
+    window.addEventListener('online', retry);
+    const timer = progressSaveFailed ? window.setInterval(retry, 5_000) : null;
+    return () => {
+      window.removeEventListener('online', retry);
+      if (timer !== null) window.clearInterval(timer);
+    };
+  }, [progressSaveFailed, enqueueProgress]);
 
   // The embed's bookingSuccessfulV2 event is a client-side postMessage — a
   // hint that booking probably just succeeded, not proof (the same reasoning
@@ -891,7 +905,7 @@ function ApplyPageInner() {
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
-    await progressQueueRef.current;
+    await progressQueue.flush();
     const [firstName, ...nameParts] = form.full_name.trim().split(/\s+/);
     const lastName = nameParts.join(' ');
     const payload = {
@@ -963,7 +977,7 @@ function ApplyPageInner() {
       goTo(resumeScreenRef.current);
       return;
     }
-    if (checkingEmail) return;
+    if (checkingEmail || submitting) return;
     const q = questions[screen - 1];
     // The last screen can be the guardian_aware gate, which — unlike the old
     // form's optional last question — has a hard validation rule. Submit only
@@ -1637,6 +1651,11 @@ function ApplyPageInner() {
             </div>
 
             {/* Error */}
+            {progressSaveFailed && (
+              <p role="status" style={{ ...text(13, 400, '#A04729'), textAlign: 'center', width: '100%' }}>
+                Connection interrupted. Retrying your save…
+              </p>
+            )}
             {error && (
               <p style={{ ...text(13, 400, '#C0392B'), textAlign: 'center', width: '100%' }}>{error}</p>
             )}

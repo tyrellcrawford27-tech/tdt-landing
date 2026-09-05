@@ -7,7 +7,7 @@ import {
   applicationQuestion,
 } from '@/lib/applicationProgress';
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function safeValue(field: string, value: unknown): string | number | null | undefined {
   if (value === null) return null;
@@ -17,7 +17,7 @@ function safeValue(field: string, value: unknown): string | number | null | unde
     return Number.isFinite(number) ? number : undefined;
   }
   if (typeof value !== 'string') return undefined;
-  return value.slice(0, 4_000);
+  return value.trim() ? value.slice(0, 4_000) : null;
 }
 
 /**
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as Record<string, unknown>;
     const draftKey = typeof body.draft_key === 'string' ? body.draft_key : '';
     const question = applicationQuestion(body.question_key);
+    const revision = Number(body.revision);
     const answers = body.answers && typeof body.answers === 'object'
       ? body.answers as Record<string, unknown>
       : null;
@@ -47,12 +48,16 @@ export async function POST(req: NextRequest) {
     if (!question || !answers) {
       return NextResponse.json({ error: 'Invalid application question' }, { status: 400 });
     }
+    if (!Number.isSafeInteger(revision) || revision <= 0) {
+      return NextResponse.json({ error: 'Invalid progress revision' }, { status: 400 });
+    }
 
     const now = new Date().toISOString();
     const update: Record<string, unknown> = {
       draft_key: draftKey,
-      status: 'pending',
+      submitted_at: null,
       application_state: 'draft',
+      progress_revision: revision,
       form_version: APPLICATION_FORM_VERSION,
       total_questions: APPLICATION_QUESTION_COUNT,
       current_question_key: question.key,
@@ -63,55 +68,70 @@ export async function POST(req: NextRequest) {
 
     // Carried on every snapshot so a pre-existing browser draft can recreate
     // its row after a transient failed write without waiting to revisit Q1/Q4.
-    for (const field of ['athlete_name', 'athlete_email', 'email'] as const) {
+    for (const field of ['athlete_name', 'athlete_email'] as const) {
       const value = safeValue(field, identity[field]);
       if (value !== undefined && value !== null && String(value).trim() !== '') update[field] = value;
     }
 
     // Each request is a complete snapshot of everything collected so far.
-    // Re-save every allowlisted field through the current question, not only
-    // the current question's fields. That makes the next successful request
-    // repair an earlier failed write instead of permanently losing that answer.
+    // Re-save all allowlisted answers, including later questions when someone
+    // goes Back. The latest snapshot repairs any earlier failed write.
     const fieldsCollectedSoFar = new Set<string>(
       APPLICATION_QUESTIONS
-        .filter(item => item.number <= question.number)
         .flatMap(item => [...item.fields]),
     );
     for (const field of fieldsCollectedSoFar) {
+      // Legacy rows reserve a unique email even when unfinished. Keep the
+      // contact answer in athlete_email while drafting so resuming an old form
+      // cannot wedge every save from Q4 onward on that legacy unique index.
+      // Final submission owns canonical email and reconciles the legacy row.
+      if (field === 'email') continue;
       if (!(field in answers)) continue;
       const value = safeValue(field, answers[field]);
       if (value !== undefined) update[field] = value;
     }
 
-    if (body.completed === true) {
-      update.last_answered_question_key = question.key;
-      update.last_answered_question_label = question.label;
-      update.last_answered_question_number = question.number;
+    const lastAnswered = applicationQuestion(body.last_answered_question_key);
+    const completedQuestion = body.completed === true ? question : lastAnswered;
+    if (completedQuestion) {
+      update.last_answered_question_key = completedQuestion.key;
+      update.last_answered_question_label = completedQuestion.label;
+      update.last_answered_question_number = completedQuestion.number;
       update.last_answered_at = now;
+    }
+    if (body.completed === true) {
+      const next = APPLICATION_QUESTIONS.find(item => item.number === question.number + 1) ?? question;
+      update.current_question_key = next.key;
+      update.current_question_label = next.label;
+      update.current_question_number = next.number;
     }
 
     const admin = createAdminClient();
-    const { data: existing, error: lookupError } = await admin
-      .from('applications')
-      .select('id, application_state')
-      .eq('draft_key', draftKey)
-      .maybeSingle();
-    if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 400 });
-
-    // A delayed debounce must never turn a completed application back into a
-    // draft. Final submission owns the row from this point onward.
-    if (existing?.application_state === 'submitted') {
-      return NextResponse.json({ ok: true, skipped: true });
+    // Compare-and-set at write time, including submission state. An unload
+    // beacon can overtake a normal request; request arrival order is not answer
+    // order. A concurrent first save may insert the same draft while we look it
+    // up, so re-read that key on a unique violation instead of losing the save.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const { data: existing, error: lookupError } = await admin
+        .from('applications')
+        .select('id, application_state, progress_revision, deleted_at')
+        .eq('draft_key', draftKey)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      if (existing && (existing.application_state === 'submitted' || existing.deleted_at || Number(existing.progress_revision) >= revision)) {
+        return NextResponse.json({ ok: true, skipped: true });
+      }
+      const result = existing
+        ? await admin.from('applications').update(update).eq('id', existing.id)
+          .or('application_state.is.null,application_state.eq.draft')
+          .is('deleted_at', null)
+          .or(`progress_revision.is.null,progress_revision.lt.${revision}`)
+        : await admin.from('applications').insert([{ ...update, status: 'pending' }]);
+      if (!result.error) return NextResponse.json({ ok: true });
+      if (!existing && result.error.code === '23505' && attempt < 2) continue;
+      throw result.error;
     }
-
-    const result = existing
-      ? await admin.from('applications').update(update).eq('id', existing.id)
-      : await admin.from('applications').insert([update]);
-
-    if (result.error) {
-      return NextResponse.json({ error: result.error.message }, { status: 400 });
-    }
-    return NextResponse.json({ ok: true });
+    throw new Error('Progress save could not be completed');
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json({ error: message }, { status: 500 });

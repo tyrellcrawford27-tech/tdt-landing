@@ -1,4 +1,4 @@
-export const APPLICATION_FORM_VERSION = 3;
+export const APPLICATION_FORM_VERSION = 4;
 
 export const APPLICATION_QUESTIONS = [
   { key: 'full_name', number: 1, label: "What's your full name?", fields: ['athlete_name', 'first_name', 'last_name'] },

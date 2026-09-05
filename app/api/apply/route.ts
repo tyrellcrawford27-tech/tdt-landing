@@ -110,9 +110,10 @@ export async function POST(req: NextRequest) {
       if (emailLookupError) return NextResponse.json({ error: emailLookupError.message }, { status: 400 });
 
       const draftRow = draftRows?.[0] ?? null;
-      const existingRow = draftRow ?? emailRows?.find(row =>
+      const legacyRow = emailRows?.find(row =>
         row.application_state == null && !row.time_commitment
       ) ?? null;
+      const existingRow = legacyRow ?? draftRow;
       const conflictingSubmission = emailRows?.some(row =>
         row.id !== draftRow?.id && (
           row.application_state === 'submitted' ||
@@ -154,6 +155,16 @@ export async function POST(req: NextRequest) {
           );
         }
         return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      // The pre-tracking form already created this legacy contact row. Finish
+      // it in place (preserving coach notes and its ID), then retire only the
+      // separate draft authenticated by this browser's random key. Contact
+      // saves never claim another row merely because the email matches.
+      if (legacyRow && draftRow && legacyRow.id !== draftRow.id) {
+        const { error: retireError } = await admin.from('applications')
+          .update({ deleted_at: new Date().toISOString(), deleted_by: 'application-resume' })
+          .eq('id', draftRow.id).eq('application_state', 'draft');
+        if (retireError) console.error('[apply] could not retire resumed draft', retireError.code);
       }
     } else {
       const { error } = await admin.from('applications').insert([record]);

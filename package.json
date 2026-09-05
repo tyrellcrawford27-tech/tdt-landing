@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:progress": "node --experimental-strip-types --test tests/application-progress.test.mjs"
   },
   "dependencies": {
     "@calcom/embed-react": "^1.5.3",
