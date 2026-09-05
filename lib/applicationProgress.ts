@@ -5,7 +5,7 @@ export const APPLICATION_QUESTIONS = [
   { key: 'age', number: 2, label: 'How old are you?', fields: ['age'] },
   { key: 'city_state', number: 3, label: 'Where are you from?', fields: ['city'] },
   { key: 'contact', number: 4, label: 'Where can we reach you?', fields: ['email', 'phone', 'athlete_email', 'athlete_phone'] },
-  { key: 'device_access', number: 5, label: 'Do you have consistent access to a laptop or computer?', fields: ['device_access'] },
+  { key: 'device_access', number: 5, label: 'What device do you usually use to review film?', fields: ['device_access'] },
   { key: 'game', number: 6, label: 'Tell us about your game', fields: ['position', 'years_playing', 'years_playing_answer'] },
   { key: 'current_team_school', number: 7, label: 'Current team or school?', fields: ['current_team', 'current_team_school'] },
   { key: 'biggest_weakness', number: 8, label: "What's your biggest weakness as a player right now?", fields: ['biggest_weakness'] },

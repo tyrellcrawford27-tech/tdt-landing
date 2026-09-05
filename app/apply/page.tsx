@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback, Fragment, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
@@ -89,9 +90,9 @@ function buildQuestions(): Q[] {
       ],
     },
     {
-      key: 'device_access', section: 'Info', question: 'Do you have consistent access to a laptop or computer?', field: 'device_access', type: 'radio-grid',
-      subtext: "Phone's fine — film review is just easier on a bigger screen.",
-      options: ['Yes, I have my own', 'I can borrow one regularly', 'iPad', 'No, phone only'],
+      key: 'device_access', section: 'Info', question: 'What device do you usually use to review film?', field: 'device_access', type: 'radio-grid',
+      subtext: "Any of these will work. We'll help you get set up.",
+      options: ['Laptop or desktop', 'iPad or tablet', 'Phone', "I don't want film yet"],
     },
     {
       key: 'game', section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
@@ -780,7 +781,7 @@ function ApplyPageInner() {
     city_state:          ["Where are you based?", "City and province/state please", "WHERE ARE YOU FROM?!"],
     email:               ["We'll need your email", "Email address please", "YOUR EMAIL. NOW."],
     phone:               ["Add a phone number", "Phone number, please", "PHONE NUMBER!!"],
-    device_access:       ["Do you have a laptop or computer?", "Pick one", "PICK ONE!!"],
+    device_access:       ["What device do you use?", "Pick one", "PICK ONE!!"],
     position:            ["Pick your position", "Choose one", "PICK. A. POSITION."],
     years_playing:       ["How long have you been playing?", "Pick one, be honest", "YEARS PLAYING. PICK ONE."],
     current_team_school: ["What team or school?", "Team or school name please", "TEAM. OR. SCHOOL."],
@@ -1084,6 +1085,14 @@ function ApplyPageInner() {
         }
       `}</style>
 
+      <Link
+        href="/"
+        aria-label="Back to website"
+        style={{ position: 'fixed', top: 20, left: 24, ...text(13, 400, 'rgba(0,0,0,0.32)'), textDecoration: 'none', letterSpacing: '0.01em', zIndex: 50 }}
+      >
+        ← Learn More
+      </Link>
+
       {earlyPricing && (
         <div style={{ opacity: 0.55, ...fadeStyle }}>
           <EarlyBirdIcon size={20} color={TERRA} />
@@ -1103,7 +1112,7 @@ function ApplyPageInner() {
           textAlign: 'center',
           lineHeight: 1.45,
         }}>
-          Same season, same team, different player by December.
+          Every journey toward excellence begins with a single step.
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin
@@ -1459,9 +1468,13 @@ function ApplyPageInner() {
       </div>
 
       {/* Back link */}
-      <a href="/" style={{ position: 'fixed', top: 20, left: 24, ...text(13, 400, 'rgba(0,0,0,0.32)'), textDecoration: 'none', letterSpacing: '0.01em', zIndex: 50 }}>
-        ← tdt
-      </a>
+      <Link
+        href="/"
+        aria-label="Back to website"
+        style={{ position: 'fixed', top: 20, left: 24, ...text(13, 400, 'rgba(0,0,0,0.32)'), textDecoration: 'none', letterSpacing: '0.01em', zIndex: 50 }}
+      >
+        ← Learn More
+      </Link>
 
       {/* Question */}
       <div className="tdt-outer" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 100px' }}>
