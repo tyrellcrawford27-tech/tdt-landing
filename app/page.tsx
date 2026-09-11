@@ -2137,7 +2137,7 @@ export default function Home() {
               </div>
               <div className="flex-1 flex items-center justify-center md:justify-end gap-[14px]">
                 <span className="text-[12px] md:text-[14px] font-medium leading-[17px] tracking-[-0.02em] text-[rgba(0,0,0,0.6)]">
-                  jaiden@thinkdifferenttraining.com
+                  tyrell@thinkdifferenttraining.com
                 </span>
                 <a
                   href="https://www.instagram.com/thinkdifferent_training/?hl=en"
