@@ -4,10 +4,11 @@ import { escapeLike } from '@/lib/escapeLike';
 import { sendBookingEmails } from '@/lib/email';
 import { getEarlyPricingSpots } from '@/lib/earlyPricing';
 import {
-  APPLICATION_FORM_VERSION,
-  APPLICATION_QUESTION_COUNT,
-  APPLICATION_QUESTIONS,
+  applicationFormVersion,
+  applicationQuestions,
+  applicationVersionMatches,
 } from '@/lib/applicationProgress';
+import { applicationAnswers, applicationFormFromAnswers, applicationSubmissionError } from '@/lib/applicationForm';
 
 // This route is public and unauthenticated, and it used to spread the raw
 // request body straight into the insert — so a caller could set ANY column,
@@ -30,6 +31,7 @@ const WRITABLE_FIELDS = [
   'parent_email', 'guardian_email',
   'parent_aware', 'guardian_aware',
   'heard_about',
+  'film_readiness', 'film_access', 'decision_support', 'guardian_consent', 'investment_readiness',
 ] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -44,6 +46,18 @@ function pickWritable(body: Record<string, unknown>): Record<string, unknown> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const version = applicationFormVersion(body.form_version);
+    if (!version) return NextResponse.json({ error: 'Unsupported application version. Please refresh.' }, { status: 400 });
+    let writable = pickWritable(body);
+    if (version === 5) {
+      const form = applicationFormFromAnswers(body);
+      const problem = applicationSubmissionError(form);
+      if (problem) return NextResponse.json({ error: problem.message, question_key: problem.key }, { status: 400 });
+      // Use validated canonical aliases and clear answers on hidden branches.
+      writable = applicationAnswers(form);
+    } else {
+      for (const field of ['film_readiness', 'film_access', 'decision_support', 'guardian_consent', 'investment_readiness']) delete writable[field];
+    }
     const admin = createAdminClient();
 
     // The client sets early_pricing from a URL param (/apply?early_pricing=true),
@@ -67,19 +81,20 @@ export async function POST(req: NextRequest) {
     const draftKey = typeof body.draft_key === 'string' && UUID.test(body.draft_key)
       ? body.draft_key
       : null;
-    const finalQuestion = APPLICATION_QUESTIONS[APPLICATION_QUESTIONS.length - 1];
+    const questions = applicationQuestions(version, writable);
+    const finalQuestion = questions[questions.length - 1];
 
     // Server-owned columns. The client never gets to set these, and
     // early_pricing is whatever the re-check above decided, not what was sent.
     const record = {
-      ...pickWritable(body),
+      ...writable,
       email,
       early_pricing: body.early_pricing || null,
       submitted_at: new Date().toISOString(),
       status: 'pending',
       application_state: 'submitted',
-      form_version: APPLICATION_FORM_VERSION,
-      total_questions: APPLICATION_QUESTION_COUNT,
+      form_version: version,
+      total_questions: questions.length,
       current_question_key: finalQuestion.key,
       current_question_label: finalQuestion.label,
       current_question_number: finalQuestion.number,
@@ -96,7 +111,7 @@ export async function POST(req: NextRequest) {
       // progress existed, so existing in-progress applications still finish
       // in place after this deploy.
       const { data: draftRows, error: draftLookupError } = draftKey
-        ? await admin.from('applications').select('id, time_commitment, application_state').eq('draft_key', draftKey).limit(1)
+        ? await admin.from('applications').select('id, time_commitment, application_state, form_version').eq('draft_key', draftKey).limit(1)
         : { data: null, error: null };
       if (draftLookupError) return NextResponse.json({ error: draftLookupError.message }, { status: 400 });
 
@@ -104,16 +119,18 @@ export async function POST(req: NextRequest) {
       // submitted rows independently and exclude only this exact draft row.
       const { data: emailRows, error: emailLookupError } = await admin
         .from('applications')
-        .select('id, time_commitment, application_state')
+        .select('id, time_commitment, application_state, form_version')
         .ilike('email', escapeLike(email))
         .limit(10);
       if (emailLookupError) return NextResponse.json({ error: emailLookupError.message }, { status: 400 });
 
       const draftRow = draftRows?.[0] ?? null;
+      if (draftRow && !applicationVersionMatches(draftRow.form_version, version)) return NextResponse.json({ error: 'Please return to the original application in this browser. Its questions have been preserved.' }, { status: 409 });
       const legacyRow = emailRows?.find(row =>
         row.application_state == null && !row.time_commitment
       ) ?? null;
       const existingRow = legacyRow ?? draftRow;
+      if (existingRow && !applicationVersionMatches(existingRow.form_version, version)) return NextResponse.json({ error: 'An earlier application with this email uses the original questions. Please resume that application or contact us for help.' }, { status: 409 });
       const conflictingSubmission = emailRows?.some(row =>
         row.id !== draftRow?.id && (
           row.application_state === 'submitted' ||
@@ -141,9 +158,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const { error } = existingRow
+      const { error, data: savedRows } = existingRow
         ? await admin.from('applications').update(record).eq('id', existingRow.id)
-        : await admin.from('applications').insert([{ ...record, draft_key: draftKey }]);
+          .or('application_state.is.null,application_state.eq.draft')
+          .or(version === 5 ? 'form_version.eq.5' : 'form_version.is.null,form_version.lt.5')
+          .is('deleted_at', null).select('id')
+        : await admin.from('applications').insert([{ ...record, draft_key: draftKey }]).select('id');
 
       if (error) {
         // 23505 = Postgres unique_violation - covers the race where two submissions
@@ -156,6 +176,7 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
+      if (!savedRows?.length) return NextResponse.json({ error: 'This application changed in another tab. Please refresh before submitting.' }, { status: 409 });
       // The pre-tracking form already created this legacy contact row. Finish
       // it in place (preserving coach notes and its ID), then retire only the
       // separate draft authenticated by this browser's random key. Contact
@@ -171,13 +192,14 @@ export async function POST(req: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    const isMinor = typeof body.age !== 'number' || body.age < 18;
+    const isMinor = typeof writable.age !== 'number' || writable.age < 18;
     await sendBookingEmails({
-      athleteName: body.athlete_name || body.first_name || '',
+      athleteName: String(writable.athlete_name || writable.first_name || ''),
       athleteEmail: email,
       isMinor,
-      guardianName: body.guardian_name || null,
-      guardianEmail: body.guardian_email || null,
+      guardianName: typeof writable.guardian_name === 'string' ? writable.guardian_name : null,
+      guardianEmail: (isMinor || writable.guardian_aware === 'Yes') && typeof writable.guardian_email === 'string' ? writable.guardian_email : null,
+      includeSupporter: !isMinor && writable.guardian_aware === 'Yes',
     }).catch(e => console.error('[apply] booking email failed', e));
 
     return NextResponse.json({ ok: true });

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback, Fragment, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { CTAButton } from '@/components/CTAButton';
 import { EarlyBirdIcon } from '@/components/EarlyBirdIcon';
@@ -13,155 +14,24 @@ import { loadGeoHint } from '@/lib/geo';
 import { SURFACE_LIGHT } from '@/lib/theme';
 import {
   APPLICATION_FORM_VERSION,
-  type ApplicationQuestionKey,
+  applicationExperienceVersion,
 } from '@/lib/applicationProgress';
+import {
+  EMPTY_APPLICATION as EMPTY, APPLICATION_SCREENS, applicationAnswers as progressAnswers,
+  normalizeApplicationDraft, firstIncompleteApplicationScreen, screenIsVisible, visibleSubFields,
+  applicationScreenError, applicationSubmissionError, isMinor, needsSupporter,
+  type ApplicationFormData as FormData, type ApplicationScreen as Q, type ApplicationField,
+} from '@/lib/applicationForm';
+import styles from './application.module.css';
 import { createProgressQueue } from '@/lib/progressQueue';
 import Cal, { getCalApi } from '@calcom/embed-react';
+
+const LegacyApplication = dynamic(() => import('./LegacyApplication'));
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
 const BG    = SURFACE_LIGHT;
 const TERRA = '#B34929';
 const CARD  = '#FFFFFF';
-
-// ── Form data ─────────────────────────────────────────────────────────────────
-type FormData = {
-  full_name: string;
-  age: string;
-  city_state: string;
-  email: string;
-  phone: string;
-  device_access: string;
-  position: string;
-  years_playing: string;
-  current_team_school: string;
-  biggest_weakness: string;
-  social_link: string;
-  time_commitment: string;
-  guardian_name: string;
-  guardian_phone: string;
-  guardian_email: string;
-  guardian_aware: string;
-  goal: string;
-  heard_about: string;
-};
-
-const EMPTY: FormData = {
-  full_name: '', age: '', city_state: '',
-  email: '', phone: '', device_access: '', position: '', years_playing: '',
-  current_team_school: '', biggest_weakness: '', social_link: '',
-  time_commitment: '',
-  guardian_name: '', guardian_phone: '', guardian_email: '', guardian_aware: '',
-  goal: '',
-  heard_about: '',
-};
-
-// ── Questions ─────────────────────────────────────────────────────────────────
-// A "group" screen bundles a few short fields onto one card instead of
-// burning a full screen per field — used for contact info and for the
-// parent/supporter block (see buildQuestions).
-type SubField =
-  | { field: keyof FormData; kind: 'text' | 'email' | 'tel'; label: string; placeholder: string }
-  | { field: keyof FormData; kind: 'radio-grid'; label: string; options: string[] };
-
-type Q = { key: ApplicationQuestionKey } & (
-  | { section: string; question: string; field: keyof FormData; type: 'text' | 'email' | 'tel' | 'number'; placeholder: string }
-  | { section: string; question: string; field: keyof FormData; type: 'textarea'; placeholder: string }
-  | { section: string; question: string; field: keyof FormData; type: 'location' }
-  | { section: string; question: string; field: keyof FormData; type: 'school' }
-  | { section: string; question: string; field: keyof FormData; type: 'radio-grid'; subtext?: string; options: string[] }
-  | { section: string; question: string; field: keyof FormData; type: 'choice'; options: string[] }
-  | { section: string; question: string; type: 'group'; kind: 'contact' | 'game' | 'parent'; subtext?: string; subs: SubField[] }
-);
-
-// Every applicant now books a discovery call as the closing step, and the
-// call recovers what the "why" essays used to ask for far better than a text
-// box can — so those are cut. What's left is what the call genuinely can't
-// produce in advance: contact info, a pre-call read on the player, and the
-// parent who actually pays, looped in before the call happens.
-function buildQuestions(): Q[] {
-  const qs: Q[] = [
-    { key: 'full_name', section: 'Info', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'First and last name' },
-    { key: 'age', section: 'Info', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17' },
-    { key: 'city_state', section: 'Info', question: 'Where are you from?', field: 'city_state', type: 'location' },
-    {
-      key: 'contact', section: 'Info', question: 'Where can we reach you?', type: 'group', kind: 'contact',
-      subs: [
-        { field: 'email', kind: 'email', label: 'Email', placeholder: 'you@email.com' },
-        { field: 'phone', kind: 'tel', label: 'Phone number', placeholder: '416-605-2033' },
-      ],
-    },
-    {
-      key: 'device_access', section: 'Info', question: 'What device do you usually use to review film?', field: 'device_access', type: 'radio-grid',
-      subtext: "Any of these will work. We'll help you get set up.",
-      options: ['Laptop or desktop', 'iPad or tablet', 'Phone', "I don't want film yet"],
-    },
-    {
-      key: 'game', section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game',
-      subs: [
-        { field: 'position', kind: 'radio-grid', label: 'Position', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
-        { field: 'years_playing', kind: 'radio-grid', label: 'Years playing competitively', options: ['Less than 1 year', '1–2 years', '3–4 years', '5+ years'] },
-      ],
-    },
-    { key: 'current_team_school', section: 'Your game', question: 'Current team or school?', field: 'current_team_school', type: 'school' },
-    { key: 'biggest_weakness', section: 'Your game', question: "What's your biggest weakness as a player right now?", field: 'biggest_weakness', type: 'textarea', placeholder: 'Be honest. Self-awareness is the first thing Jaiden looks for.' },
-    { key: 'social_link', section: 'Your game', question: "What's your @ on Instagram or Twitter (X)?", field: 'social_link', type: 'text', placeholder: '@yourusername' },
-    {
-      key: 'goal', section: 'The ceiling',
-      question: "What's the highest you see this going for you and what makes you believe it?",
-      field: 'goal',
-      type: 'textarea',
-      placeholder: 'Be honest pro, D1, or wherever you truly see it. Then tell me why.',
-    },
-    { key: 'time_commitment', section: 'Your commitment', question: 'How much time can you realistically commit per day?', field: 'time_commitment', type: 'radio-grid', options: ['30–45 minutes', '1 hour', '1.5–2 hours', '2+ hours'] },
-  ];
-
-  // The buyer is the parent on the overwhelming majority of applications, and
-  // a discovery call booked by the player alone is a call with the wrong person
-  // in the room. Asked of everyone regardless of age — this is a prep-age
-  // audience, and even an adult applicant usually has a parent in the decision.
-  qs.push(
-    {
-      key: 'guardian', section: 'Parent / Supporter', question: "Who's the parent or supporter we're looping in?", type: 'group', kind: 'parent',
-      subtext: "Whoever's helping you make this decision. We'll keep them in the loop.",
-      subs: [
-        { field: 'guardian_name', kind: 'text', label: 'Their name', placeholder: 'Full name' },
-        { field: 'guardian_phone', kind: 'tel', label: 'Their phone number', placeholder: '416-605-2033' },
-        { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'their@email.com' },
-      ],
-    },
-    { key: 'guardian_aware', section: 'Parent / Supporter', question: "Have you told them you're applying?", field: 'guardian_aware', type: 'choice', options: ['Yes', 'No'] },
-  );
-
-  // Always the last question — where the lead actually came from.
-  qs.push({
-    key: 'heard_about', section: 'One more thing',
-    question: 'How did you hear about this?',
-    field: 'heard_about',
-    type: 'radio-grid',
-    options: ['Instagram post', 'Instagram DM', 'Instagram story', 'A friend or teammate', 'From Jaiden directly', 'Other'],
-  });
-
-  return qs;
-}
-
-// Used when a saved draft's screen index can no longer be trusted (see
-// DRAFT_VERSION below) — walks the CURRENT question order and returns the
-// screen number of the first still-incomplete REQUIRED question. Optional
-// fields (currently just heard_about) are skipped entirely regardless of
-// whether they're filled, so nobody gets bounced back to a field they
-// deliberately left blank.
-function firstIncompleteScreen(qs: Q[], form: FormData, optional: Set<keyof FormData>): number {
-  for (let i = 0; i < qs.length; i++) {
-    const q = qs[i];
-    if (q.type === 'group') {
-      const incomplete = q.subs.some(sub => !optional.has(sub.field) && !form[sub.field].toString().trim());
-      if (incomplete) return i + 1;
-      continue;
-    }
-    if (!optional.has(q.field) && !form[q.field].toString().trim()) return i + 1;
-  }
-  return qs.length;
-}
 
 // ── Phone formatting ──────────────────────────────────────────────────────────
 // Types out as 416-605-2033. A separator is only ever added once there's a digit
@@ -292,18 +162,8 @@ function GoBackButton({ onClick }: { onClick: () => void }) {
 
 const STORAGE_KEY = 'tdt-apply-draft';
 const DRAFT_KEY_STORAGE = 'tdt-apply-draft-key';
-// Bump this whenever buildQuestions()'s order changes. A stored draft whose
-// version doesn't match has its screen index discarded (its typed answers
-// are kept) and gets re-resumed at the first incomplete required question
-// instead — a raw array index from a prior question order can silently
-// point at the wrong question, or skip one, after a reorder. See the restore
-// effect below and firstIncompleteScreen() above.
+// Versioned drafts retain their answers when the question order changes.
 const DRAFT_VERSION = APPLICATION_FORM_VERSION;
-// Attribution is the one non-load-bearing field left — it's also the very
-// last screen before Submit, so any bug in its validation would block every
-// application behind it. Not worth that risk for a "how'd you hear about
-// us" answer.
-const OPTIONAL = new Set<keyof FormData>(['heard_about']);
 // Set once the application form itself is finished, cleared once the call is
 // confirmed booked (by the server, never by the client). Its presence on
 // mount is what lets someone who closes the tab after finishing the form —
@@ -334,90 +194,75 @@ function readFresh(key: string, ttlMs: number): Record<string, unknown> | null {
   return parsed;
 }
 
-function yearsPlayingValue(value: string): number | null {
-  if (!value) return null;
-  if (value.toLowerCase().includes('less')) return 0;
-  return parseInt(value.match(/\d+/)?.[0] ?? '0');
-}
+// The original form got progressively less patient when Continue was pressed
+// repeatedly without a usable answer. Keep that voice separate from the actual
+// validation rules so the rules can stay precise while the feedback has some life.
+const EMPTY_NUDGES: Partial<Record<ApplicationField, string[]>> = {
+  full_name: ['Name pls', 'First and last name', 'FULL NAME. GO.'],
+  goal: ['Pick where you want this to go', 'Choose the goal that fits best', 'PICK A GOAL. DREAM BIG.'],
+  goal_detail: ['What goal do you have in mind?', 'A few words is enough', 'TELL US THE GOAL.'],
+  age: ['How old are you?', 'Age. Just a number.', 'YOUR AGE. TYPE IT.'],
+  position: ['Pick your position', 'Choose one', 'PICK. A. POSITION.'],
+  years_playing: ['How long have you been playing?', 'Pick one, be honest', 'YEARS PLAYING. PICK ONE.'],
+  current_team_school: ['What team or school?', 'Team or school name please', 'TEAM. OR. SCHOOL.'],
+  biggest_weakness: ['Be honest here', 'Something, anything', 'YOUR WEAKNESS. TELL US.'],
+  city_state: ['Where are you based?', 'City and province or state please', 'WHERE ARE YOU FROM?!'],
+  email: ["We'll need your email", 'Email address please', 'YOUR EMAIL. NOW.'],
+  phone: ['Add a phone number', 'Phone number, please', 'PHONE NUMBER!!'],
+  social_link: ['Drop your @ handle', 'Your handle or the no account option', 'YOUR @. OR PICK THE OPTION.'],
+  time_commitment: ['How much time can you give?', 'Pick a realistic time', 'PICK A TIME!!'],
+  film_readiness: ['How does film coaching sound?', 'Pick the honest answer', 'PICK ONE. BE HONEST.'],
+  film_access: ['Do you have game footage?', 'Choose what is true right now', 'PICK YOUR FILM SITUATION.'],
+  device_access: ['What device can you use?', 'Pick one', 'PICK A DEVICE!!'],
+  decision_support: ["Who's helping you decide?", 'Choose who is supporting you', "WHO'S IN YOUR CORNER?!"],
+  guardian_name: ['Add their name', 'Parent or supporter name', 'THEIR NAME. NOW.'],
+  guardian_phone: ['Add their number', 'Their phone number please', 'THEIR NUMBER. GO.'],
+  guardian_email: ["We'll need their email", 'Their email please', 'THEIR EMAIL. NOW.'],
+  guardian_aware: ['Yes or not yet?', 'Pick one', 'HAVE YOU TOLD THEM?!'],
+  investment_readiness: ['How do you feel about the investment?', 'Choose the honest answer', 'PICK WHAT FITS.'],
+  heard_about: ['How did you find us?', 'Pick the closest answer', 'HOW DID YOU HEAR ABOUT US?!'],
+  heard_about_detail: ['Tell us where', 'A few words is enough', 'WHERE DID YOU FIND US?!'],
+};
 
-/** Canonical database fields. The server still allowlists them per question. */
-function progressAnswers(form: FormData): Record<string, unknown> {
-  const [firstName, ...lastName] = form.full_name.trim().split(/\s+/);
-  return {
-    athlete_name: form.full_name,
-    first_name: firstName || '',
-    last_name: lastName.join(' '),
-    age: form.age ? parseInt(form.age) : null,
-    city: form.city_state,
-    email: form.email,
-    athlete_email: form.email,
-    phone: form.phone,
-    athlete_phone: form.phone,
-    device_access: form.device_access,
-    position: form.position,
-    years_playing: yearsPlayingValue(form.years_playing),
-    years_playing_answer: form.years_playing,
-    current_team: form.current_team_school,
-    current_team_school: form.current_team_school,
-    biggest_weakness: form.biggest_weakness,
-    social_link: form.social_link,
-    goal: form.goal,
-    time_commitment: form.time_commitment,
-    parent_name: form.guardian_name,
-    guardian_name: form.guardian_name,
-    parent_phone: form.guardian_phone,
-    guardian_phone: form.guardian_phone,
-    parent_email: form.guardian_email,
-    guardian_email: form.guardian_email,
-    parent_aware: form.guardian_aware,
-    guardian_aware: form.guardian_aware,
-    heard_about: form.heard_about,
-  };
-}
+const INVALID_NUDGES: Partial<Record<ApplicationField, string[]>> = {
+  full_name: ['Include first and last name', 'e.g. Marcus Thompson', 'FIRST AND LAST NAME.'],
+  age: ['Age must be between 13 and 35', 'Enter a real age', 'REAL AGE. 13 TO 35.'],
+  current_team_school: ['Give us a real team or school name', 'More than one letter', 'TEAM OR SCHOOL NAME.'],
+  biggest_weakness: ['Give more detail than that', 'Dig deeper, be specific', 'ACTUALLY ANSWER IT.'],
+  city_state: ["Use 'City, Province or State'", 'e.g. Toronto, Ontario', 'CITY, PROVINCE. THAT IS IT.'],
+  email: ["That's not a valid email", 'Try name@email.com', 'VALID EMAIL ONLY.'],
+  phone: ['Needs a full phone number', 'Include the area or country code', 'REAL PHONE NUMBER.'],
+  social_link: ["That doesn't look like a real handle", 'Try @yourusername or choose no account', 'REAL HANDLE.'],
+  guardian_name: ["That doesn't look like a name", 'Use their actual name', 'REAL NAME.'],
+  guardian_phone: ['Needs a full phone number', 'Include the area or country code', 'REAL PHONE NUMBER.'],
+  guardian_email: ["That's not a valid email", 'Try name@email.com', 'VALID EMAIL ONLY.'],
+  goal_detail: ['Give us a little more than that', 'Say what you are aiming for', 'TELL US THE GOAL.'],
+  heard_about_detail: ['Tell us where you heard about us', 'A few real words please', 'WHERE DID YOU FIND US?!'],
+};
 
-// ── Radio button style (shared by standalone radio-grid questions and the
-//    smaller grids inside a group card) ────────────────────────────────────
-function radioBtnStyle(active: boolean, compact: boolean): React.CSSProperties {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-    gap: compact ? 10 : 12,
-    padding: compact ? '12px 14px' : '16px 18px',
-    borderRadius: 12,
-    border: active ? `1.5px solid ${TERRA}` : '1px solid rgba(0,0,0,0.08)',
-    background: '#ffffff',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    fontSize: compact ? 14 : 15,
-    fontWeight: 400,
-    letterSpacing: '-0.02em',
-    color: 'rgba(0,0,0,0.75)',
-    textAlign: 'left',
-    transition: 'border-color 0.15s ease',
-    boxShadow: '0px 1px 4px rgba(0,0,0,0.05)',
-  };
-}
-function radioCircleStyle(active: boolean): React.CSSProperties {
-  return {
-    flexShrink: 0,
-    width: 20,
-    height: 20,
-    borderRadius: '50%',
-    border: active ? `1.5px solid ${TERRA}` : '1.5px solid rgba(0,0,0,0.2)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'border-color 0.15s ease',
-  };
+function personalityNudge(problem: { field: ApplicationField; message: string }, form: FormData, attempt: number): string {
+  if (problem.message.includes('respectful')) {
+    const respectNudges = ['Keep it respectful', 'Seriously. Clean it up.', 'WRITE A REAL BASKETBALL ANSWER.'];
+    return respectNudges[attempt % respectNudges.length];
+  }
+  if (problem.message.includes('real answer')) {
+    const qualityNudges = ['Give us a real answer', 'Random text is not an answer', 'COME ON. ANSWER IT FOR REAL.'];
+    return qualityNudges[attempt % qualityNudges.length];
+  }
+  const presets = form[problem.field].trim() ? INVALID_NUDGES[problem.field] : EMPTY_NUDGES[problem.field];
+  if (!presets?.length) {
+    const fallbacks = [problem.message, 'Still need a real answer here', 'ANSWER THIS ONE FIRST.'];
+    return fallbacks[attempt % fallbacks.length];
+  }
+  return presets[attempt % presets.length];
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 function ApplyPageInner() {
   const searchParams = useSearchParams();
   const claimsEarlyPricing = searchParams.get('early_pricing') === 'true';
-  // The URL param is only a request — a shared or stale link shouldn't promise a
-  // price we won't honour. Confirm against the server before showing $800
-  // anywhere; /api/apply re-checks again at write time regardless.
+  // Confirm promotional eligibility before showing its badge. No price is
+  // displayed in the application; /api/apply re-checks eligibility at submission.
   const [earlySpotOpen, setEarlySpotOpen] = useState(false);
   useEffect(() => {
     if (!claimsEarlyPricing) return;
@@ -436,10 +281,11 @@ function ApplyPageInner() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [nudgeMsg, setNudgeMsg]     = useState<string | null>(null);
-  const [nudgeType, setNudgeType]   = useState<'error' | 'info'>('error');
   const [nudgeKey, setNudgeKey]     = useState(0);
-  const [attempts, setAttempts]     = useState(0);
+  const [nudgeAttempts, setNudgeAttempts] = useState(0);
   const [shaking, setShaking]       = useState(false);
+  const [editingReview, setEditingReview] = useState(false);
+  const [invalidField, setInvalidField] = useState<ApplicationField | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const inputRef   = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const advanceRef = useRef<() => void>(() => {});
@@ -448,9 +294,6 @@ function ApplyPageInner() {
   // call booked yet. "Let's Begin" awaits it so the answer decides the screen,
   // rather than the check racing the click.
   const resumePendingRef = useRef<Promise<void> | null>(null);
-  // Set when city_state came from the picker. A value the dropdown offered must
-  // never be rejected by the validator, independent of the heuristics.
-  const cityFromPicker = useRef(false);
   const draftKeyRef = useRef<string | null>(null);
   const progressRevisionRef = useRef(0);
   const lastAnsweredKeyRef = useRef<string | null>(null);
@@ -471,11 +314,12 @@ function ApplyPageInner() {
     }
   }, []);
 
-  // Every applicant answers the parent block, so the question list is fixed —
-  // no age branching, and therefore no way for a back-edit to the age field to
-  // resize the flow underneath someone mid-application.
-  const questions = useMemo(() => buildQuestions(), []);
+  const questions = APPLICATION_SCREENS;
   const TOTAL = questions.length;
+  const REVIEW = TOTAL + 1;
+  const BOOKING = TOTAL + 2;
+  const DONE = TOTAL + 3;
+  const visibleQuestions = questions.filter(q => screenIsVisible(q.key, form));
 
   const nextProgressRevision = useCallback(() => {
     // Persist across reloads and tabs. Reusing an older sequence would make a
@@ -514,7 +358,7 @@ function ApplyPageInner() {
     return progressQueue.enqueue(JSON.stringify({
       draft_key: ensureDraftKey(), revision: nextProgressRevision(),
       last_answered_question_key: lastAnsweredKeyRef.current,
-      question_key: question.key, completed, answers: progressAnswers(snapshot),
+      form_version: DRAFT_VERSION, question_key: question.key, completed, answers: progressAnswers(snapshot),
       identity: { athlete_name: snapshot.full_name, athlete_email: snapshot.email, email: snapshot.email },
     }));
   }, [ensureDraftKey, nextProgressRevision, progressQueue]);
@@ -551,22 +395,25 @@ function ApplyPageInner() {
       const saved = readFresh(STORAGE_KEY, DRAFT_TTL_MS);
       if (saved) {
         const { form: f, screen: s, version: v } = saved as { form: FormData; screen: number; version: number };
-        setForm(f);
+        const restored = normalizeApplicationDraft(f);
+        // Hydrate browser-only storage after the server-rendered intro matches.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setForm(restored);
         if (v === DRAFT_VERSION && s >= 1) {
-          resumeScreenRef.current = Math.min(s, TOTAL);
+          resumeScreenRef.current = s <= REVIEW && (s === REVIEW || screenIsVisible(questions[s - 1].key, restored)) ? s : firstIncompleteApplicationScreen(restored);
         } else {
           // Stale draft from before a question-order change (or from before
           // versioning existed at all) — the saved index can't be trusted to
           // point at the right question anymore, but the typed answers are
           // still good. Resume at the first incomplete required question
           // instead of trusting the index.
-          resumeScreenRef.current = Math.min(firstIncompleteScreen(questions, f, OPTIONAL), TOTAL);
+          resumeScreenRef.current = firstIncompleteApplicationScreen(restored);
         }
       } else {
         dropKey(DRAFT_KEY_STORAGE);
       }
     } catch {}
-  }, [questions, TOTAL]);
+  }, [questions, REVIEW]);
 
   // The application form itself is done, but booking the call is a required
   // part of finishing — not a follow-up. On mount, if this browser finished
@@ -584,36 +431,42 @@ function ApplyPageInner() {
   // never trap someone who genuinely booked behind an unrelated error.
   useEffect(() => {
     const info = readFresh(SUBMITTED_KEY, SUBMITTED_TTL_MS) as {
-      full_name?: string; email?: string; guardian_email?: string | null;
+      full_name?: string; email?: string; guardian_email?: string | null; age?: string; decision_support?: string; guardian_aware?: string; version?: number;
     } | null;
     if (!info?.email) return; // nothing to resume — stay on the intro
 
     const email = info.email;
+    // Hydrate the external submitted-draft record only after mounting.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(f => ({
       ...f,
       full_name: info.full_name || f.full_name,
       email: email || f.email,
       guardian_email: info.guardian_email || f.guardian_email,
+      age: info.age || f.age,
+      decision_support: info.decision_support || f.decision_support,
+      // v4 submission already required parent awareness before this entry existed.
+      guardian_aware: info.guardian_aware || (!info.version && info.guardian_email ? 'Yes' : f.guardian_aware),
     }));
-    resumeScreenRef.current = TOTAL + 1;
+    resumeScreenRef.current = BOOKING;
 
     resumePendingRef.current = fetch(`/api/apply/booking-status?email=${encodeURIComponent(email)}`)
       .then(res => (res.ok ? res.json() : null))
       .then(json => {
         if (json?.booked) {
           dropKey(SUBMITTED_KEY);
-          resumeScreenRef.current = TOTAL + 2;
+          resumeScreenRef.current = DONE;
         }
       })
       .catch(() => {})
       .finally(() => { resumePendingRef.current = null; });
-  }, [TOTAL]);
+  }, [BOOKING, DONE]);
 
   // Auto-save draft whenever form or screen changes (skip intro + success)
   useEffect(() => {
-    if (screen < 1 || screen > TOTAL) return;
+    if (screen < 1 || screen > REVIEW) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION, savedAt: Date.now() })); } catch {}
-  }, [form, screen, TOTAL]);
+  }, [form, screen, REVIEW]);
 
   // Save while they type/select, not just when they eventually submit. A short
   // debounce avoids one database write per keystroke while still preserving a
@@ -650,6 +503,7 @@ function ApplyPageInner() {
         draft_key: draftKey,
         revision: nextProgressRevision(),
         last_answered_question_key: lastAnsweredKeyRef.current,
+        form_version: DRAFT_VERSION,
         question_key: latest.question.key,
         completed: false,
         answers: progressAnswers(latest.snapshot),
@@ -691,7 +545,7 @@ function ApplyPageInner() {
   // flips the screen by itself; it only kicks off a short poll of our own
   // server-confirmed status, which is the one thing allowed to do that.
   useEffect(() => {
-    if (screen !== TOTAL + 1) return;
+    if (screen !== BOOKING) return;
     let cancelled = false;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     const stopPolling = () => { if (pollTimer) clearInterval(pollTimer); };
@@ -704,7 +558,7 @@ function ApplyPageInner() {
           if (cancelled || !json?.booked) return;
           dropKey(SUBMITTED_KEY); dropKey(STORAGE_KEY);
           stopPolling();
-          setScreen(TOTAL + 2);
+          setScreen(DONE);
         })
         .catch(() => {});
     };
@@ -727,21 +581,23 @@ function ApplyPageInner() {
     })();
 
     return () => { cancelled = true; stopPolling(); };
-  }, [screen, form.email, TOTAL]);
+  }, [screen, form.email, BOOKING, DONE]);
 
   // Keep advanceRef fresh every render so the keydown handler always calls latest advance
   // (assigned after advance is defined below — see comment there)
 
   // Focus input when screen changes
   useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 260);
+    const t = setTimeout(() => (inputRef.current ?? document.getElementById('application-question'))?.focus(), 260);
     return () => clearTimeout(t);
   }, [screen]);
 
   // Enter key to advance (Cmd/Ctrl+Enter for textareas)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'Enter') return;
+      if (e.key !== 'Enter' || e.defaultPrevented || e.isComposing) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('button, a, [role="combobox"]') || (target instanceof HTMLInputElement && ['radio', 'checkbox'].includes(target.type))) return;
       if (screen > TOTAL) return;
       const q = screen > 0 ? questions[screen - 1] : null;
       if (q?.type === 'textarea' && !e.metaKey && !e.ctrlKey) return;
@@ -757,18 +613,19 @@ function ApplyPageInner() {
     requestAnimationFrame(() => requestAnimationFrame(() => setShaking(true)));
   };
 
-  const fireNudge = (msg: string, type: 'error' | 'info' = 'error') => {
-    setNudgeType(type);
-    setNudgeMsg(msg);
-    setNudgeKey(k => k + 1);
+  const fireNudge = (message: string) => {
+    setNudgeMsg(message);
+    setNudgeKey(key => key + 1);
+    triggerShake();
   };
 
   const goTo = (next: number) => {
     setError(null);
     setNudgeMsg(null);
     setNudgeKey(0);
-    setAttempts(0);
+    setNudgeAttempts(0);
     setShaking(false);
+    setInvalidField(null);
     setVisible(false);
     setTimeout(() => { setScreen(next); setVisible(true); }, 200);
   };
@@ -786,159 +643,19 @@ function ApplyPageInner() {
       : raw;
     setForm(f => ({ ...f, [field]: v }));
     setNudgeMsg(null);
+    setInvalidField(null);
   };
-
-  // Escalating messages when field is empty
-  const VALIDATION: Partial<Record<keyof FormData, string[]>> = {
-    full_name:           ["Name pls", "First and last name", "FULL NAME. GO."],
-    age:                 ["How old are you?", "Age. Just a number.", "YOUR AGE. TYPE IT."],
-    city_state:          ["Where are you based?", "City and province/state please", "WHERE ARE YOU FROM?!"],
-    email:               ["We'll need your email", "Email address please", "YOUR EMAIL. NOW."],
-    phone:               ["Add a phone number", "Phone number, please", "PHONE NUMBER!!"],
-    device_access:       ["What device do you use?", "Pick one", "PICK ONE!!"],
-    position:            ["Pick your position", "Choose one", "PICK. A. POSITION."],
-    years_playing:       ["How long have you been playing?", "Pick one, be honest", "YEARS PLAYING. PICK ONE."],
-    current_team_school: ["What team or school?", "Team or school name please", "TEAM. OR. SCHOOL."],
-    biggest_weakness:    ["Be honest here", "Something, anything", "YOUR WEAKNESS. TELL US."],
-    social_link:         ["Drop your @ handle", "We need to see your account", "YOUR @. NOW."],
-    time_commitment:     ["How much time can you give?", "Pick a time commitment", "PICK ONE!!"],
-    guardian_name:       ["Add their name", "Parent or supporter name", "NAME. NOW."],
-    guardian_phone:      ["Add their number", "Their phone number please", "THEIR NUMBER. GO."],
-    guardian_email:      ["We'll need their email", "Their email please", "EMAIL. NOW."],
-    guardian_aware:      ["Yes or no?", "Pick one", "YES. OR. NO."],
-    goal:                ["Tell us how high you see this going", "Where do you see this going?", "YOUR CEILING. TELL US."],
-  };
-
-  // Escalating messages when content doesn't pass validation
-  const VALIDATION_BAD: Partial<Record<keyof FormData, string[]>> = {
-    full_name:           ["Include first and last name", "e.g. Marcus Thompson", "FIRST AND LAST NAME."],
-    city_state:          ["Needs to be 'City, Province' format", "e.g. Mississauga, Ontario", "CITY, PROVINCE. THAT'S IT."],
-    age:                 ["Age must be between 13 and 35", "Enter a real age", "REAL AGE. 13–35."],
-    email:               ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
-    phone:               ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
-    current_team_school: ["Give us a real team or school name", "More than one letter", "TEAM OR SCHOOL NAME."],
-    biggest_weakness:    ["Give more detail than that", "Dig deeper, be specific", "ACTUALLY ANSWER IT."],
-    social_link:         ["That doesn't look like a real handle", "Just your @, like @yourusername", "REAL HANDLE."],
-    guardian_name:       ["That doesn't look like a full name", "Letters only please", "REAL NAME."],
-    guardian_phone:      ["Needs at least 10 digits", "Full phone number please", "REAL PHONE NUMBER."],
-    guardian_email:      ["That's not a valid email", "Try name@email.com", "VALID EMAIL ONLY."],
-    goal:                ["Give more than that. Level and why.", "Say the level, then why you believe it", "LEVEL. AND. WHY."],
-  };
-
-  // Returns true if the value fails content validation for that field
-  const validateContent = (field: keyof FormData, v: string): boolean => {
-    const isGibberishName = (s: string) =>
-      !/[aeiou]/i.test(s) ||                    // no vowels at all
-      /[^aeiou\s''\-]{5,}/i.test(s) ||          // 5+ consecutive consonants
-      /(.)\1{3,}/.test(s);                       // same char repeated 4+ times
-
-    const isGibberishText = (s: string) =>
-      s.trim().split(/\s+/).length < 3 ||        // fewer than 3 words
-      /(.)\1{4,}/.test(s) ||                     // same char repeated 5+ times
-      /^(.{1,4})\1{3,}/.test(s);                 // short pattern repeated (asdasdasd)
-
-    const isDisengaged = (s: string) => {
-      if (s.length > 100) return false; // long answers are fine
-      const lower = s.toLowerCase();
-      const bad = ['nothing', ' none', 'idk', 'no weakness', 'i am the best', 'best at everything',
-                   'no flaws', "don't have any", 'i have no weakness', 'n/a', 'no idea',
-                   'i have none', 'everything is fine', 'i\'m perfect', 'not applicable', 'good at everything'];
-      return bad.some(p => lower.includes(p));
-    };
-
-    switch (field) {
-      case 'full_name': {
-        const parts = v.trim().split(/\s+/);
-        if (parts.length < 2) return true;
-        return parts.some(p => p.length < 2 || !/^[a-zA-ZÀ-ÿ''\-]+$/.test(p) || isGibberishName(p));
-      }
-      case 'guardian_name':
-        return v.length < 2 || !/^[a-zA-ZÀ-ÿ\s''\-]+$/.test(v) || isGibberishName(v);
-      case 'age': {
-        const n = parseInt(v);
-        return isNaN(n) || n < 13 || n > 35;
-      }
-      case 'email':
-      case 'guardian_email':
-        return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      case 'phone':
-      case 'guardian_phone':
-        return v.replace(/[\s\-\(\)\+\.]/g, '').length < 10 || !/^[\d\s\-\(\)\+\.]+$/.test(v);
-      case 'city_state': {
-        if (!v.includes(',')) return true;                   // must have city, province format
-        const [city, region] = v.split(',').map(s => s.trim());
-        if (!city || city.length < 2) return true;           // city must exist
-        if (!region || region.length < 2) return true;       // region must exist
-        // Fold accents before the heuristics, or Köln / Ürümqi / Cần Thơ read as
-        // consonant mash. y counts as a vowel (Lynn, Spry, Zephyrhills), and
-        // . / digits are separators (St. John's, Hounsfield Heights/Briar Hill).
-        const base = city.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '');
-        if (!/[aeiouy]/.test(base)) return true;             // city must have vowels
-        if (/[^aeiouy\s'’\-./0-9]{6,}/.test(base)) return true; // no consonant mashing
-        return false;
-      }
-      case 'current_team_school':
-        return v.length < 3;
-      case 'social_link': {
-        const s = v.trim().toLowerCase();
-        // The @ is optional. The field asks for "@yourusername", but plenty of
-        // people type the username alone and mean exactly the same thing —
-        // rejecting that is the confusion this question is meant to avoid.
-        const looksLikeHandle = /^@?[a-z0-9._]{2,}$/.test(s);
-        // Still accept a pasted profile link, since that's what the question
-        // used to ask for and some applicants will paste one out of habit.
-        const looksLikeUrl = /(instagram\.com|twitter\.com|x\.com)\/[a-z0-9._]{2,}/.test(s);
-        return !(looksLikeHandle || looksLikeUrl);
-      }
-      case 'biggest_weakness':
-        return v.length < 20 || isGibberishText(v) || isDisengaged(v);
-      case 'goal':
-        // Two-part answer (a level, then the reasoning) — asks for a little
-        // more length than the single-beat weakness question.
-        return v.length < 25 || isGibberishText(v);
-      default:
-        return false;
-    }
-  };
-
 
   const handleSubmit = async () => {
+    if (submitting) return;
+    const problem = applicationSubmissionError(form);
+    if (problem) { setError(problem.message); return; }
     setSubmitting(true);
     setError(null);
     await progressQueue.flush();
-    const [firstName, ...nameParts] = form.full_name.trim().split(/\s+/);
-    const lastName = nameParts.join(' ');
     const payload = {
-      athlete_name:  form.full_name.trim(),
-      athlete_email: form.email,
-      athlete_phone: form.phone,
-      first_name:    firstName || '',
-      last_name:     lastName || '',
-      email:         form.email,
-      phone:         form.phone,
-      device_access: form.device_access,
-      age:          form.age ? parseInt(form.age) : null,
-      city:         form.city_state,
-      position:     form.position,
-      years_playing: yearsPlayingValue(form.years_playing),
-      years_playing_answer: form.years_playing,
-      current_team:        form.current_team_school,
-      current_team_school: form.current_team_school,
-      biggest_weakness:    form.biggest_weakness,
-      goal:                form.goal,
-      social_link:         form.social_link,
-      time_commitment:     form.time_commitment,
-      parent_name:         form.guardian_name || null,
-      guardian_name:       form.guardian_name || null,
-      parent_phone:        form.guardian_phone || null,
-      guardian_phone:      form.guardian_phone || null,
-      parent_email:        form.guardian_email || null,
-      guardian_email:      form.guardian_email || null,
-      parent_aware:        form.guardian_aware || null,
-      guardian_aware:      form.guardian_aware || null,
-      heard_about:         form.heard_about || null,
-      early_pricing:     earlyPricing || null,
-      draft_key:         ensureDraftKey(),
+      ...progressAnswers(form), form_version: DRAFT_VERSION,
+      early_pricing: earlyPricing || null, draft_key: ensureDraftKey(),
     };
     try {
       const res  = await fetch('/api/apply', {
@@ -957,11 +674,13 @@ function ApplyPageInner() {
         localStorage.setItem(SUBMITTED_KEY, JSON.stringify({
           full_name: form.full_name.trim(),
           email: form.email,
-          guardian_email: form.guardian_email || null,
+          guardian_email: needsSupporter(form) ? form.guardian_email || null : null,
+          age: form.age, decision_support: form.decision_support, guardian_aware: form.guardian_aware,
           savedAt: Date.now(),
+          version: DRAFT_VERSION,
         }));
       } catch {}
-      goTo(TOTAL + 1);
+      goTo(BOOKING);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
       setSubmitting(false);
@@ -977,86 +696,40 @@ function ApplyPageInner() {
       goTo(resumeScreenRef.current);
       return;
     }
-    if (checkingEmail || submitting) return;
+    if (checkingEmail || submitting || screen > TOTAL || !visible) return;
     const q = questions[screen - 1];
-    // The last screen can be the guardian_aware gate, which — unlike the old
-    // form's optional last question — has a hard validation rule. Submit only
-    // fires after that rule (and everything else below) passes.
-    const finish = async () => {
-      // Never make the applicant wait for a network round-trip before seeing
-      // the next question. enqueueProgress serializes, retries, and keeps the
-      // full snapshot; the next save (and the pagehide beacon) will repair a
-      // transient failure without blocking the form's flow.
-      void enqueueProgress(q, true, form);
-      if (screen === TOTAL) await handleSubmit();
-      else goTo(screen + 1);
-    };
-
-    if (q.type === 'group') {
-      for (const sub of q.subs) {
-        const v = form[sub.field].toString().trim();
-        if (!v) {
-          const msgs = VALIDATION[sub.field] ?? ["Fill this in to continue", "Still need this", "FILL IT IN."];
-          fireNudge(msgs[attempts % msgs.length]);
-          setAttempts(a => a + 1);
-          triggerShake();
+    const problem = applicationScreenError(q, form);
+    if (problem) {
+      fireNudge(personalityNudge(problem, form, nudgeAttempts));
+      setNudgeAttempts(attempt => attempt + 1);
+      setInvalidField(problem.field);
+      requestAnimationFrame(() => document.getElementById(`field-${problem.field}`)?.focus());
+      return;
+    }
+    if (q.key === 'contact') {
+      setCheckingEmail(true);
+      try {
+        const res = await fetch(`/api/apply/check-email?email=${encodeURIComponent(form.email.trim())}`, { signal: AbortSignal.timeout(5000) });
+        const json = res.ok ? await res.json() : null;
+        if (json?.exists) {
+          fireNudge('An application with this email has already been submitted. Use the booking link in your confirmation email.');
+          setInvalidField('email');
           return;
         }
-        if (validateContent(sub.field, v)) {
-          const msgs = VALIDATION_BAD[sub.field] ?? ["That doesn't look right", "Check your answer", "FIX IT."];
-          fireNudge(msgs[attempts % msgs.length]);
-          setAttempts(a => a + 1);
-          triggerShake();
-          return;
-        }
-        // Block a repeat applicant right at the email step instead of after the
-        // whole form. Fail-open on network errors — the final submit still guards.
-        if (sub.field === 'email') {
-          setCheckingEmail(true);
-          try {
-            const res = await fetch(`/api/apply/check-email?email=${encodeURIComponent(v)}`);
-            const json = await res.json();
-            if (json.exists) {
-              fireNudge("Email in use");
-              triggerShake();
-              setCheckingEmail(false);
-              return;
-            }
-          } catch { /* fail-open */ }
-          setCheckingEmail(false);
-        }
-      }
-      await finish();
-      return;
+      } catch { /* Final submission also checks for duplicates. */ }
+      finally { setCheckingEmail(false); }
     }
-
-    const v = form[q.field].toString().trim();
-    if (!OPTIONAL.has(q.field) && !v) {
-      const msgs = VALIDATION[q.field] ?? ["Fill this in to continue", "Still need this", "FILL IT IN."];
-      fireNudge(msgs[attempts % msgs.length]);
-      setAttempts(a => a + 1);
-      triggerShake();
-      return;
-    }
-    const pickerVouched = q.field === 'city_state' && cityFromPicker.current;
-    if (v && !pickerVouched && validateContent(q.field, v)) {
-      const msgs = VALIDATION_BAD[q.field] ?? ["That doesn't look right", "Check your answer", "FIX IT."];
-      fireNudge(msgs[attempts % msgs.length]);
-      setAttempts(a => a + 1);
-      triggerShake();
-      return;
-    }
-    // A minor can't book alone — they need to have told their parent before
-    // moving on, not just claim they will.
-    if (q.field === 'guardian_aware' && v !== 'Yes') {
-      fireNudge("Loop them in first");
-      setAttempts(a => a + 1);
-      triggerShake();
-      return;
-    }
-    await finish();
+    void enqueueProgress(q, true, form);
+    if (editingReview) { setEditingReview(false); goTo(REVIEW); return; }
+    const nextIndex = questions.findIndex((item, index) => index >= screen && screenIsVisible(item.key, form));
+    goTo(nextIndex < 0 ? REVIEW : nextIndex + 1);
   };
-  const retreat = () => { if (screen > 1) goTo(screen - 1); };
+  const retreat = () => {
+    if (editingReview) { setEditingReview(false); goTo(REVIEW); return; }
+    for (let index = Math.min(screen - 2, TOTAL - 1); index >= 0; index--) {
+      if (screenIsVisible(questions[index].key, form)) { goTo(index + 1); return; }
+    }
+  };
 
   // Escape hatch off the resumed booking step. Someone who lands there from a
   // previous session — a different applicant on a shared device, or the same
@@ -1068,12 +741,16 @@ function ApplyPageInner() {
     draftKeyRef.current = null;
     resumeScreenRef.current = 1;
     resumePendingRef.current = null;
+    lastAnsweredKeyRef.current = null;
+    setSubmitting(false);
+    setCheckingEmail(false);
+    setEditingReview(false);
     setForm(EMPTY);
     goTo(0);
   };
 
   // Keep advanceRef pointing to the latest advance closure
-  advanceRef.current = advance;
+  useEffect(() => { advanceRef.current = advance; });
 
   const fadeStyle: React.CSSProperties = {
     opacity:   visible ? 1 : 0,
@@ -1129,7 +806,7 @@ function ApplyPageInner() {
           Every journey toward excellence begins with a single step.
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
-          Let's Begin
+          Let&apos;s Begin
         </CTAButton>
       </div>
     </div>
@@ -1140,13 +817,13 @@ function ApplyPageInner() {
   // only job is getting a booked call, embedded right here instead of
   // sending the applicant off to another tab, with the parent locked in as
   // a guest on the invite.
-  if (screen === TOTAL + 1) {
+  if (screen === BOOKING) {
     const calConfig: Record<string, string | string[]> = {
       theme: 'dark',
       name: form.full_name.trim(),
       email: form.email,
     };
-    if (form.guardian_email) calConfig.guests = [form.guardian_email];
+    if (needsSupporter(form) && form.guardian_aware === 'Yes' && form.guardian_email) calConfig.guests = [form.guardian_email];
 
     return (
       <div style={{ minHeight: '100dvh', background: BG, padding: '60px 20px 80px' }}>
@@ -1159,10 +836,10 @@ function ApplyPageInner() {
           {/* Copy */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, textAlign: 'center', alignItems: 'center', maxWidth: 700, margin: '0 auto', width: '100%' }}>
             <p style={{ ...text(16, 500, TERRA), margin: 0 }}>
-              Application in. Now the real part.
+              Your answers are saved. Choose a time to talk.
             </p>
             <p style={{ ...text(15, 400, 'rgba(0,0,0,0.45)'), lineHeight: 1.5, margin: 0 }}>
-              The application tells us you&apos;re serious. The call tells us if we&apos;re a fit, and it&apos;s the last step. Grab a time you and your parent can both sit down for it, this one&apos;s a family decision.
+              The call is the last step in your application. We&apos;ll talk through your goals, how the coaching works and whether it&apos;s a good fit. {needsSupporter(form) ? 'Choose a time your parent or supporter can join too.' : 'Choose a time that works for you.'}
             </p>
           </div>
 
@@ -1180,9 +857,9 @@ function ApplyPageInner() {
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
-            <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
+            <Link href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
               ← Back to home
-            </a>
+            </Link>
             <span style={{ ...text(13, 400, 'rgba(0,0,0,0.18)') }}>·</span>
             <button
               type="button"
@@ -1208,7 +885,7 @@ function ApplyPageInner() {
   // Reached only once the server (the Cal.com webhook, never the client) has
   // recorded a booking for this email — either right after the embed polling
   // above catches it, or on a later visit once it already had.
-  if (screen === TOTAL + 2) return (
+  if (screen === DONE) return (
     <div style={{ minHeight: '100dvh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 80px' }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');`}</style>
       <div style={{ ...fadeStyle, width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', textAlign: 'center' }}>
@@ -1221,478 +898,271 @@ function ApplyPageInner() {
         <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 28, fontWeight: 400, color: TERRA, margin: '4px 0 0' }}>
           Talk soon
         </p>
-        <a href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
+        <Link href="/" style={{ ...text(13, 400, 'rgba(0,0,0,0.35)'), textDecoration: 'none', letterSpacing: '0.03em' }}>
           ← Back to home
-        </a>
+        </Link>
       </div>
     </div>
   );
 
-  // ── Question / group screens ─────────────────────────────────────────────
-  const qi  = screen - 1;
-  const q   = questions[qi];
-  const isFirst = screen === 1;
-  const isLast  = screen === TOTAL;
-  const progress = (screen / TOTAL) * 100;
-  const numLabel = String(screen).padStart(2, '0');
 
-  // Frame 424 input style — no fill, 5% black border, 30% drop shadow
-  const inputBoxStyle: React.CSSProperties = {
-    boxSizing: 'border-box',
-    width: '100%',
-    border: '1px solid rgba(0, 0, 0, 0.05)',
-    boxShadow: '0px 6px 14px rgba(0, 0, 0, 0.08)',
-    borderRadius: 12,
-    padding: '20px 10px',
-    fontSize: 16,
-    fontWeight: 400,
-    letterSpacing: '-0.02em',
-    lineHeight: '18px',
-    color: '#000000',
-    background: '#ffffff',
-    outline: 'none',
-    fontFamily: 'inherit',
+const choose = (field: ApplicationField, value: string) => {
+    setForm(f => ({
+      ...f, [field]: value,
+      ...(field === 'guardian_aware' && value !== 'Yes' ? { guardian_consent: '' } : {}),
+    }));
+    setNudgeMsg(null);
+    setInvalidField(null);
+    setError(null);
   };
+  const editQuestion = (key: string) => {
+    setEditingReview(true);
+    goTo(questions.findIndex(item => item.key === key) + 1);
+  };
+  const legalLinks = (
+    <p className={styles.legal}>
+      By submitting, you agree to our{' '}
+      <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+      {' '}and{' '}
+      <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+    </p>
+  );
 
-  const renderGroupSub = (sub: SubField) => {
-    if (sub.kind === 'radio-grid') {
-      const val = form[sub.field];
-      return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%' }}>
-          {sub.options.map(opt => {
-            const active = val === opt;
+  if (screen === REVIEW) return (
+    <main className={styles.root} style={{ background: BG }}>
+      <Link href="/" className={styles.homeLink}>← Learn More</Link>
+      <div className={styles.review} style={fadeStyle}>
+        <p className={styles.eyebrow}>Your application</p>
+        <h1>Make sure this sounds like you.</h1>
+        <p className={styles.description}>
+          Review your answers, then choose a time to talk with Jaiden.
+          Applying is not a commitment to join.
+        </p>
+        <div className={styles.reviewList}>
+          {visibleQuestions.map(question => {
+            const answers = question.type === 'group'
+              ? visibleSubFields(question, form).map(sub => ({ label: sub.label, value: form[sub.field] }))
+              : [{ label: '', value: form[question.field] + (
+                'detailField' in question && question.detailField && form[question.field] === question.detailOption && form[question.detailField]
+                  ? ': ' + form[question.detailField] : ''
+              ) }];
             return (
-              <button
-                key={opt}
-                type="button"
-                className="tdt-radio-btn"
-                onClick={() => { setForm(f => ({ ...f, [sub.field]: opt })); setNudgeMsg(null); }}
-                style={radioBtnStyle(active, true)}
-              >
-                <span style={radioCircleStyle(active)}>
-                  {active && <span style={{ width: 10, height: 10, borderRadius: '50%', background: TERRA, display: 'block' }} />}
-                </span>
-                {opt}
-              </button>
+              <section key={question.key} className={styles.reviewItem}>
+                <div className={styles.reviewHeading}>
+                  <h2>{question.question}</h2>
+                  <button type="button" onClick={() => editQuestion(question.key)} aria-label={'Edit: ' + question.question}>Edit</button>
+                </div>
+                {answers.map((answer, index) => (
+                  <p key={index}>
+                    {answer.label && <span className={styles.answerLabel}>{answer.label}: </span>}
+                    {answer.value || <span className={styles.missing}>Answer needed</span>}
+                  </p>
+                ))}
+              </section>
             );
           })}
         </div>
-      );
-    }
-    return (
-      <input
-        type={sub.kind}
-        value={form[sub.field]}
-        onChange={set(sub.field)}
-        placeholder={sub.placeholder}
-        style={{ ...inputBoxStyle, padding: '16px 10px' }}
-      />
-    );
-  };
+        {isMinor(form) && (
+          <section className={styles.notice}>
+            <h2>A quick check with your parent or guardian</h2>
+            {form.guardian_aware !== 'Yes' ? (
+              <>
+                <p>You can keep this draft, but your parent or legal guardian needs to review it with you before you submit.</p>
+                <button type="button" className={styles.textButton} onClick={() => editQuestion('guardian_aware')}>Update parent awareness</button>
+              </>
+            ) : (
+              <label className={styles.consent}>
+                <input type="checkbox" checked={form.guardian_consent === 'Yes'} onChange={e => choose('guardian_consent', e.target.checked ? 'Yes' : '')} />
+                <span>My parent or legal guardian has reviewed this application and the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> with me and agrees to my applying.</span>
+              </label>
+            )}
+          </section>
+        )}
+        {error && <p role="alert" className={styles.error}>{error}</p>}
+        <div className={styles.navigation}>
+          <GoBackButton onClick={retreat} />
+          <CTAButton onClick={handleSubmit} disabled={submitting} className="min-h-[42px] flex-[2] px-4 py-2 text-[18px] font-normal tracking-[-0.02em]">
+            {submitting ? 'Submitting…' : 'Submit and choose a call time'}
+          </CTAButton>
+        </div>
+        {legalLinks}
+        <p className={styles.hint}>This browser remembers your draft for 7 days. Your saved answers are visible to the coaching team.</p>
+      </div>
+    </main>
+  );
 
+  const q = questions[screen - 1];
+  const ordinal = visibleQuestions.findIndex(item => item.key === q.key) + 1;
+  const isFirst = ordinal === 1;
+  const isLast = ordinal === visibleQuestions.length;
+  const progress = ((ordinal - 1) / (visibleQuestions.length + 2)) * 100;
+  const fieldProps = (field: ApplicationField) => ({
+    id: `field-${field}`,
+    name: field,
+    'aria-invalid': invalidField === field || undefined,
+    'aria-describedby': invalidField === field && nudgeMsg ? 'answer-error' : undefined,
+  });
+  const inputStyle: React.CSSProperties = {
+    boxSizing: 'border-box', width: '100%', padding: '20px 10px', borderRadius: 12,
+    border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0px 6px 14px rgba(0,0,0,0.08)',
+    color: '#000000', background: '#ffffff', outline: 'none',
+    fontFamily: 'inherit', fontSize: 16, fontWeight: 400, letterSpacing: '-0.02em', lineHeight: '18px',
+  };
+  const radioOptions = (field: ApplicationField, options: string[], compact = false, choice = false) => (
+    <div className={choice ? styles.choices : compact ? styles.compactOptions : styles.options}>
+      {options.map((option, index) => (
+        <label key={option} className={`${styles.option} ${form[field] === option ? styles.selected : ''}`}>
+          <input {...fieldProps(field)} id={index === 0 ? `field-${field}` : `field-${field}-${index}`}
+            type="radio" value={option} checked={form[field] === option}
+            onChange={() => choose(field, option)} />
+          <span>{option}</span>
+        </label>
+      ))}
+    </div>
+  );
+  const standardInput = (field: ApplicationField, kind: string, placeholder: string, primary = false) => (
+    <input {...fieldProps(field)}
+      ref={primary ? inputRef as unknown as React.RefObject<HTMLInputElement> : undefined}
+      className={styles.input} type={kind === 'number' ? 'text' : kind}
+      inputMode={kind === 'number' ? 'numeric' : undefined}
+      autoComplete={kind === 'email' ? 'email' : kind === 'tel' ? 'tel' : field === 'full_name' ? 'name' : 'off'}
+      maxLength={kind === 'number' ? 2 : 4000}
+      value={form[field]} placeholder={placeholder} onChange={set(field)} />
+  );
   const renderInput = () => {
-    if (q.type === 'group') return null; // rendered separately — see the JSX branch above
-
-    if (q.type === 'textarea') {
-      return (
-        <textarea
-          ref={inputRef as unknown as React.RefObject<HTMLTextAreaElement>}
-          value={form[q.field]}
-          onChange={set(q.field)}
-          placeholder={'placeholder' in q ? q.placeholder : ''}
-          rows={4}
-          style={{ ...inputBoxStyle, resize: 'none', lineHeight: 1.55 }}
-        />
-      );
-    }
-
-    if (q.type === 'location') {
-      return (
-        <LocationInput
-          ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
-          value={form[q.field]}
-          onChange={v => {
-            cityFromPicker.current = false;
-            setForm(f => ({ ...f, [q.field]: v }));
-            setNudgeMsg(null);
-          }}
-          onCommit={() => { cityFromPicker.current = true; }}
-          baseStyle={inputBoxStyle}
-        />
-      );
-    }
-
-    if (q.type === 'school') {
-      return (
-        <SchoolInput
-          ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
-          value={form[q.field]}
-          onChange={v => { setForm(f => ({ ...f, [q.field]: v })); setNudgeMsg(null); }}
-          baseStyle={inputBoxStyle}
-        />
-      );
-    }
-
-    if (q.type === 'radio-grid') {
-      const val = form[q.field];
-      return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%' }}>
-          {q.options.map(opt => {
-            const active = val === opt;
-            return (
-              <button
-                key={opt}
-                type="button"
-                className="tdt-radio-btn"
-                onClick={() => { setForm(f => ({ ...f, [q.field]: opt })); setNudgeMsg(null); }}
-                style={radioBtnStyle(active, false)}
-              >
-                <span style={radioCircleStyle(active)}>
-                  {active && <span style={{ width: 10, height: 10, borderRadius: '50%', background: TERRA, display: 'block' }} />}
-                </span>
-                {opt}
-              </button>
-            );
-          })}
-        </div>
-      );
-    }
-
-    if (q.type === 'choice') {
-      const val = form[q.field];
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-            {q.options.map(opt => {
-              const active = val === opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  className="tdt-choice-btn"
-                  onClick={() => { setForm(f => ({ ...f, [q.field]: opt })); setNudgeMsg(null); }}
-                  style={{
-                    ...inputBoxStyle,
-                    flex: 1,
-                    boxShadow: active ? 'none' : '0px 1px 4px rgba(0,0,0,0.05)',
-                    border: active ? `1.5px solid ${TERRA}` : '1px solid rgba(0,0,0,0.05)',
-                    background: active ? 'rgba(179,73,41,0.06)' : '#ffffff',
-                    color: active ? TERRA : 'rgba(0,0,0,0.3)',
-                    fontWeight: active ? 500 : 400,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    textAlign: 'center',
-                  }}
-                >
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
-          {q.field === 'guardian_aware' && val === 'No' && (
-            <div style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: 'rgba(179,73,41,0.06)', border: '1px solid rgba(179,73,41,0.15)' }}>
-              <p style={{ ...text(14, 400, 'rgba(0,0,0,0.6)'), lineHeight: 1.6, margin: 0 }}>
-                Go tell them first. This is a real commitment and they&apos;re part of it. Better they hear it from you now than find out later. Hit Yes once they know.
-              </p>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // A numeric question renders as `tel`, not `number` or inputMode="numeric".
-    // Both of those land iOS on the full keyboard's number plane, which keeps an
-    // ABC key to switch back to letters. `tel` is the only one that raises the
-    // 12-key dialer pad — the same keyboard the phone fields in this form get.
-    // A number input also hands back "" for anything it considers malformed, so
-    // a stray character silently wipes what was typed; `tel` keeps the raw
-    // string for the 13–35 check in invalid(), and `set` strips non-digits.
-    //
-    // min/max are gone with it: they only bind on a number input, there is no
-    // <form> here to run native validation, and they said 10–80 while the real
-    // rule is 13–35.
-    const isNumeric = q.type === 'number';
+    if (q.type === 'group') return (
+      <div className={styles.group}>
+        {visibleSubFields(q, form).map(sub => (
+          <fieldset key={sub.field} className={styles.fieldset}>
+            <legend>{sub.label}</legend>
+            {sub.kind === 'radio-grid'
+              ? radioOptions(sub.field, sub.options, true)
+              : standardInput(sub.field, sub.kind, sub.placeholder)}
+          </fieldset>
+        ))}
+      </div>
+    );
+    if (q.type === 'radio-grid' || q.type === 'choice') return (
+      <>
+        <fieldset className={styles.fieldset} aria-labelledby="application-question">
+          {radioOptions(q.field, q.options, false, q.type === 'choice')}
+        </fieldset>
+        {q.type === 'radio-grid' && q.detailField && form[q.field] === q.detailOption && (
+          <label className={styles.detail}>
+            {q.key === 'goal' ? 'Tell us the goal you have in mind' : 'Where did you hear about us?'}
+            {standardInput(q.detailField, 'text', q.key === 'goal' ? 'A few words are enough' : 'Tell us where')}
+          </label>
+        )}
+        {q.key === 'guardian_aware' && form.guardian_aware === 'Not yet' && (
+          <p className={styles.notice}>
+            {isMinor(form)
+              ? 'You can keep going and save your draft. Before submitting, review the application with your parent or legal guardian.'
+              : 'You can still finish your application. Talk with your supporter before choosing a call time together.'}
+          </p>
+        )}
+      </>
+    );
+    let input;
+    if (q.type === 'location') input = (
+      <LocationInput ref={inputRef as unknown as React.RefObject<HTMLInputElement>} value={form[q.field]}
+        onChange={value => choose(q.field, value)} baseStyle={inputStyle} />
+    );
+    else if (q.type === 'school') input = (
+      <SchoolInput ref={inputRef as unknown as React.RefObject<HTMLInputElement>} value={form[q.field]}
+        onChange={value => choose(q.field, value)} baseStyle={inputStyle} />
+    );
+    else if (q.type === 'textarea') input = (
+      <textarea {...fieldProps(q.field)} aria-labelledby="application-question"
+        ref={inputRef as unknown as React.RefObject<HTMLTextAreaElement>} className={styles.input}
+        rows={4} maxLength={4000} value={form[q.field]} onChange={set(q.field)} placeholder={q.placeholder} />
+    );
+    else input = (
+      <label className={styles.inputLabel}>
+        <span className={styles.srOnly}>{q.question}</span>
+        {standardInput(q.field, q.type, 'placeholder' in q ? q.placeholder : '', true)}
+      </label>
+    );
     return (
-      <input
-        ref={inputRef as unknown as React.RefObject<HTMLInputElement>}
-        type={isNumeric ? 'tel' : q.type}
-        inputMode={isNumeric ? 'tel' : undefined}
-        pattern={isNumeric ? '[0-9]*' : undefined}
-        maxLength={isNumeric ? 3 : undefined}
-        // Without this the dialer pad drags a phone-number autofill bar with it.
-        autoComplete={isNumeric ? 'off' : undefined}
-        value={form[q.field]}
-        onChange={set(q.field)}
-        placeholder={'placeholder' in q ? q.placeholder : ''}
-        style={inputBoxStyle}
-      />
+      <>
+        {input}
+        {'alternative' in q && q.alternative && (
+          <button type="button" className={`${styles.alternative} ${form[q.field] === q.alternative ? styles.alternativeSelected : ''}`}
+            aria-pressed={form[q.field] === q.alternative}
+            onClick={() => choose(q.field, form[q.field] === q.alternative ? '' : q.alternative!)}>
+            {q.alternative}
+          </button>
+        )}
+      </>
     );
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: BG }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; }
-        ::placeholder { color: rgba(0,0,0,0.3); font-family: inherit; font-size: 16px; font-weight: 400; letter-spacing: -0.02em; }
-        @keyframes tdt-nudge-in {
-          from { opacity: 0; transform: translateX(-50%) translateY(14px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0px); }
-        }
-        @keyframes tdt-shake {
-          0%,100% { transform: translateX(0) rotate(0deg); }
-          12%  { transform: translateX(-9px) rotate(-0.5deg); }
-          25%  { transform: translateX(9px)  rotate(0.5deg); }
-          37%  { transform: translateX(-7px) rotate(-0.3deg); }
-          50%  { transform: translateX(7px)  rotate(0.3deg); }
-          62%  { transform: translateX(-4px); }
-          75%  { transform: translateX(4px); }
-          87%  { transform: translateX(-2px); }
-        }
-        @keyframes tdt-pop-in {
-          from { opacity: 0; transform: translateY(-4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes tdt-loc-row-in {
-          from { opacity: 0; transform: translateY(-4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .tdt-loc-row { animation: tdt-loc-row-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        @media (prefers-reduced-motion: reduce) {
-          .tdt-loc-panel,
-          .tdt-loc-row { animation: none !important; transition: none !important; }
-        }
-        @media (max-width: 639px) {
-          .tdt-loc-row { padding: 13px 12px !important; }
-          .tdt-card { padding: 28px 16px !important; border-radius: 20px !important; }
-          .tdt-card-inner { padding-left: 0 !important; padding-right: 0 !important; }
-          .tdt-question-text { font-size: 17px !important; line-height: 24px !important; }
-          .tdt-section-label { font-size: 15px !important; margin-bottom: 16px !important; }
-          .tdt-radio-btn { padding: 12px !important; font-size: 14px !important; gap: 10px !important; }
-          .tdt-choice-btn { padding: 16px 8px !important; font-size: 15px !important; }
-          .tdt-outer { padding: 70px 20px 80px !important; }
-        }
-      `}</style>
-
-      {/* Progress bar */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.07)', zIndex: 50 }}>
-        <div style={{ height: '100%', background: TERRA, width: `${progress}%`, transition: 'width 0.4s ease' }} />
+    <main className={styles.root} style={{ background: BG }}>
+      <div className={styles.progress} role="progressbar" aria-label="Application progress, including review and call"
+        aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
+        <div style={{ width: `${progress}%` }} />
       </div>
-
-      {/* Back link */}
-      <Link
-        href="/"
-        aria-label="Back to website"
-        style={{ position: 'fixed', top: 20, left: 24, ...text(13, 400, 'rgba(0,0,0,0.32)'), textDecoration: 'none', letterSpacing: '0.01em', zIndex: 50 }}
-      >
-        ← Learn More
-      </Link>
-
-      {/* Question */}
-      <div className="tdt-outer" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 100px' }}>
-        <div style={{ ...fadeStyle, width: '100%', maxWidth: 700 }}>
-
-          {/* Section label */}
-          <p className="tdt-section-label" style={{ ...text(16, 500, TERRA), textAlign: 'center', marginBottom: 20 }}>
-            {q.section}
-          </p>
-
-          {/* Frame 421 wrapper — gap: 10px between card and nav */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%' }}>
-
-            {/* Frame 422 — the card */}
-            <div
-              className="tdt-card"
-              onAnimationEnd={() => setShaking(false)}
-              style={{
-                boxSizing: 'border-box',
-                width: '100%',
-                background: '#FFFFFF',
-                border: '1px solid rgba(0, 0, 0, 0.05)',
-                borderRadius: 32,
-                padding: '44px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: 10,
-                position: 'relative',
-                animation: shaking ? 'tdt-shake 0.45s ease' : 'none',
-              }}>
-              {/* Single placeholder logo badge — top-center of the card, overlapping
-                  the top edge. Only for the school question; swap for the selected
-                  school's real logo once assets exist. */}
-              {q.type === 'school' && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: -20,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: '#FFFFFF',
-                    border: '1px solid rgba(0,0,0,0.08)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    pointerEvents: 'none',
-                    zIndex: 2,
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 3L2 8l10 5 10-5-10-5z" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinejoin="round" />
-                    <path d="M6 10.5V16c0 1 2.5 3 6 3s6-2 6-3v-5.5" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              )}
-              {/* Validation / nudge pill — remounts on key change to replay animation */}
-              {nudgeMsg && (
-                <div key={nudgeKey} style={{
-                  position: 'absolute',
-                  top: 30,
-                  left: '50%',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  padding: '5px 10px',
-                  gap: 10,
-                  background: nudgeType === 'info' ? '#E6F4EC' : '#FFE2E2',
-                  borderRadius: 36,
-                  height: 28,
-                  pointerEvents: 'none',
-                  zIndex: 2,
-                  whiteSpace: 'nowrap',
-                  animation: 'tdt-nudge-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both',
-                }}>
-                  <span style={{
-                    fontFamily: 'inherit',
-                    fontWeight: 400,
-                    fontSize: 12,
-                    lineHeight: '18px',
-                    letterSpacing: '-0.02em',
-                    color: nudgeType === 'info' ? '#1A7A3F' : '#FF5050',
-                  }}>
-                    {nudgeMsg}
-                  </span>
-                </div>
-              )}
-              {/* Frame 425 — number row */}
-              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%' }}>
-                <span style={{
-                  fontFamily: "'Digital Numbers', 'Courier New', monospace",
-                  fontSize: 14,
-                  fontWeight: 400,
-                  letterSpacing: '-0.02em',
-                  lineHeight: '18px',
-                  color: '#000000',
-                  opacity: 0.3,
-                }}>
-                  {numLabel}
-                </span>
+      <Link href="/" className={styles.homeLink}>← Learn More</Link>
+      <div className={styles.questionLayout}>
+        <div className={styles.questionContainer} style={fadeStyle}>
+          <p className={styles.eyebrow}>{q.section}</p>
+          <section
+            key={q.key}
+            className={`${styles.card} ${shaking ? styles.shaking : ''}`}
+            aria-labelledby="application-question"
+            onAnimationEnd={event => {
+              if (event.currentTarget === event.target) setShaking(false);
+            }}
+          >
+            {q.type === 'school' && (
+              <div className={styles.schoolBadge} aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3L2 8l10 5 10-5-10-5z" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinejoin="round" />
+                  <path d="M6 10.5V16c0 1 2.5 3 6 3s6-2 6-3v-5.5" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-
-              {/* Frame 423 — question + input */}
-              <div className="tdt-card-inner" style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                padding: '0px 50px',
-                gap: 20,
-                width: '100%',
-                boxSizing: 'border-box',
-              }}>
-                <p className="tdt-question-text" style={{
-                  width: '100%',
-                  fontSize: 20,
-                  fontWeight: 500,
-                  letterSpacing: '-0.02em',
-                  lineHeight: '28px',
-                  color: '#000000',
-                  opacity: 0.5,
-                  margin: 0,
-                  fontFamily: 'inherit',
-                }}>
-                  {q.question}
-                </p>
-                {q.type === 'group' ? (
-                  <>
-                    {q.subtext && (
-                      <p style={{ ...text(14, 400, 'rgba(0,0,0,0.4)'), lineHeight: 1.6, margin: '-10px 0 0', width: '100%' }}>
-                        {q.subtext}
-                      </p>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-                      {q.subs.map(sub => (
-                        <div key={sub.field} style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-                          <p style={{ ...text(13, 500, 'rgba(0,0,0,0.4)'), margin: 0 }}>{sub.label}</p>
-                          {renderGroupSub(sub)}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <Fragment key={q.field}>
-                    {q.type === 'radio-grid' && q.subtext && (
-                      <p style={{ ...text(14, 400, 'rgba(0,0,0,0.4)'), lineHeight: 1.6, margin: '-10px 0 0', width: '100%' }}>
-                        {q.subtext}
-                      </p>
-                    )}
-                    {/* Keyed so two same-typed questions never share input state */}
-                    {renderInput()}
-                  </Fragment>
-                )}
+            )}
+            <span className={styles.number} aria-label={`Question ${ordinal} of ${visibleQuestions.length}`}>
+              {String(ordinal).padStart(2, '0')}
+            </span>
+            {nudgeMsg && (
+              <div key={nudgeKey} id="answer-error" role="alert" className={styles.nudge}>
+                {nudgeMsg}
               </div>
+            )}
+            <div className={styles.cardInner}>
+              <h1 id="application-question" tabIndex={-1}>{q.question}</h1>
+              {q.subtext && <p className={styles.description}>{q.subtext}</p>}
+              {q.key === 'guardian' && isMinor(form) && <p className={styles.description}>Because you&apos;re under 18, a parent or legal guardian needs to be involved.</p>}
+              {renderInput()}
             </div>
-
-            {/* Error */}
-            {progressSaveFailed && (
-              <p role="status" style={{ ...text(13, 400, '#A04729'), textAlign: 'center', width: '100%' }}>
-                Connection interrupted. Retrying your save…
-              </p>
-            )}
-            {error && (
-              <p style={{ ...text(13, 400, '#C0392B'), textAlign: 'center', width: '100%' }}>{error}</p>
-            )}
-
-            {/* Frame 426 — nav row, stretch so both buttons share the same height */}
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: 10, width: '100%' }}>
-              {!isFirst && <GoBackButton onClick={retreat} />}
-              <CTAButton
-                onClick={advance}
-                className={`h-[42px] text-[18px] font-normal tracking-[-0.02em] ${isFirst ? 'w-full' : 'flex-1'}`}
-              >
-                {isLast ? (submitting ? 'Submitting…' : 'Submit') : (checkingEmail ? 'Checking…' : 'Next')}
-              </CTAButton>
-            </div>
-
-            {isLast && (
-              <p style={{ fontSize: 12, lineHeight: '18px', color: 'rgba(0,0,0,0.4)', textAlign: 'center', margin: 0 }}>
-                By submitting, you agree to our{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(0,0,0,0.55)', textDecoration: 'underline' }}>
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(0,0,0,0.55)', textDecoration: 'underline' }}>
-                  Privacy Policy
-                </a>.
-              </p>
-            )}
-
+          </section>
+          {progressSaveFailed && <p role="status" className={styles.saveNotice}>Connection interrupted. Retrying your save. Your draft is also stored on this browser when storage is available.</p>}
+          <div className={styles.navigation}>
+            {!isFirst && <GoBackButton onClick={retreat} />}
+            <CTAButton onClick={advance} disabled={checkingEmail || !visible}
+              className="min-h-[42px] flex-1 px-4 py-2 text-[18px] font-normal tracking-[-0.02em]">
+              {checkingEmail ? 'Checking…' : editingReview ? 'Save and return to review' : isLast ? 'Review my answers' : 'Continue'}
+            </CTAButton>
           </div>
-
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
 export default function ApplyPage() {
+  const [experience, setExperience] = useState<4 | 5 | null>(null);
+  useEffect(() => {
+    const version = applicationExperienceVersion(
+      readFresh(STORAGE_KEY, DRAFT_TTL_MS),
+      readFresh(SUBMITTED_KEY, SUBMITTED_TTL_MS),
+    );
+    // Resolve browser storage before mounting either form and its save effects.
+    setExperience(version);
+  }, []);
+  if (experience === null) return <div role="status" style={{ minHeight: '100dvh', background: BG, display: 'grid', placeItems: 'center', color: '#70675f' }}>Loading your application…</div>;
+  if (experience === 4) return <LegacyApplication onStartNew={() => setExperience(5)} />;
   return (
     <Suspense>
       <ApplyPageInner />

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import {
-  APPLICATION_FORM_VERSION,
-  APPLICATION_QUESTION_COUNT,
   APPLICATION_QUESTIONS,
-  applicationQuestion,
+  LEGACY_APPLICATION_QUESTIONS,
+  applicationFormVersion,
+  applicationQuestions,
+  applicationVersionMatches,
 } from '@/lib/applicationProgress';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as Record<string, unknown>;
     const draftKey = typeof body.draft_key === 'string' ? body.draft_key : '';
-    const question = applicationQuestion(body.question_key);
+    const version = applicationFormVersion(body.form_version);
     const revision = Number(body.revision);
     const answers = body.answers && typeof body.answers === 'object'
       ? body.answers as Record<string, unknown>
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
     const identity = body.identity && typeof body.identity === 'object'
       ? body.identity as Record<string, unknown>
       : {};
+    if (!version) return NextResponse.json({ error: 'Unsupported application version. Please refresh.' }, { status: 400 });
+    const questions = applicationQuestions(version, answers ?? {});
+    const question = questions.find(item => item.key === body.question_key);
 
     if (!UUID.test(draftKey)) {
       return NextResponse.json({ error: 'Invalid draft key' }, { status: 400 });
@@ -58,8 +62,8 @@ export async function POST(req: NextRequest) {
       submitted_at: null,
       application_state: 'draft',
       progress_revision: revision,
-      form_version: APPLICATION_FORM_VERSION,
-      total_questions: APPLICATION_QUESTION_COUNT,
+      form_version: version,
+      total_questions: questions.length,
       current_question_key: question.key,
       current_question_label: question.label,
       current_question_number: question.number,
@@ -77,7 +81,7 @@ export async function POST(req: NextRequest) {
     // Re-save all allowlisted answers, including later questions when someone
     // goes Back. The latest snapshot repairs any earlier failed write.
     const fieldsCollectedSoFar = new Set<string>(
-      APPLICATION_QUESTIONS
+      (version === 4 ? LEGACY_APPLICATION_QUESTIONS : APPLICATION_QUESTIONS)
         .flatMap(item => [...item.fields]),
     );
     for (const field of fieldsCollectedSoFar) {
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
       if (value !== undefined) update[field] = value;
     }
 
-    const lastAnswered = applicationQuestion(body.last_answered_question_key);
+    const lastAnswered = questions.find(item => item.key === body.last_answered_question_key);
     const completedQuestion = body.completed === true ? question : lastAnswered;
     if (completedQuestion) {
       update.last_answered_question_key = completedQuestion.key;
@@ -100,7 +104,7 @@ export async function POST(req: NextRequest) {
       update.last_answered_at = now;
     }
     if (body.completed === true) {
-      const next = APPLICATION_QUESTIONS.find(item => item.number === question.number + 1) ?? question;
+      const next = questions.find(item => item.number === question.number + 1) ?? question;
       update.current_question_key = next.key;
       update.current_question_label = next.label;
       update.current_question_number = next.number;
@@ -114,10 +118,13 @@ export async function POST(req: NextRequest) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const { data: existing, error: lookupError } = await admin
         .from('applications')
-        .select('id, application_state, progress_revision, deleted_at')
+        .select('id, application_state, progress_revision, deleted_at, form_version')
         .eq('draft_key', draftKey)
         .maybeSingle();
       if (lookupError) throw lookupError;
+      if (existing && !applicationVersionMatches(existing.form_version, version)) {
+        return NextResponse.json({ ok: true, skipped: true, refresh_required: true });
+      }
       if (existing && (existing.application_state === 'submitted' || existing.deleted_at || Number(existing.progress_revision) >= revision)) {
         return NextResponse.json({ ok: true, skipped: true });
       }
@@ -125,6 +132,7 @@ export async function POST(req: NextRequest) {
         ? await admin.from('applications').update(update).eq('id', existing.id)
           .or('application_state.is.null,application_state.eq.draft')
           .is('deleted_at', null)
+          .or(version === 5 ? 'form_version.eq.5' : 'form_version.is.null,form_version.lt.5')
           .or(`progress_revision.is.null,progress_revision.lt.${revision}`)
         : await admin.from('applications').insert([{ ...update, status: 'pending' }]);
       if (!result.error) return NextResponse.json({ ok: true });

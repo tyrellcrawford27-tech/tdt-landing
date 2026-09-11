@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from('applications')
-      .select('time_commitment, call_booked_at')
+      .select('time_commitment, call_booked_at, application_state, deleted_at')
       .ilike('email', escapeLike(email))
       .limit(10);
 
@@ -24,9 +24,12 @@ export async function GET(req: NextRequest) {
     // A person can have an older draft and a submitted application with the
     // same email. Never let whichever row PostgREST returns first mask the
     // submitted/booking state that actually matters here.
+    const submitted = data?.filter(row => !row.deleted_at && (
+      row.application_state === 'submitted' || (row.application_state == null && !!row.time_commitment)
+    )) ?? [];
     return NextResponse.json({
-      submitted: data?.some(row => !!row.time_commitment) ?? false,
-      booked: data?.some(row => !!row.call_booked_at) ?? false,
+      submitted: submitted.length > 0,
+      booked: submitted.some(row => !!row.call_booked_at),
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Server error';

@@ -125,7 +125,8 @@ export async function POST(req: NextRequest) {
     .from('applications')
     .select('id, call_booked_at, cal_booking_uid')
     .ilike('email', escapeLike(email))
-    .not('time_commitment', 'is', null) // only a completed application can be "booked"
+    .is('deleted_at', null)
+    .or('application_state.eq.submitted,and(application_state.is.null,time_commitment.not.is.null)')
     .limit(1);
 
   if (lookupError) {

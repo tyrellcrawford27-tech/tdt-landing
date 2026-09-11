@@ -9,6 +9,10 @@ function getResend(): Resend | null {
   return new Resend(key);
 }
 
+function html(value: string): string {
+  return value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
+}
+
 // Fires right after an application is stored. The booking link also lives on
 // the on-screen success step, but that step is lost the moment the tab
 // closes — this is what survives that. For a minor, the parent gets their
@@ -17,6 +21,7 @@ export async function sendBookingEmails(opts: {
   athleteName: string;
   athleteEmail: string;
   isMinor: boolean;
+  includeSupporter?: boolean;
   guardianName?: string | null;
   guardianEmail?: string | null;
 }): Promise<void> {
@@ -27,10 +32,11 @@ export async function sendBookingEmails(opts: {
   }
 
   const athleteFirst = opts.athleteName.trim().split(/\s+/)[0] || 'there';
+  const includeSupporter = opts.isMinor || opts.includeSupporter === true;
   const bookingUrl = buildBookingUrl({
     name: opts.athleteName,
     email: opts.athleteEmail,
-    guestEmail: opts.isMinor ? opts.guardianEmail : undefined,
+    guestEmail: includeSupporter ? opts.guardianEmail : undefined,
   });
 
   const sends: Promise<unknown>[] = [];
@@ -41,15 +47,15 @@ export async function sendBookingEmails(opts: {
       to: opts.athleteEmail,
       subject: 'Book your call with Jaiden',
       html: `
-        <p>Hey ${athleteFirst},</p>
-        <p>Your application's in. Next step is a 20-minute call with Jaiden — that's the actual review, not this form.</p>
-        <p><a href="${bookingUrl}">Book your call</a></p>
-        ${opts.isMinor ? `<p>${opts.guardianName ? opts.guardianName.trim().split(/\s+/)[0] : 'Your parent'} is invited on the call too — we've sent them their own note.</p>` : ''}
+        <p>Hey ${html(athleteFirst)},</p>
+        <p>Your answers are saved. The last step is a call with Jaiden to talk through your goals and whether the coaching is a good fit.</p>
+        <p><a href="${html(bookingUrl)}">Choose a call time</a></p>
+        ${includeSupporter && opts.guardianEmail ? '<p>Choose a time your parent or supporter can join too. We are also sending them a booking link.</p>' : ''}
       `,
     })
   );
 
-  if (opts.isMinor && opts.guardianEmail) {
+  if (includeSupporter && opts.guardianEmail) {
     const guardianFirst = opts.guardianName ? opts.guardianName.trim().split(/\s+/)[0] : 'there';
     sends.push(
       resend.emails.send({
@@ -57,9 +63,9 @@ export async function sendBookingEmails(opts: {
         to: opts.guardianEmail,
         subject: `${athleteFirst} applied to Think Different Training`,
         html: `
-          <p>Hi ${guardianFirst},</p>
-          <p>${athleteFirst} applied to Think Different Training, a basketball development program run by Jaiden Francis. The next step is a 20-minute call to see if it's the right fit — ${athleteFirst} is booking the time, and you're on it as a guest.</p>
-          <p><a href="${bookingUrl}">See the call details</a></p>
+          <p>Hi ${html(guardianFirst)},</p>
+          <p>${html(athleteFirst)} applied to Think Different Training, a basketball development program run by Jaiden Francis. The next step is a call to see if it is the right fit. Please choose a time together so you can both join.</p>
+          <p><a href="${html(bookingUrl)}">Choose a call time</a></p>
         `,
       })
     );
