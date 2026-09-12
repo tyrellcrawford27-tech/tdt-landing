@@ -5,9 +5,8 @@ import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
-import { ProgramStepIcon, ProgramIconStyles } from "@/components/ProgramStepIcon";
+import { HowItWorks, HundredDays, ProgramPricing, LandingFinalCTA } from "@/components/LandingProgram";
 import HeroCarousel, { type HeroSlide } from "@/components/HeroCarousel";
-import Spline from "@splinetool/react-spline";
 
 // Hero background rotation. Served files are public/`hero-N.webp` (1900w) plus a
 // `-sm` 1000w variant for phones. The full-res originals they were derived from
@@ -21,906 +20,27 @@ const HERO_SLIDES: HeroSlide[] = [
   { src: '/hero-2.webp', srcSm: '/hero-2-sm.webp', alt: 'Jaiden working a live one-on-one read with an athlete in the gym', objectPosition: '50% 40%' },
 ];
 
-// Program section scroll tuning — one step per PROGRAM_STEP_VH of scroll.
-// Shared between the step index and the container height so they can't drift
-// apart. Desktop/tablet pin each stage's card via position: sticky for
-// roughly PROGRAM_STEP_VH of scroll; mobile skips pinning entirely (see
-// ProgramMobile below) and just reveals each stage as it scrolls into view.
-const PROGRAM_STEP_VH = 42;       // scroll distance (% of viewport) per stage — lower = less scroll friction
-// Tail after the last stage, before the sticky container releases. Must clear
-// the pinned viewport's own height or the last stage is never reachable:
-// container - sticky >= (steps-1) * STEP_VH. At 3 stages that's a floor of
-// ~47svh; 65 leaves a short breath past the last panel without the half-screen
-// of dead scroll the old 90 left behind.
-const PROGRAM_END_BUFFER_VH = 65;
-
-type ProgramStep = {
-  slug: string;
-  label: string;
-  num: string;
-  icon: import('@/components/ProgramStepIcon').ProgramIconName;
-  title: string;
-  body: React.ReactNode; // ReactNode, not string, so copy can carry inline emphasis
-  image: string;
-  imagePosition?: string;
-};
-
-// Second-person address is italicised across the Program copy, so every stage
-// reads as spoken to the athlete rather than about them.
-const You = ({ children }: { children: React.ReactNode }) => <em className="italic">{children}</em>;
-
-const PROGRAM_STEPS: ProgramStep[] = [
-  { slug: 'diagnosis',    label: 'Diagnosis',    num: '01', icon: 'stethoscope', title: "Straight to the problem.", body: <>He's not watching for highlights. He's watching for the possession where <You>you</You> had the answer and didn't see it.</>, image: 'diagnosis.webp' },
-  { slug: 'prescription', label: 'Prescription', num: '02', icon: 'pillbottle',  title: "The fix begins.", body: <>Jaiden pulls what <You>you</You> work on from <You>your</You> film. Then explains one-on-one how to translate it into real games.</>, image: 'drill-true.webp' },
-  { slug: '100-days',     label: 'The 100 Days', num: '03', icon: 'repeat',      title: "Then it repeats.", body: <>Again and again, until there's nothing left to fix. A complete plan that's <You>yours</You> alone to translate into real games.</>, image: 'the-100-days.webp', imagePosition: 'center 52%' },
-];
-
-// Mobile Program section — pinned, one stage per swipe.
-//
-// This was originally a nested snap-scroller (its own overflow-y). That could
-// not hold the user in the section: it only occupied one viewport of *page*
-// height, so a swipe that the page picked up instead of the scroller carried
-// straight past all three stages. A nested scroller can never prevent that —
-// the page is free to scroll regardless of what the inner element does.
-//
-// So mobile now uses the same mechanic as desktop: the section reserves real
-// page height (one screen of scroll per stage) and pins a single viewport with
-// position: sticky. Scrolling past requires actually scrolling through every
-// stage, and the pinned screen is what produces the "freeze, then advance"
-// feel. Stages crossfade in place.
-//
-// Failure mode is deliberately soft: step defaults to 0, so if the scroll
-// handler never runs the first stage is still fully rendered rather than the
-// section going black — which is what the earlier opacity-gated version did.
-const PROGRAM_MOBILE_STAGE_VH = 50; // page scroll (% of viewport) per stage
-// The pinned pane is a full screen tall, so the container needs a screen of tail
-// past the last stage — without it the section releases the moment stage 03
-// appears. At exactly 100 every stage gets the same time on screen, so tune
-// PROGRAM_MOBILE_STAGE_VH (not this) to change how long the section holds.
-const PROGRAM_MOBILE_TAIL_VH = 100;
-
-// Which stage the page is currently scrolled to. Both the scroll handler and
-// the swipe read through this rather than trusting React state: a swipe that
-// lands before the next render — or part-way through a swipe's own smooth
-// scroll — would otherwise compute its target from a stale step and jump the
-// wrong way.
-function programMobileStep(startEl: HTMLElement | null) {
-  if (!startEl) return 0;
-  // Guard innerHeight — a collapsed viewport reports 0, and 0/0 is NaN, which
-  // would index PROGRAM_STEPS out of bounds.
-  const vh = window.innerHeight || 1;
-  const passed = Math.max(0, -startEl.getBoundingClientRect().top) / vh;
-  return Math.min(
-    PROGRAM_STEPS.length - 1,
-    Math.max(0, Math.floor(passed * (100 / PROGRAM_MOBILE_STAGE_VH))) || 0,
-  );
-}
-
-// Horizontal swipe thresholds for the mobile Program stages. Deliberately
-// strict: this sits inside a vertically-scrolling page, so anything that could
-// plausibly be a scroll must stay a scroll.
-const SWIPE_MIN_PX = 45;    // shorter than this is a tap or a jitter
-const SWIPE_RATIO = 1.3;    // must be this much more sideways than vertical
-const SWIPE_MAX_MS = 600;   // a flick, not a slow drag that wandered
-
-function ProgramMobile() {
-  const startRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(0);
-  const touchRef = useRef<{ x: number; y: number; t: number } | null>(null);
-
-  // Swipes scroll the page to the target stage rather than setting `step`
-  // directly. Scroll position stays the single source of truth, so the swipe
-  // and the scroll-down mechanic can't disagree — and the dots, which read off
-  // `step`, follow for free.
-  const goToStep = (i: number) => {
-    const el = startRef.current;
-    if (!el) return;
-    const clamped = Math.min(PROGRAM_STEPS.length - 1, Math.max(0, i));
-    if (clamped === programMobileStep(el)) return;
-    const vh = window.innerHeight || 1;
-    const startY = el.getBoundingClientRect().top + window.scrollY;
-    // Aim at the middle of the stage's window, not its edge — landing on a
-    // boundary leaves a stray pixel of scroll able to flip it back.
-    const target = startY + (clamped + 0.5) * (PROGRAM_MOBILE_STAGE_VH / 100) * vh;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top: Math.round(target), behavior: reduced ? 'auto' : 'smooth' });
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchRef.current = { x: t.clientX, y: t.clientY, t: performance.now() };
-  };
-
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const start = touchRef.current;
-    touchRef.current = null;
-    if (!start) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    // Never preventDefault anywhere in this gesture: the page has to keep
-    // scrolling vertically through it. Intent is judged only once, at the end.
-    if (Math.abs(dx) < SWIPE_MIN_PX) return;
-    if (Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
-    if (performance.now() - start.t > SWIPE_MAX_MS) return;
-    goToStep(programMobileStep(startRef.current) + (dx < 0 ? 1 : -1));
-  };
-
-  useEffect(() => {
-    const onScroll = () => setStep(programMobileStep(startRef.current));
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  return (
-    <div
-      className="md:hidden relative"
-      style={{ height: `${PROGRAM_STEPS.length * PROGRAM_MOBILE_STAGE_VH + PROGRAM_MOBILE_TAIL_VH}svh` }}
-    >
-      <div ref={startRef} />
-
-      {/* touch-action pan-y: vertical scroll and pinch stay native, but the
-          browser stops claiming horizontal drags — without it iOS reads a
-          right-swipe near the edge as back-navigation. */}
-      <div
-        className="sticky top-0 h-[100svh] overflow-hidden"
-        style={{ touchAction: 'pan-y pinch-zoom' }}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onTouchCancel={() => { touchRef.current = null; }}
-      >
-        {PROGRAM_STEPS.map((s, i) => (
-          <div
-            key={s.slug}
-            // pt clears the fixed nav, pb clears the dot rail — justify-center
-            // then centres the content in what's actually left, so it lands in
-            // the middle of the readable area rather than the raw viewport.
-            className="absolute inset-0 flex flex-col justify-center px-6 pt-[92px] pb-[64px]"
-            aria-hidden={step !== i}
-            style={{
-              opacity: step === i ? 1 : 0,
-              transform: `translateY(${step === i ? 0 : step > i ? -18 : 18}px)`,
-              transition: 'opacity 0.45s cubic-bezier(0.16,1,0.3,1), transform 0.45s cubic-bezier(0.16,1,0.3,1)',
-              pointerEvents: step === i ? 'auto' : 'none',
-            }}
-          >
-            <div className="flex-shrink-0">
-              <div className="flex flex-row items-center gap-[8px] text-[#C2552F] mb-[12px]">
-                <ProgramStepIcon name={s.icon} active={step === i} className="h-[16px] w-[16px] flex-shrink-0" />
-                <span className="text-[11px] font-semibold uppercase text-[rgba(179,73,41,0.85)]">{s.label}</span>
-              </div>
-              <h2 className="text-[30px] font-bold leading-[1.12] tracking-[-0.025em] text-white mb-[10px]">
-                {s.title}
-              </h2>
-              <p className="text-[14px] font-normal leading-[19px] text-white/50">
-                {s.body}
-              </p>
-            </div>
-
-            {/* 16/10 matches the source screenshots so `cover` fills the frame
-                with no side-cropping; min-h-0 lets it yield height on short
-                screens instead of overflowing. */}
-            <div
-              className="relative w-full min-h-0 shrink rounded-[16px] overflow-hidden mt-[20px]"
-              style={{
-                aspectRatio: '16 / 10',
-                maxHeight: '44svh',
-                background: '#0c0c0c',
-                border: '1px solid rgba(255,255,255,0.07)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-              }}
-            >
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `url(/${s.image})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: s.imagePosition ?? 'top',
-                }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
-            </div>
-          </div>
-        ))}
-
-        {/* Dot rail sits outside the stages so it never fades with them */}
-        <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 flex gap-[6px]" aria-hidden="true">
-          {PROGRAM_STEPS.map((s, i) => (
-            <span
-              key={s.slug}
-              className="h-[5px] rounded-full transition-all duration-300"
-              style={{
-                width: i === step ? 18 : 5,
-                background: i === step ? '#C2552F' : 'rgba(255,255,255,0.2)',
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Smootherstep — zero velocity AND zero acceleration at both ends.
- *
- * The page's usual curve, cubic-bezier(0.16,1,0.3,1), is an ease-out: it starts
- * at full speed. That's right for something appearing on its own, but wrong for
- * moving between two resting points, where an instant start reads as a jolt.
- * This leaves and arrives with no visible edge at either end, which is what a
- * stage-to-stage glide needs.
- *
- * Panels take their position linearly from scroll, so this curve alone shapes
- * the motion — see the note in the rAF loop about what compounding two of them
- * did.
- */
-const PROGRAM_SNAP_EASE = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
-
-/**
- * ProgramDesktop — md and up. Each stage is a full-bleed panel (copy + its own
- * screenshot) that slides across the viewport as you scroll, so the transition
- * IS the scroll rather than a fixed-duration animation it triggers.
- *
- * Two things this deliberately does NOT do:
- *
- * 1. It doesn't drive position from React state. A scroll-linked transform
- *    re-rendering this page's whole component tree on every scroll tick is what
- *    made the first attempt stutter — the work per frame swamped the frame. The
- *    rAF loop writes transforms straight to the DOM nodes instead, and the only
- *    state that changes is the active step index, which flips ~3 times total.
- *
- * 2. It doesn't put the page gutter on the clipping parent. Panels are
- *    absolute inset-0 of the sticky box and translate by 100% of their own
- *    width, so if that box were padded, one "panel width" would be narrower
- *    than the viewport and the outgoing panel would never clear the screen —
- *    it'd sit stranded in the margin next to the incoming one. The sticky box
- *    is full-bleed and each panel carries the gutter itself.
- */
-function ProgramDesktop() {
-  const startRef = useRef<HTMLDivElement>(null);
-  const stickyRef = useRef<HTMLDivElement>(null);
-  const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const railFillRef = useRef<HTMLDivElement>(null);
-  // The rail labels are rendered here but the scroll tween lives inside the
-  // effect below, so the effect hands the jump back out through this.
-  const jumpToStepRef = useRef<((i: number) => void) | null>(null);
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const start = startRef.current;
-    const sticky = stickyRef.current;
-    if (!start || !sticky) return;
-
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    let raf = 0;
-    let running = false;
-    let lastActive = -1;
-
-    const frame = () => {
-      const vh = window.innerHeight || 1;
-      const passed = Math.max(0, -start.getBoundingClientRect().top) / vh;
-      const unit = PROGRAM_STEP_VH / 100;
-      const idx = Math.min(PROGRAM_STEPS.length - 1, Math.max(0, passed / unit));
-      // Linear in scroll, deliberately. Easing the panel here as well as in the
-      // scroll tween that drives it compounds the two curves: measured, that
-      // put the panel 90% of the way across in the first 20% of the glide, then
-      // crawling — which reads as a snap, not a slide. One easing only, and it
-      // belongs on the scroll, so free-scrolling tracks the finger 1:1 too.
-      const position = idx;
-
-      panelRefs.current.forEach((panel, i) => {
-        if (!panel) return;
-        const offset = i - position;
-        const away = Math.min(1, Math.abs(offset));
-        if (reduced) {
-          // Same staging, no travel — a full-width horizontal sweep tied to
-          // scroll is exactly the motion this preference exists to opt out of.
-          panel.style.transform = 'translate3d(0,0,0)';
-          panel.style.opacity = String(1 - away);
-        } else {
-          panel.style.transform = `translate3d(${offset * 100}%,0,0)`;
-          // Slight fade on the way out softens the clip at the screen edge;
-          // not a crossfade, the slide still does the work.
-          panel.style.opacity = String(1 - away * 0.35);
-        }
-        panel.style.pointerEvents = away < 0.5 ? 'auto' : 'none';
-      });
-
-      // +0.5 puts the head at the CENTRE of the active stage's segment, which is
-      // exactly where that stage's label is centred below. Filling to the
-      // segment's trailing edge instead would park the dot on the divider
-      // between two labels, pointing at neither.
-      const fill = railFillRef.current;
-      if (fill) fill.style.width = `${((position + 0.5) / PROGRAM_STEPS.length) * 100}%`;
-
-      const nearest = Math.round(position);
-      if (nearest !== lastActive) {
-        lastActive = nearest;
-        setActiveStep(nearest);
-      }
-
-      if (running) raf = requestAnimationFrame(frame);
-    };
-
-    // Only spin the loop while the section is actually on screen.
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !running) {
-          running = true;
-          raf = requestAnimationFrame(frame);
-        } else if (!entry.isIntersecting && running) {
-          running = false;
-          cancelAnimationFrame(raf);
-        }
-      },
-      { rootMargin: '100px' },
-    );
-    io.observe(sticky);
-
-    return () => {
-      running = false;
-      cancelAnimationFrame(raf);
-      io.disconnect();
-    };
-  }, []);
-
-  // One flick, one stage — the feed-style scroll this section is going for.
-  //
-  // The earlier version let the page scroll freely and snapped back once you
-  // stopped, which meant every transition passed through the state this layout
-  // handles worst: outgoing panel, incoming panel and two screenshots on screen
-  // together. Capturing the gesture instead means that state only ever exists
-  // mid-glide, under our own easing, and never as somewhere you can come to
-  // rest.
-  //
-  // Capture is deliberately narrow. It only applies at md and up (the panels
-  // are display:none below that), only while the section is within its staged
-  // range, and it always releases at the ends — a flick down on the last stage
-  // or up on the first is left to the browser, so the section can never trap
-  // you. Touch is left alone entirely and falls through to the settle-after-
-  // scroll path below, since preventDefault on touchmove is a much easier way
-  // to break a page than it is to improve one.
-  useEffect(() => {
-    const start = startRef.current;
-    if (!start) return;
-
-    const desktop = window.matchMedia('(min-width: 768px)');
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-    let quiet: ReturnType<typeof setTimeout>;
-    let gliding = false;
-    let tweenRaf = 0;
-    let lastWheelAt = 0;
-    let lastDelta = 0;
-    // When the current run of swallowed events began, or 0 when not swallowing.
-    let holdingSince = 0;
-    // Stage the current glide is heading for, or null when idle. Chaining off
-    // this rather than off live scroll position is what lets a second flick
-    // mid-glide advance one more stage instead of re-reading a half-travelled
-    // scrollY and landing back where it started.
-    let targetIdx: number | null = null;
-
-    // Fixed duration for gesture-driven moves: every flick travels exactly one
-    // stage, so a distance-scaled duration would only make identical gestures
-    // feel inconsistent. Hand-rolled rather than scrollTo({behavior:'smooth'})
-    // because that gives no control over either duration or curve.
-    const GLIDE_MS = 720;
-    // Separating "one flick" from "still scrolling" is the whole problem here,
-    // and neither timing alone nor magnitude alone does it:
-    //
-    //   - A trackpad flick is a burst of dozens of events whose momentum tail
-    //     can outlast the glide, so a plain cooldown lets the tail advance a
-    //     second stage.
-    //   - A mouse wheel scrolled steadily also fires inside any gap threshold
-    //     wide enough to catch that tail, so a plain gap check freezes it.
-    //
-    // What actually separates them is that momentum DECAYS and deliberate input
-    // does not. So: a gap means a new gesture, and within a stream, a delta that
-    // stops shrinking means the user pushed again.
-    const GESTURE_GAP_MS = 90;
-    // Below this, |deltaY| is a momentum tail rather than anything a hand is
-    // doing. macOS decays well under it long before a tail ends.
-    const MOMENTUM_FLOOR = 8;
-    // Backstop. Whatever the heuristics decide, never hold the section still for
-    // longer than this while input is arriving — being stuck is a worse failure
-    // than advancing one stage too many, so this is the last word.
-    const HOLD_CAP_MS = 900;
-
-    const geometry = () => {
-      const vh = window.innerHeight || 1;
-      return {
-        vh,
-        unit: (PROGRAM_STEP_VH / 100) * vh, // one stage, in px of scroll
-        startY: start.getBoundingClientRect().top + window.scrollY,
-        lastIdx: PROGRAM_STEPS.length - 1,
-      };
-    };
-
-    const glideTo = (targetY: number) => {
-      const from = window.scrollY;
-      const delta = targetY - from;
-      if (Math.abs(delta) < 2) return;
-
-      if (reduced.matches) {
-        window.scrollTo(0, targetY);
-        return;
-      }
-
-      const html = document.documentElement;
-      // globals.css sets html { scroll-behavior: smooth }, which would animate
-      // every per-frame scrollTo below and fight this tween into a crawl.
-      const prevBehavior = html.style.scrollBehavior;
-      html.style.scrollBehavior = 'auto';
-
-      const t0 = performance.now();
-      gliding = true;
-
-      const stop = () => {
-        html.style.scrollBehavior = prevBehavior;
-        gliding = false;
-        targetIdx = null;
-      };
-
-      const step = (now: number) => {
-        if (!gliding) { stop(); return; } // cancelled
-        const t = Math.min(1, (now - t0) / GLIDE_MS);
-        window.scrollTo(0, from + delta * PROGRAM_SNAP_EASE(t));
-        if (t < 1) tweenRaf = requestAnimationFrame(step);
-        else stop();
-      };
-      cancelAnimationFrame(tweenRaf);
-      tweenRaf = requestAnimationFrame(step);
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      if (!desktop.matches || reduced.matches) return;
-
-      const { unit, startY, lastIdx } = geometry();
-      const passed = window.scrollY - startY;
-
-      // Outside the staged range the section behaves like any other content.
-      if (passed < -0.5 * unit || passed > lastIdx * unit + 0.5 * unit) return;
-
-      // Use horizontal scroll (deltaX) if present, otherwise use vertical (deltaY)
-      const scrollDelta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      const dir = scrollDelta > 0 ? 1 : -1;
-      // Chain off the in-flight target only while one is actually in flight. A
-      // glide interrupted before it settles (tab backgrounded mid-tween, so rAF
-      // never delivers the final frame) would otherwise leave a stale target
-      // here forever, and every later flick would be measured from a stage the
-      // page isn't on.
-      const from = gliding && targetIdx !== null ? targetIdx : Math.round(passed / unit);
-      const next = from + dir;
-
-      // Release at both ends so the section can be scrolled out of normally.
-      if (next < 0 || next > lastIdx) { holdingSince = 0; return; }
-
-      // Swallowed for the whole gesture, not just the event that advances —
-      // letting the momentum tail through would scroll the page underneath the
-      // glide.
-      e.preventDefault();
-
-      const now = performance.now();
-      const gap = now - lastWheelAt;
-      const delta = Math.abs(scrollDelta);
-      const shrinking = delta < lastDelta;
-      lastWheelAt = now;
-      lastDelta = delta;
-
-      const advance = () => {
-        holdingSince = 0;
-        glideTo(Math.round(startY + next * unit));
-        targetIdx = next;
-      };
-
-      // A gap in the stream is unambiguous: the last gesture ended.
-      if (gap >= GESTURE_GAP_MS) { advance(); return; }
-
-      // A tween in flight is its own bounded hold — it always ends, on a timer
-      // we set. So swallow freely here and reset the backstop's clock: counting
-      // glide time towards it is what let a flick's momentum trip the backstop
-      // and steal a second stage.
-      if (gliding) { holdingSince = 0; return; }
-
-      // Not gliding, and the stream is still arriving. This is the only branch
-      // that can swallow unboundedly, so it's the only one that needs a
-      // backstop.
-      if (!holdingSince) holdingSince = now;
-      if (now - holdingSince >= HOLD_CAP_MS) { advance(); return; }
-
-      // Momentum decays; a hand does not. A delta that has stopped shrinking,
-      // and is above the floor, is the user pushing again rather than the last
-      // flick running out. Strictly shrinking, because momentum quantised to
-      // small integers repeats values on the way down, and those repeats sit
-      // below the floor anyway.
-      if (shrinking || delta <= MOMENTUM_FLOOR) return;
-
-      advance();
-    };
-
-    const onKey = (e: KeyboardEvent) => {
-      if (!desktop.matches || reduced.matches) return;
-      const dir = e.key === 'ArrowDown' || e.key === 'PageDown' ? 1
-        : e.key === 'ArrowUp' || e.key === 'PageUp' ? -1
-        : 0;
-      if (!dir) return;
-
-      const { unit, startY, lastIdx } = geometry();
-      const passed = window.scrollY - startY;
-      if (passed < -0.5 * unit || passed > lastIdx * unit + 0.5 * unit) return;
-
-      const next = (gliding && targetIdx !== null ? targetIdx : Math.round(passed / unit)) + dir;
-      if (next < 0 || next > lastIdx) return;
-
-      e.preventDefault();
-      glideTo(Math.round(startY + next * unit));
-      targetIdx = next;
-    };
-
-    // Fallback for anything that isn't a wheel or an arrow key — touch,
-    // dragging the scrollbar, a trackpad fling that outruns the cooldown.
-    // Settles to the nearest stage once the page goes quiet.
-    const settle = () => {
-      if (!desktop.matches || gliding) return;
-      const { unit, startY, lastIdx } = geometry();
-      const passed = window.scrollY - startY;
-      if (passed < -0.15 * unit || passed > lastIdx * unit + 0.4 * unit) return;
-      const nearest = Math.min(lastIdx, Math.max(0, Math.round(passed / unit)));
-      glideTo(Math.round(startY + nearest * unit));
-    };
-
-    const onScroll = () => {
-      if (gliding) return; // our own tween, not the user
-      clearTimeout(quiet);
-      quiet = setTimeout(settle, 140); // wait out trackpad momentum
-    };
-
-    // Touch always wins outright — never fight a finger for the scroll.
-    const onTouch = () => { gliding = false; targetIdx = null; };
-
-    // Direct jump for the rail labels — same tween, so clicking a stage and
-    // flicking to it land identically instead of one hard-cutting.
-    jumpToStepRef.current = (i: number) => {
-      const { unit, startY, lastIdx } = geometry();
-      const target = Math.min(lastIdx, Math.max(0, i));
-      glideTo(Math.round(startY + target * unit));
-      targetIdx = target;
-    };
-
-    window.addEventListener('wheel', onWheel, { passive: false });
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('touchstart', onTouch, { passive: true });
-
-    return () => {
-      jumpToStepRef.current = null;
-      clearTimeout(quiet);
-      cancelAnimationFrame(tweenRaf);
-      document.documentElement.style.scrollBehavior = '';
-      window.removeEventListener('wheel', onWheel);
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('touchstart', onTouch);
-    };
-  }, []);
-
-  return (
-    <div
-      className="hidden md:block"
-      style={{ height: `${PROGRAM_STEPS.length * PROGRAM_STEP_VH + PROGRAM_END_BUFFER_VH}svh` }}
-    >
-      <div ref={startRef} />
-
-      <div
-        ref={stickyRef}
-        className="sticky top-[64px] lg:top-[98px] h-[calc(100svh-64px)] lg:h-[calc(100svh-98px)] overflow-hidden"
-      >
-        {PROGRAM_STEPS.map((s, i) => (
-          <div
-            key={s.slug}
-            ref={(el) => { panelRefs.current[i] = el; }}
-            // pb clears the progress rail below, so a tall screenshot or a long
-            // heading can't run into it on a short viewport.
-            className="absolute inset-0 flex flex-row items-center gap-[60px] lg:gap-[80px] px-6 md:px-12 lg:px-[100px] pb-[76px]"
-            // Seeded so the first paint matches where the rAF loop will put it
-            // — without this every panel renders stacked at 0 for one frame.
-            style={{ transform: `translate3d(${i * 100}%,0,0)`, willChange: 'transform, opacity' }}
-          >
-            {/* Left — label, heading, body */}
-            <div className="w-[42%] lg:w-[38%] flex-shrink-0 flex flex-col justify-center gap-[18px]">
-              <div className="flex flex-row items-center gap-[8px] text-[#C2552F]">
-                <ProgramStepIcon
-                  name={s.icon}
-                  active={i === activeStep}
-                  className="h-[16px] w-[16px] flex-shrink-0 md:h-[18px] md:w-[18px]"
-                />
-                <span className="text-[11px] font-semibold tracking-normal uppercase text-[rgba(179,73,41,0.85)]">
-                  {s.label}
-                </span>
-              </div>
-              <h2 className="text-[38px] md:text-[44px] lg:text-[50px] font-bold leading-[1.12] tracking-[-0.025em] text-white">
-                {s.title}
-              </h2>
-              <p className="text-[14px] md:text-[15px] font-normal leading-[19px] text-white/50 max-w-[400px]">
-                {s.body}
-              </p>
-            </div>
-
-            {/* Right — this stage's screenshot, travelling with its copy */}
-            <div className="flex flex-1 flex-col items-end justify-center h-full py-[16px]">
-              <div className="flex flex-col items-end gap-[3px] pb-[25px] flex-shrink-0 text-right">
-                <span className="text-[11px] font-medium text-white/25 tracking-[0.06em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {s.num} <span className="text-white/12">/ {String(PROGRAM_STEPS.length).padStart(2, '0')}</span>
-                </span>
-              </div>
-              <div className="relative w-full" style={{ maxHeight: '100%', aspectRatio: '16 / 10' }}>
-                <div
-                  className="absolute inset-0 rounded-[24px] pointer-events-none"
-                  style={{ background: 'radial-gradient(ellipse at 50% 110%, rgba(179,73,41,0.18) 0%, transparent 65%)' }}
-                />
-                <div
-                  className="relative w-full h-full overflow-hidden rounded-[16px]"
-                  style={{
-                    background: '#0c0c0c',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 100px rgba(0,0,0,0.65), 0 8px 32px rgba(0,0,0,0.4)',
-                  }}
-                >
-                  <div
-                    className="absolute inset-0 bg-cover"
-                    style={{
-                      backgroundImage: `url(/${s.image})`,
-                      backgroundPosition: s.imagePosition ?? 'top',
-                      backgroundColor: 'rgba(255,255,255,0.025)',
-                    }}
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.35))' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Progress rail — the one element in here that doesn't travel. The
-            panels slide past it, so it reads as a fixed measure of the whole
-            section rather than a piece of any single stage.
-
-            Sits outside the panel loop for that reason, and shares the panels'
-            gutter so the rule lines up with the copy above it. */}
-        <div className="absolute inset-x-0 bottom-[34px] px-6 md:px-12 lg:px-[100px] pointer-events-none">
-          <div className="relative h-px w-full" style={{ background: 'rgba(255,255,255,0.10)' }}>
-            {/* Stage boundaries, sitting on the rule rather than breaking it */}
-            {PROGRAM_STEPS.slice(1).map((s, i) => (
-              <span
-                key={s.slug}
-                className="absolute top-1/2 h-[7px] w-px -translate-y-1/2"
-                style={{ left: `${((i + 1) / PROGRAM_STEPS.length) * 100}%`, background: 'rgba(255,255,255,0.16)' }}
-              />
-            ))}
-
-            {/* Fill. Width is written by the rAF loop, not transitioned — it's
-                already following scroll every frame, so a transition would only
-                add lag between the rail and the panels it's measuring. */}
-            <div
-              ref={railFillRef}
-              className="absolute inset-y-0 left-0"
-              style={{ width: '16.667%', background: 'linear-gradient(90deg, rgba(179,73,41,0.35), #C2552F)' }}
-            >
-              <span
-                className="absolute right-0 top-1/2 h-[4px] w-[4px] -translate-y-1/2 translate-x-1/2 rounded-full"
-                style={{ background: '#C2552F', boxShadow: '0 0 6px rgba(194,85,47,0.55)' }}
-              />
-            </div>
-          </div>
-
-          {/* Stage names under their own segment — a map of the section, distinct
-              from the eyebrow inside each panel, which is that stage's heading.
-              Same type spec as that eyebrow (11px semibold uppercase, normal
-              tracking) so it reads as the section's own voice; tracking these
-              out instead is the generic micro-label look and matches nothing
-              else on the page. */}
-          <div className="relative mt-[6px] h-[26px]">
-            {PROGRAM_STEPS.map((s, i) => (
-              <button
-                key={s.slug}
-                type="button"
-                onClick={() => jumpToStepRef.current?.(i)}
-                aria-label={`Go to ${s.label}`}
-                aria-current={i === activeStep ? 'true' : undefined}
-                // The rail wrapper is pointer-events-none so it can sit over the
-                // panels without eating clicks; the labels opt themselves back in.
-                // py gives a real target height without moving the baseline.
-                className="pointer-events-auto absolute top-0 -translate-x-1/2 cursor-pointer whitespace-nowrap px-2 py-[5px] text-[11px] font-semibold uppercase tracking-normal"
-                style={{
-                  left: `${((i + 0.5) / PROGRAM_STEPS.length) * 100}%`,
-                  color: i === activeStep ? 'rgba(194,85,47,0.95)' : 'rgba(255,255,255,0.22)',
-                  transition: 'color 0.35s cubic-bezier(0.16,1,0.3,1)',
-                }}
-                onMouseEnter={(e) => {
-                  if (i !== activeStep) e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = i === activeStep ? 'rgba(194,85,47,0.95)' : 'rgba(255,255,255,0.22)';
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-// How far past the apply-cta section's top counts as "in" it, in viewports.
-// The panel holds on black and only resolves the CTA partway through its
-// scroll, so the active-label check measures from here rather than the
-// section's literal top.
-// Must land inside [0.525, 0.75]: the reveal completes at 0.525 and the
-// sticky panel unpins at 0.75 — within that span the CTA sits flex-centered
-// in the viewport; past it the whole stage rides up and off-center.
-const APPLY_CTA_NAV_OFFSET_VH = 0.7;
-
-// Pricing used to be a nav destination; the section it pointed at is now a
-// plain Apply push (see "apply-cta" below), so it isn't a distinct place to
-// navigate to anymore — dropped from both nav menus rather than pointing at
-// a section with nothing pricing-shaped left in it.
+// Every destination stays visible on desktop; mobile retains the Difference shortcut.
 const NAV_LINKS = [
-  { id: 'coach', label: 'The Coach' },
-  { id: 'program', label: 'Program' },
+  { id: 'how-it-works', label: 'How it works' },
+  { id: 'coach', label: 'The coach' },
+  { id: 'pricing', label: 'Pricing' },
   { id: 'faq', label: 'FAQ' },
 ] as const;
 
-// The comparison table is an especially useful orientation point on smaller
-// screens, so mobile exposes it directly without adding another desktop item.
 const MOBILE_NAV_LINKS = [
-  { id: 'coach', label: 'The Coach' },
-  { id: 'program', label: 'Program' },
+  ...NAV_LINKS.slice(0, 3),
   { id: 'difference', label: 'Difference' },
-  { id: 'faq', label: 'FAQ' },
-] as const;
-
-const SECTION_LABELS: Record<string, string> = {
-  coach: 'Meet the Coach',
-  program: 'The Program',
-  difference: 'Why TDT',
-  'apply-cta': 'Apply now',
-  faq: 'FAQ',
-};
-
-const COACH_IMAGES = [
-  { src: '/coach-1.jpg', position: 'center 45%' },
-  { src: '/coach-2.jpg', position: 'center 30%' },
-  { src: '/coach-3.jpg', position: 'top' },
-  { src: '/coach-4.jpg', position: 'top' },
-  { src: '/coach-5.jpg', position: 'top' },
+  ...NAV_LINKS.slice(3),
 ];
 
-const COACH_INTERVAL = 4200;
-// Each photo gets a distinct slow drift so the rotation never feels static
-const KB_ANIMS = ['kb-a', 'kb-b', 'kb-c', 'kb-d', 'kb-e'];
-
-function CoachCarousel() {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
-  // Read after mount so SSR and first paint agree; drives both the autoplay
-  // and the perpetual Ken Burns zoom.
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
-    const onChange = () => setReducedMotion(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
-  // setTimeout keyed on `current` so clicking a dot cleanly resets the timer
-  useEffect(() => {
-    if (paused || reducedMotion) return;
-    const id = setTimeout(() => setCurrent(i => (i + 1) % COACH_IMAGES.length), COACH_INTERVAL);
-    return () => clearTimeout(id);
-  }, [current, paused, reducedMotion]);
-
-  return (
-    <div
-      className="relative flex w-full lg:w-[565px] items-center justify-center lg:justify-end"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      // Touch has no hover, so give phones their own pause affordance:
-      // press and hold stops the rotation.
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setPaused(false)}
-      onTouchCancel={() => setPaused(false)}
-      role="img"
-      aria-label="Photos of coach Jaiden Francis training athletes"
-    >
-      <style>{`
-        @keyframes kb-a { from { transform: scale(1.05) translate(0, 0);        } to { transform: scale(1.16) translate(-2.2%, -1.6%); } }
-        @keyframes kb-b { from { transform: scale(1.14) translate(1.6%, 0);     } to { transform: scale(1.04) translate(-1.6%, 1.2%); } }
-        @keyframes kb-c { from { transform: scale(1.05) translate(0, 1.2%);     } to { transform: scale(1.15) translate(1.8%, -1.6%); } }
-        @keyframes kb-d { from { transform: scale(1.15) translate(-1.6%, -1%);  } to { transform: scale(1.05) translate(1.2%, 1.6%);  } }
-        @keyframes kb-e { from { transform: scale(1.06) translate(1.2%, -1.2%); } to { transform: scale(1.16) translate(-1.6%, 1.6%); } }
-        @keyframes coach-fill { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-      `}</style>
-
-      {/* Ambient accent glow behind the frame */}
-      <div
-        className="absolute right-0 hidden lg:block h-[434px] w-[543px] rounded-[40px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 55%, rgba(179,73,41,0.16) 0%, transparent 68%)', filter: 'blur(22px)' }}
-      />
-
-      {/* Progress indicators — active one fills as its slide plays */}
-      <div className="absolute left-0 top-0 z-10 hidden lg:flex h-full w-[12px] flex-col items-center justify-center gap-[9px]">
-        {COACH_IMAGES.map((_img, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className="relative cursor-pointer overflow-hidden rounded-full transition-all duration-500"
-            style={{
-              width: 3,
-              height: current === i ? 26 : 10,
-              backgroundColor: 'rgba(255,255,255,0.18)',
-            }}
-            aria-label={`Go to image ${i + 1}`}
-          >
-            {current === i && (
-              <span
-                key={`${current}-${paused}`}
-                className="absolute inset-0 rounded-full bg-white"
-                style={
-                  paused
-                    ? undefined
-                    : { transformOrigin: 'top', animation: `coach-fill ${COACH_INTERVAL}ms linear forwards` }
-                }
-              />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Frame */}
-      <div className="relative w-full aspect-video lg:aspect-auto lg:h-[434px] lg:w-[543px] overflow-hidden rounded-[12px] border border-white/40 bg-[#111111]">
-        {COACH_IMAGES.map((img, i) => (
-          <div
-            key={img.src}
-            className="absolute inset-0 overflow-hidden"
-            style={{ opacity: current === i ? 1 : 0, transition: 'opacity 0.9s cubic-bezier(0.4,0,0.2,1)' }}
-          >
-            <div
-              className="absolute inset-0 bg-cover"
-              style={{
-                backgroundImage: `url(${img.src})`,
-                backgroundPosition: img.position,
-                animation: reducedMotion ? undefined : `${KB_ANIMS[i % KB_ANIMS.length]} 9s ease-in-out infinite alternate`,
-                willChange: reducedMotion ? undefined : 'transform',
-              }}
-            />
-          </div>
-        ))}
-        {/* Bottom vignette */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_55%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
-      </div>
-    </div>
-  );
-}
-
-// ── Early-pricing popover ─────────────────────────────────────────────────────
-// Liquid-glass card that morphs out of the "Questions about pricing?" link.
-// The goo layer (SVG alpha-threshold filter) makes the neck pinch off from the
-// button like a droplet; the glass card crossfades in on top of it.
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
-  const [tp, setTp] = useState(0);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [navHovered, setNavHovered] = useState(false);
-  const applyBtnRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [tp, setTp] = useState(0); // dark→light scroll progress through transition zone
+  const [desktopTransition, setDesktopTransition] = useState(false);
   const [coachVisible, setCoachVisible] = useState(false);
   const [coachExpanded, setCoachExpanded] = useState(false);
   // Open height of the collapsed half of the coach letter. Animating to a
@@ -948,8 +68,8 @@ export default function Home() {
   const [tableVisible, setTableVisible] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
-  const transitionZoneRef = useRef<HTMLDivElement>(null);
   const coachContentRef = useRef<HTMLDivElement>(null);
+  const transitionZoneRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
@@ -960,33 +80,37 @@ export default function Home() {
     (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') as ScrollBehavior;
 
   useEffect(() => {
-    const SECTIONS = ['coach', 'program', 'difference', 'apply-cta', 'faq'];
+    const query = window.matchMedia('(min-width: 768px)');
+    const sync = () => setDesktopTransition(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    const SECTIONS = ['how-it-works', '100-days', 'coach', 'difference', 'pricing', 'faq', 'apply-cta'];
     const onScroll = () => {
       setScrolled(prev => window.scrollY > (prev ? 40 : 80));
-      if (transitionZoneRef.current) {
+      if (desktopTransition && transitionZoneRef.current) {
         const r = transitionZoneRef.current.getBoundingClientRect();
-        // Progress across only the pinned span (container height minus the sticky screen),
-        // so the black→white flip fully completes while the panel still covers the viewport.
         const pinnable = Math.max(1, r.height - window.innerHeight);
         setTp(Math.max(0, Math.min(1, -r.top / pinnable)));
+      } else {
+        setTp(0);
       }
       const mid = window.innerHeight * 0.45;
       let active = '';
       for (const id of SECTIONS) {
         const el = document.getElementById(id);
         if (!el) continue;
-        // The apply CTA opens on a screen of held black before the light flips
-        // and the content resolves, so measuring from its top would light the
-        // label while the panel still reads as the quote above it.
-        const enterAt = id === 'apply-cta' ? window.innerHeight * APPLY_CTA_NAV_OFFSET_VH : 0;
-        if (el.getBoundingClientRect().top + enterAt <= mid) active = id;
+        if (el.getBoundingClientRect().top <= mid) active = id;
       }
       setActiveSection(active);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [desktopTransition]);
 
 
 
@@ -1025,44 +149,49 @@ export default function Home() {
     if (!menuOpen) return () => { document.body.style.overflow = ''; };
     // Modal behaviour while open: Escape dismisses, focus moves into the
     // dialog, and returns to the hamburger when it closes.
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    const returnFocus = menuButtonRef.current;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+      if (e.key !== 'Tab') return;
+      const targets = document.querySelectorAll<HTMLElement>('#mobile-menu a[href], #mobile-menu button');
+      const first = targets[0];
+      const last = targets[targets.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
     window.addEventListener('keydown', onKey);
     menuCloseRef.current?.focus({ preventScroll: true });
     return () => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
-      menuButtonRef.current?.focus({ preventScroll: true });
+      returnFocus?.focus({ preventScroll: true });
     };
   }, [menuOpen]);
 
   const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
-  // Cinematic dark→light transition: hold true black, then a fast bright flip like stage lights snapping on.
-  const flip   = Math.min(1, Math.max(0, (tp - 0.08) / 0.32)); // short black hold, then a punchy flip
-  const tt     = flip * flip * (3 - 2 * flip);                 // eased colour progress (drives nav + panel together)
-  const flash  = Math.sin(flip * Math.PI);                     // white burst, peaks in the middle of the flip
-  const reveal = Math.min(1, Math.max(0, (tp - 0.42) / 0.28)); // card fades/scales in, revealed by the light
+  // Cinematic dark→light transition: hold true black, then a quick flip to cream.
+  const flip   = Math.min(1, Math.max(0, (tp - 0.08) / 0.32));
+  const tt     = flip * flip * (3 - 2 * flip);
+  const flash  = Math.sin(flip * Math.PI);
+  // The beam owns the first part of the change. Only bring the dark-on-light
+  // content in once the surface is genuinely bright, otherwise it reads as a
+  // grey pricing panel floating over a black page.
+  const reveal = Math.min(1, Math.max(0, (flip - 0.78) / 0.12));
   const revealEased = reveal * reveal * (3 - 2 * reveal);
-  const isDark = tt < 0.5;
-  const isCompact = !!activeSection;
-  const showCompact = isCompact && !navHovered;
-
-  const panelBg = `rgb(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)})`;
-
-  // The browser chrome and the overscroll gutter live outside React's tree, so
-  // they don't follow the flip on their own — which left iOS holding a black
-  // status bar over a cream page. Both track `tt` here.
-  //
-  // `tt` is a good proxy for the whole page, not just the panel: it pins to 0
-  // above the transition zone (hero through quote are all #000000) and to 1
-  // below it (FAQ and footer are both #FBF6F2), and those are exactly the two
-  // endpoints it lerps between.
-  //
-  // Quantised because iOS animates every theme-color change: one write per
-  // scroll frame leaves the chrome chasing the page. Sixteen steps still reads
-  // as a gradient and bounds the writes across the flip.
+  const isDark = desktopTransition
+    ? tt < 0.5
+    : !['pricing', 'faq', 'apply-cta'].includes(activeSection);
   const CHROME_STEPS = 16;
   const ttStepped = Math.round(tt * CHROME_STEPS) / CHROME_STEPS;
-  const chromeSurface = `rgb(${lerp(0,251,ttStepped)},${lerp(0,246,ttStepped)},${lerp(0,242,ttStepped)})`;
+  const chromeSurface = desktopTransition
+    ? `rgb(${lerp(0,251,ttStepped)},${lerp(0,246,ttStepped)},${lerp(0,242,ttStepped)})`
+    : isDark ? '#000000' : '#FBF6F2';
+  const panelBg = `rgb(${lerp(0, 251, tt)},${lerp(0, 246, tt)},${lerp(0, 242, tt)})`;
 
   useEffect(() => {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', chromeSurface);
@@ -1075,24 +204,19 @@ export default function Home() {
     document.documentElement.style.removeProperty('--page-surface');
   }, []);
 
-  const navBgStyle = { backgroundColor: `rgba(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)},${tt < 0.5 ? 0.96 : 0.92})` };
-  const navBorderStyle = { borderColor: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},0.12)` };
-  // At rest the pill has no background of its own, so nav type sits directly on
-  // the hero photo. The carousel shots include white gym walls — measured ~0.78
-  // luminance behind the pill — so the at-rest treatment runs near-opaque with a
-  // tight double shadow that holds the glyph edges. Once the pill picks up its
-  // blurred background (scrolled / compact) it drops back to the quieter values.
   const navRestShadow = '0 1px 2px rgba(0,0,0,0.85), 0 2px 14px rgba(0,0,0,0.55)';
-  const navAtRest = !scrolled && !showCompact;
   const navTextStyle = {
-    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${navAtRest ? 0.95 : 0.6})`,
-    textShadow: navAtRest ? navRestShadow : 'none',
+    color: isDark ? 'rgba(255,255,255,0.9)' : '#584a41',
+    textShadow: scrolled ? 'none' : navRestShadow,
+    transition: 'color 0.4s ease, text-shadow 0.4s ease',
   };
   const navLinkStyle = (id: string) => ({
-    color: `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},${activeSection === id ? 1 : navAtRest ? 0.9 : 0.4})`,
-    transition: 'color 0.3s ease',
+    color: isDark
+      ? activeSection === id ? '#ffffff' : 'rgba(255,255,255,0.78)'
+      : activeSection === id ? '#1a0f0a' : '#736359',
     fontWeight: activeSection === id ? '500' : '400',
-    textShadow: navAtRest ? navRestShadow : 'none',
+    textShadow: scrolled ? 'none' : navRestShadow,
+    transition: 'color 0.4s ease, text-shadow 0.4s ease, font-weight 0.4s ease',
   });
 
   const fadeUp = (delay: number): React.CSSProperties => ({
@@ -1124,21 +248,6 @@ export default function Home() {
   return (
     <div className="relative min-h-screen">
 
-      {/* ── Preloads ──
-          These live here, not in the root layout, because they are landing-page
-          assets: in the layout they fired on /apply, /privacy and /terms
-          too, none of which render a single <img>. React hoists
-          these into <head> from here, so they still start during HTML parse —
-          they're just scoped to the one route that actually uses them.
-
-          Only the Program shots are listed. The hero needs nothing static: React
-          emits slide 1's preload off the fetchPriority="high" <img> in
-          HeroCarousel, and slide 2 is warmed by the carousel's own effect ~5s
-          (HOLD_MS) before the first crossfade. Both of those carry the srcset,
-          so phones get the -sm file; a plain href preload here could not. */}
-      <link rel="preload" as="image" href="/diagnosis.webp" />
-      <link rel="preload" as="image" href="/drill-true.webp" />
-
       {/* ── Film grain overlay ── */}
       <FilmGrain />
 
@@ -1159,7 +268,6 @@ export default function Home() {
           backdropFilter: 'blur(30px) saturate(0.72)',
           WebkitBackdropFilter: 'blur(30px) saturate(0.72)',
           overscrollBehavior: 'contain',
-          touchAction: 'none',
           paddingTop: 'calc(10px + env(safe-area-inset-top))',
         }}
         onClick={() => setMenuOpen(false)}
@@ -1179,8 +287,8 @@ export default function Home() {
           className="relative z-10 mx-[10px] flex min-h-0 flex-[1_1_auto] flex-col overflow-hidden rounded-[30px] border border-white/70"
           onClick={(e) => e.stopPropagation()}
           style={{
-            maxHeight: 'min(68dvh, 620px)',
-            minHeight: '360px',
+            maxHeight: 'min(74dvh, calc(100dvh - 180px))',
+            minHeight: 'min(220px, calc(100dvh - 180px))',
             background: 'linear-gradient(145deg, var(--menu-glass-start), var(--menu-glass-end))',
             backdropFilter: 'blur(34px) saturate(1.08)',
             WebkitBackdropFilter: 'blur(34px) saturate(1.08)',
@@ -1197,7 +305,7 @@ export default function Home() {
             <div className="flex h-[42px] w-[38px] items-center justify-center">
               <TDTLogo letterColor="rgb(26,15,10)" />
             </div>
-            <span className="text-[9px] font-semibold uppercase tracking-[0.03em] text-[#1A0F0A]/50">
+            <span className="text-[12px] font-medium tracking-normal text-[#1A0F0A]/60">
               Menu
             </span>
             <button
@@ -1218,8 +326,9 @@ export default function Home() {
                 <a
                   key={id}
                   href={`#${id}`}
-                  className="group relative grid min-h-[78px] grid-cols-[28px_1fr_28px] items-center border-b border-black/[0.11] text-[#1A0F0A] last:border-b-0 active:bg-black/[0.04]"
+                  className="group relative grid grid-cols-[28px_1fr_28px] items-center border-b border-black/[0.11] text-[#1A0F0A] last:border-b-0 active:bg-black/[0.04]"
                   style={{
+                    minHeight: 'clamp(44px, 8dvh, 62px)',
                     opacity: menuOpen ? 1 : 0,
                     transform: menuOpen ? 'translateY(0)' : 'translateY(18px)',
                     transition: menuOpen
@@ -1232,7 +341,7 @@ export default function Home() {
                     const jump = (triesLeft: number) => {
                       if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
                       const el = document.getElementById(id);
-                      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
+                      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 64, behavior: 'instant' });
                     };
                     setTimeout(() => jump(30), 16);
                   }}
@@ -1240,7 +349,7 @@ export default function Home() {
                   <span className="text-[10px] font-semibold tracking-normal text-[var(--brand-terra)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     0{i + 1}
                   </span>
-                  <span className="text-center text-[clamp(30px,9vw,42px)] font-medium leading-none tracking-[-0.045em]">
+                  <span className="text-center text-[clamp(25px,7vw,34px)] font-medium leading-none tracking-[-0.025em]">
                     {label}
                   </span>
                   <span className="mx-auto h-px w-3 bg-[#1A0F0A]/25 transition-all duration-300 group-active:w-5" />
@@ -1276,138 +385,54 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Header ── */}
+      {/* The frosted header keeps its destinations visible while scrolling. */}
       <header className="fixed z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
         <div
-          className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border pointer-events-auto"
-          // Pointer-type-gated: on touch, mouseenter fires on tap and never
-          // reliably leaves, sticking the pill out of compact mode.
-          //
-          // Also skip the expand entirely when the cursor arrives from the
-          // right, over/near the Apply button: expanding shoves Apply further
-          // right just as the user is closing in on it, so a click meant for
-          // Apply can land short. Approaching from the left (logo, nav links)
-          // still expands as normal.
-          onPointerEnter={(e) => {
-            if (e.pointerType !== 'mouse') return;
-            if (showCompact && applyBtnRef.current) {
-              const btnLeft = applyBtnRef.current.getBoundingClientRect().left;
-              if (e.clientX >= btnLeft - 24) return;
-            }
-            setNavHovered(true);
-          }}
-          onPointerLeave={() => setNavHovered(false)}
+          className="grid grid-cols-[auto_1fr_auto] items-center border pointer-events-auto"
           style={{
-            width: 'calc(100% - 80px)',
-            maxWidth: showCompact ? '380px' : scrolled ? '960px' : '100%',
-            height: showCompact ? '52px' : scrolled ? '52px' : '60px',
-            paddingLeft: showCompact ? '16px' : scrolled ? '20px' : '0px',
-            paddingRight: showCompact ? '16px' : scrolled ? '20px' : '0px',
-            borderRadius: scrolled || showCompact ? '9999px' : '16px',
-            backdropFilter: scrolled || showCompact ? 'blur(20px)' : 'none',
-            backgroundColor: scrolled || showCompact
-              ? isDark
-                ? `rgba(255,255,255,${showCompact ? 0.08 : 0.10})`
-                : `rgba(251,246,242,${showCompact ? 0.55 : 0.65})`
-              : 'transparent',
-            borderColor: isDark
-              ? `rgba(255,255,255,${showCompact ? 0.12 : scrolled ? 0.10 : 0})`
-              : `rgba(26,15,10,${scrolled || showCompact ? 0.10 : 0})`,
-            boxShadow: !(scrolled || showCompact) ? 'none'
-              : isDark
-                ? '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.09)'
-                : '0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-            transition: 'all 0.5s cubic-bezier(0.4,0,0.2,1)',
+            width: 'calc(100% - 40px)',
+            maxWidth: scrolled ? '1080px' : '1320px',
+            height: scrolled ? '52px' : '60px',
+            paddingInline: scrolled ? '16px' : '4px',
+            borderRadius: '9999px',
+            backdropFilter: scrolled ? 'blur(20px)' : 'none',
+            WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
+            backgroundColor: scrolled ? isDark ? 'rgba(22,18,15,0.85)' : 'rgba(251,246,242,0.9)' : 'transparent',
+            borderColor: scrolled ? isDark ? 'rgba(255,255,255,0.13)' : 'rgba(26,15,10,0.12)' : 'transparent',
+            boxShadow: scrolled ? '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
+            transition: 'background-color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, max-width 0.4s ease, padding 0.4s ease',
           }}
         >
-          {/* Logo — the button is a fixed 44px tap target; the inner div carries
-              the animated visual size and clips the oversized SVG as before. The
-              negative margin keeps the pill's visual metrics unchanged. */}
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })}
-            className="flex h-11 w-11 -mx-[5px] cursor-pointer items-center justify-center flex-shrink-0"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center"
             aria-label="Back to top"
           >
-            <div className={`flex items-center justify-center overflow-hidden transition-all duration-500 ${showCompact ? 'h-[38px] w-[34px]' : scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}>
-              <TDTLogo letterColor={`rgb(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)})`} />
+            <div className="flex h-[40px] w-[36px] items-center justify-center overflow-hidden">
+              <TDTLogo letterColor={isDark ? '#ffffff' : '#1A0F0A'} />
             </div>
           </button>
-
-          {/* Desktop center — crossfades between nav links and section label */}
-          <div className="relative hidden lg:flex items-center justify-center" style={{ minWidth: 0 }}>
-            {/* Nav links — shown when not in a section */}
-            <nav
-              className="flex items-center justify-center gap-[30px] text-[14px] tracking-[-0.02em] transition-all duration-500"
-              style={{
-                opacity: showCompact ? 0 : 1,
-                transform: showCompact ? 'translateY(-5px)' : 'translateY(0)',
-                pointerEvents: showCompact ? 'none' : 'auto',
-              }}
-            >
-              {NAV_LINKS.map(({ id, label }) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  className={`transition-colors duration-150 ${isDark ? 'hover:!text-white' : 'hover:!text-[#1A0F0A]'}`}
-                  style={navLinkStyle(id)}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: scrollBehavior() });
-                  }}
-                >
-                  {label}
-                </a>
-              ))}
-            </nav>
-            {/* Section label — shown when in a section. All possible labels are
-                mounted at once, stacked on the same centered anchor point, and
-                cross-fade via opacity/blur/translateY as activeSection changes —
-                the same "keep every state's node alive, transition between them"
-                idiom the coach carousel uses, so the swap animates instead of
-                snapping and there's no enter/exit unmount choreography to get
-                right for a fixed, small set of labels. */}
-            <span
-              className="absolute left-1/2 whitespace-nowrap transition-all duration-500"
-              style={{
-                opacity: showCompact ? 1 : 0,
-                transform: showCompact ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(5px)',
-                color: isDark ? 'rgba(255,255,255,0.85)' : `rgba(${lerp(255,26,tt)},${lerp(255,15,tt)},${lerp(255,10,tt)},0.85)`,
-                pointerEvents: 'none',
-              }}
-            >
-              {Object.entries(SECTION_LABELS).map(([id, label]) => (
-                <span
-                  key={id}
-                  className="absolute left-1/2 top-1/2 text-[14px] font-medium tracking-[-0.02em] whitespace-nowrap"
-                  style={{
-                    transform: `translate(-50%, -50%) translateY(${activeSection === id ? 0 : -6}px)`,
-                    opacity: activeSection === id ? 1 : 0,
-                    filter: activeSection === id ? 'blur(0px)' : 'blur(3px)',
-                    transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s cubic-bezier(0.16,1,0.3,1)',
-                  }}
-                >
-                  {label}
-                </span>
-              ))}
-            </span>
-          </div>
-
-          {/* Right side — desktop actions + mobile hamburger */}
-          <div className="col-start-3 flex items-center justify-end">
-            <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
-              {/* Log In fades out in compact mode */}
+          <nav aria-label="Main navigation" className="hidden lg:flex items-center justify-center gap-[24px] text-[14px]">
+            {NAV_LINKS.map(({ id, label }) => (
               <a
-                href="https://app.thinkdifferenttraining.com/access"
-                className={`transition-all duration-500 hover:opacity-100 ${isDark ? 'hover:text-white' : 'hover:text-[#1A0F0A]'}`}
-                style={{ opacity: showCompact ? 0 : 1, pointerEvents: showCompact ? 'none' : 'auto', marginRight: showCompact ? '-60px' : '0' }}
+                key={id}
+                href={`#${id}`}
+                aria-current={activeSection === id ? 'location' : undefined}
+                className="whitespace-nowrap py-3 transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-4"
+                style={navLinkStyle(id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior() });
+                }}
               >
-                Log In
+                {label}
               </a>
-              <div ref={applyBtnRef}>
-                <CTAButton href="/apply" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>
-                  Apply
-                </CTAButton>
-              </div>
+            ))}
+          </nav>
+          <div className="col-start-3 flex items-center justify-end">
+            <div className="hidden lg:flex items-center gap-[16px] text-[14px]" style={navTextStyle}>
+              <a href="https://app.thinkdifferenttraining.com/access" className="whitespace-nowrap py-3 transition-opacity hover:opacity-70">Log in</a>
+              <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">Apply</CTAButton>
             </div>
             <button
               ref={menuButtonRef}
@@ -1419,7 +444,7 @@ export default function Home() {
               aria-controls="mobile-menu"
               aria-haspopup="dialog"
             >
-              <svg width="22" height="15" viewBox="0 0 22 15" fill="none">
+              <svg width="22" height="15" viewBox="0 0 22 15" fill="none" aria-hidden="true">
                 <path d="M0 1H22M0 7.5H22M0 14H22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </button>
@@ -1430,23 +455,16 @@ export default function Home() {
       <main className="flex w-full flex-col">
 
         {/* ── Hero ── */}
-        <section className="relative w-full min-h-screen bg-black" style={{ minHeight: '100dvh' }}>
+        <section className="relative w-full min-h-screen bg-black" style={{ minHeight: 'max(720px, 100svh)' }}>
           {/* Background carousel */}
           <HeroCarousel slides={HERO_SLIDES} />
-          {/* Bottom scrim. Heavier than it was under the old placeholder: the
-              carousel shots are bright gym floors, and the headline's white→dark
-              gradient fill needs something to sit on. Reaches true rgba(0,0,0,1)
-              by 100% — not just "dark enough to read text on" — because the
-              section directly below (Coach) is solid #000000; stopping short
-              (the old curve topped out at 0.82) left a visible seam where
-              photo-tinted-black met true black. The last stretch (92%→100%)
-              carries most of that final ramp so it reads as the photo
-              dissolving into the section below, not a visible gradient band.  */}
+          {/* A directional scrim keeps the longer copy legible over every
+              carousel image and fades into the black section below. */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.07) 40%, rgba(0,0,0,0.35) 68%, rgba(0,0,0,0.85) 92%, rgba(0,0,0,1) 100%)',
+                'linear-gradient(90deg, rgba(0,0,0,0.48) 0%, transparent 82%), linear-gradient(180deg, transparent 15%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.65) 68%, rgba(0,0,0,0.9) 92%, #000 100%)',
             }}
           />
 
@@ -1465,23 +483,20 @@ export default function Home() {
 
           {/* Bottom-left content */}
           <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[50px] md:pb-[80px]">
-            {/* Sits higher in the frame than the headline, where the bottom
-                scrim has only reached ~20% — too thin to carry white type on a
-                bright floor by itself, so it brings its own shadow. */}
-            {/* Plain white here; the white→dark gradient fill is reapplied at
-                md and up by .hero-headline in globals.css. It can't stay inline
-                because it needs a media query to come off on phones. */}
-            <h1 className="hero-headline text-white text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]">
+            <p className="mb-4 inline-flex max-w-fit items-center rounded-full border border-white/35 bg-gradient-to-r from-white/28 via-white/14 to-white/10 px-5 py-2 text-[12px] md:text-[13px] leading-none font-medium tracking-[-0.01em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_20px_40px_rgba(255,255,255,0.08)] ring-1 ring-white/18 backdrop-blur-[18px]" style={{ textShadow: navRestShadow }}>
+              100 days of private coaching.
+            </p>
+            <h1 className="text-white text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]">
               You&apos;re better in practice
               <br />
               than in games
             </h1>
-            <p className="text-[14px] md:text-[16px] font-normal leading-[19px] tracking-[-0.02em] text-white/60 max-w-[507px] mb-[20px]">
-              <em className="italic">100 days</em> of Coach Jaiden Francis breaking down your game and building personalised drills around what you need to improve.
+            <p className="text-[16px] font-normal leading-[1.6] text-white/80 max-w-[565px] mb-[24px]">
+              Over 100 days, Coach Jaiden Francis breaks down your film, gives focused coaching, and sends custom drills for you to practice on your court.
             </p>
-            <div className="flex items-center gap-[16px]">
-              <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">
-                Claim your spot
+            <div className="flex flex-wrap items-center gap-x-[22px] gap-y-[16px]">
+              <CTAButton href="/apply" className="h-[46px] px-[24px] text-[15px]">
+                Apply for coaching
               </CTAButton>
               <a
                 onClick={(e) => {
@@ -1493,7 +508,7 @@ export default function Home() {
                 className="group inline-flex items-center text-[14px] font-normal tracking-[-0.02em] text-white/80 transition-colors duration-200 ease-out hover:text-white"
               >
                 <span className="underline underline-offset-4 decoration-white/40 transition-colors duration-200 ease-out group-hover:decoration-white/70">
-                  See the program
+                  See how it works
                 </span>
                 <span className="inline-block ml-[6px] transition-transform duration-300 ease-out group-hover:translate-x-[4px]">→</span>
               </a>
@@ -1502,10 +517,15 @@ export default function Home() {
 
         </section>
 
+        <HowItWorks />
+        <HundredDays />
+
         {/* ── Coach ── */}
         <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
           <div className="flex w-full max-w-[1156px] flex-col lg:flex-row items-center lg:items-start gap-[50px] lg:gap-[100px]">
             <div ref={coachContentRef} className="flex w-full lg:w-[491px] flex-col justify-center gap-[30px]">
+              <div>
+              </div>
               <div>
                 {/* No gap on this column: the collapsed panel is zero-height, so
                     a flex gap would sit on both sides of it and push the toggle
@@ -1517,13 +537,13 @@ export default function Home() {
                       hands off to the toggle. */}
                   <div className="flex flex-col gap-[18px]">
                     <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(0) }}>
-                      I've trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts, and I'm watching a completely different player.
+                      I&apos;ve trained a lot of athletes who looked incredible in practice. Guys who walked into the gym like nobody could touch them. Then the game starts, and I&apos;m watching a completely different player.
                     </p>
                     <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(150) }}>
-                      For a long time I called it nerves. It wasn't nerves. And handing them another drill was never going to tell me what it was — the right drill only exists once you know what's stopping the work from showing up.
+                      For a long time I called it nerves. It wasn&apos;t nerves. And handing them another drill was never going to tell me what it was — the right drill only exists once you know what&apos;s stopping the work from showing up.
                     </p>
                     <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                      So I studied it. Film, one possession at a time, for years. What I found is in every game you've ever played, and almost nobody is coaching it.
+                      So I studied it. Film, one possession at a time, for years. What I found is in every game you&apos;ve ever played, and almost nobody is coaching it.
                     </p>
                   </div>
                   {/* The answer to that last line collapses behind the toggle
@@ -1543,10 +563,10 @@ export default function Home() {
                   >
                     <div ref={coachRestRef} className="flex flex-col gap-[18px] pt-[18px]">
                       <p className="text-[18px] font-normal tracking-[-0.02em] text-[rgba(255,255,255,0.6)]" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                        Practice teaches you what to do. Nobody teaches you when. And when you don't know when, you start second-guessing. You hesitate. You play safe. People call that confidence. We work on that too, but not by hyping you up. Confidence is what shows up after you know what you're looking at.
+                        Practice teaches you what to do. Nobody teaches you when. And when you don&apos;t know when, you start second-guessing. You hesitate. You play safe. People call that confidence. We work on that too, but not by hyping you up. Confidence is what shows up after you know what you&apos;re looking at.
                       </p>
                       <p className="text-[18px] font-bold tracking-[-0.02em] text-white" style={{ lineHeight: '26px', ...revealLine(300) }}>
-                        That's my duty to every athlete who comes on. Getting out the talent we both know is lying dormant in there.
+                        That&apos;s my duty to every athlete who comes on. Getting out the talent we both know is lying dormant in there.
                       </p>
                     </div>
                   </div>
@@ -1634,15 +654,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Program ── */}
-        <section id="program" className="relative w-full bg-[#000000]">
-          <ProgramIconStyles />
-          {/* Mobile: no pinning — see ProgramMobile for why. */}
-          <ProgramMobile />
-          {/* md and up: full-bleed panels that slide across as you scroll. */}
-          <ProgramDesktop />
-        </section>
-
         {/* ── Difference ── */}
         {(() => {
           const ROWS = [
@@ -1695,9 +706,9 @@ export default function Home() {
                   </span>
                 </h3>
                 <h2 className="w-full max-w-[620px] text-center text-[22px] md:text-[26px] font-normal leading-[30px] md:leading-[34px] tracking-[-0.02em] text-white">
-                  Everywhere else teaches the first half.
+                  Your skills are only part of the game.
                   <br />
-                  You've had that half your whole life. This is the other one.
+                  Learn when and why to use them, with coaching built around your own film.
                 </h2>
               </div>
 
@@ -1726,15 +737,15 @@ export default function Home() {
                   {/* Header — topic cell stays blank, matching the desktop table
                       (the topics column has no header cell there either). */}
                   <div className="grid items-stretch" style={{ gridTemplateColumns: '0.8fr 1.1fr 1.1fr' }}>
-                    <div className="p-[10px]" />
-                    <div className="flex items-center gap-[6px] p-[10px]" style={{ background: '#B34929' }}>
+                    <div className="p-[12px] bg-[#000000] rounded-tl-[14px]" />
+                    <div className="flex items-center gap-[6px] p-[12px]" style={{ background: '#B34929' }}>
                       <TDTLogo letterColor="white" width={13} height={15} />
-                      <span className="text-[11px] font-medium leading-[13px] tracking-[-0.01em] text-white">
+                      <span className="text-[12px] font-medium leading-[14px] tracking-[-0.01em] text-white">
                         Think Different Training
                       </span>
                     </div>
-                    <div className="flex items-center p-[10px]">
-                      <span className="text-[11px] font-medium leading-[13px] tracking-[-0.01em] text-white/50">
+                    <div className="flex items-center p-[12px]">
+                      <span className="text-[12px] font-medium leading-[14px] tracking-[-0.01em] text-white/50">
                         Everywhere else
                       </span>
                     </div>
@@ -1752,18 +763,18 @@ export default function Home() {
                         transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms`,
                       }}
                     >
-                      <div className="flex items-center p-[10px]">
-                        <span className="text-[12px] font-medium leading-[15px] tracking-[-0.01em] text-white/75">
+                      <div className="flex items-center p-[12px]" style={{ minHeight: '58px' }}>
+                        <span className="text-[13px] font-medium leading-[16px] tracking-[-0.01em] text-white/75">
                           {row.topic}
                         </span>
                       </div>
-                      <div className="flex items-center p-[10px]" style={{ background: '#B34929' }}>
-                        <span className="text-[12px] font-normal leading-[15px] tracking-[-0.01em] text-white">
+                      <div className="flex items-center p-[12px]" style={{ minHeight: '58px', background: '#B34929' }}>
+                        <span className="text-[13px] font-normal leading-[16px] tracking-[-0.01em] text-white">
                           {row.tdt}
                         </span>
                       </div>
-                      <div className="flex items-center p-[10px]">
-                        <span className="text-[12px] font-normal leading-[15px] tracking-[-0.01em] text-white/50">
+                      <div className="flex items-center p-[12px]" style={{ minHeight: '58px' }}>
+                        <span className="text-[13px] font-normal leading-[16px] tracking-[-0.01em] text-white/50">
                           {row.others}
                         </span>
                       </div>
@@ -1877,7 +888,7 @@ export default function Home() {
                         className="flex items-center justify-start w-[300px] h-[120px] px-[30px]"
                         style={{
                           borderWidth: row.bw, borderStyle: 'solid', borderColor: '#333333',
-                          borderRadius: (row as any).br ?? '0px',
+                          borderRadius: row.br,
                           // Entrance
                           opacity: tableVisible ? 1 : 0,
                           transform: tableVisible ? 'translateY(0px)' : 'translateY(12px)',
@@ -1903,30 +914,17 @@ export default function Home() {
           );
         })()}
 
-        {/* ── Quote ── */}
-        <section className="relative flex w-full flex-col items-center px-6 md:px-12 lg:px-[100px] py-[100px] md:py-[130px] bg-[#000000]">
-          <blockquote className="w-full max-w-[900px] text-center">
-            <p className="text-[22px] md:text-[32px] font-medium italic leading-[1.4] tracking-[-0.02em] text-white/90">
-              &ldquo;I went from watching what happened to what could have and should have happened.&rdquo;
-            </p>
-            <footer className="mt-[24px] text-[13px] md:text-[14px] font-medium tracking-[0.04em] uppercase text-[rgba(179,73,41,0.85)]">
-              — Kobe Bryant
-            </footer>
-          </blockquote>
-        </section>
-
-        {/* ── Apply CTA — the lights come up on a direct push to apply ──
-            Was a price reveal; archived (see git history) in favor of
-            maximizing applications over sorting by ticket price. The
-            scroll-linked dark→light stage stays — it's what flips the
-            header and the sections below into light mode, not just a
-            frame for the old price card. */}
-        <section id="apply-cta" ref={transitionZoneRef} className="relative w-full" style={{ height: '175vh' }}>
+        {/* Transition from the dark section set into the light surface */}
+        <section
+          id="pricing-transition"
+          ref={transitionZoneRef}
+          className="relative w-full"
+          style={{ height: desktopTransition ? '175vh' : undefined }}
+        >
           <div
-            className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center px-6 md:px-12 lg:px-[100px]"
-            style={{ backgroundColor: panelBg, color: '#000' }}
+            className={desktopTransition ? 'sticky top-0 h-screen w-full overflow-hidden' : 'relative w-full'}
+            style={{ backgroundColor: desktopTransition ? panelBg : '#FBF6F2' }}
           >
-            {/* Expanding blade of light — thin at first, blooms as it opens across the frame */}
             <div
               className="absolute left-1/2 top-1/2 pointer-events-none z-0"
               style={{
@@ -1938,7 +936,6 @@ export default function Home() {
                 opacity: flip > 0.001 && flip < 0.999 ? 1 : 0,
               }}
             />
-            {/* Full-frame white burst that blows out at the midpoint, then recedes into the light */}
             <div
               className="absolute inset-0 pointer-events-none z-0"
               style={{
@@ -1948,113 +945,58 @@ export default function Home() {
               }}
             />
 
-            {/* The card + text, revealed by the light */}
             <div
-              className="relative z-10 flex w-full max-w-[1156px] mx-auto flex-col lg:flex-row items-center gap-[28px] lg:gap-[70px]"
+              className="relative z-10 mx-auto w-full"
               style={{
-                opacity: revealEased,
-                transform: `translateY(${lerp(28, 0, revealEased)}px) scale(${(0.94 + 0.06 * revealEased).toFixed(4)})`,
+                opacity: desktopTransition ? revealEased : 1,
+                transform: desktopTransition ? `translateY(${(1 - revealEased) * 16}px)` : 'none',
+                transition: desktopTransition
+                  ? 'opacity 140ms cubic-bezier(0.16, 1, 0.3, 1), transform 140ms cubic-bezier(0.16, 1, 0.3, 1)'
+                  : 'none',
+                pointerEvents: !desktopTransition || revealEased > 0 ? 'auto' : 'none',
               }}
             >
-              {/* Mobile-only heading, sitting directly above the card rather
-                  than overlaid on it — the Spline scene already bakes in its
-                  own "Think Different Training" / "100 Days" text at the top
-                  and center, so anything layered on top of the card itself
-                  collides with that. The desktop heading (in the right
-                  column) is hidden here to avoid showing it twice. */}
-              <h2
-                className="lg:hidden text-[36px] font-bold leading-tight tracking-[-0.02em] text-center"
-                style={{
-                  background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
-                  backgroundSize: '200% auto',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  animation: 'tdt-gradient-pan 5s linear infinite',
-                }}
-              >
-                Application
-              </h2>
-
-              {/* Left — card by itself. Copy on the card ("$1000" etc.) lives
-                  in the Spline scene, not here — edit it at spline.design. */}
-              {/* On mobile the holder hugs the Spline canvas — the canvas sizes
-                  itself to the scene's aspect (~2:1), so a fixed 400px min-height
-                  here left ~230px of dead space under the card. Desktop keeps
-                  flex-1 + the 400px floor, where it's the column height. */}
-              <div className="relative w-full flex-none min-h-0 lg:flex-1 lg:min-h-[400px]" style={{ borderRadius: '24px', overflow: 'visible', perspective: '1200px' }}>
-                <Spline
-                  scene="https://prod.spline.design/EDGt2tyGvNwlGnGh/scene.splinecode"
-                  style={{ width: '100%', height: '100%', display: 'block', borderRadius: '24px', overflow: 'visible' }}
-                />
-              </div>
-
-              {/* Right — heading (desktop only), subtext, CTA */}
-              <div className="flex w-full lg:w-[420px] flex-shrink-0 flex-col items-center lg:items-start gap-[16px] text-center lg:text-left">
-                <div className="flex flex-col gap-[6px] items-center lg:items-start">
-                  <h2
-                    className="hidden lg:block text-[36px] md:text-[48px] font-bold leading-tight tracking-[-0.02em]"
-                    style={{
-                      background: 'linear-gradient(105deg, #3D2418, #B34929, #E8A87C, #B34929, #3D2418)',
-                      backgroundSize: '200% auto',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      animation: 'tdt-gradient-pan 5s linear infinite',
-                    }}
-                  >
-                    Application
-                  </h2>
-
-                  <p className="text-[16px] font-normal leading-[22px] tracking-[-0.02em] text-black/60">
-                    10 spots. One cohort. Apply and find out if you&apos;re one of them.
-                  </p>
-                </div>
-
-                <CTAButton href="/apply" className="h-[42px] px-8 text-[16px]">
-                  Apply now
-                </CTAButton>
-              </div>
+              <ProgramPricing transition />
             </div>
           </div>
         </section>
 
         {/* ── FAQ ── */}
-        <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#FBF6F2] text-black">
-          <div className="flex w-full max-w-[1156px] flex-col items-center gap-[10px]">
+        <section id="faq" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[72px] md:py-[100px] bg-[#FBF6F2] text-black">
+          <div className="flex w-full max-w-[860px] flex-col items-center gap-[28px]">
             <h2 className="w-full max-w-[634px] text-center text-[28px] md:text-[40px] lg:text-[48px] font-bold leading-tight tracking-[-0.02em] text-[#1A0F0A]">
-              Everything you need to know before applying.
+              Questions from players and parents.
             </h2>
 
             <div className="flex w-full flex-col items-start">
               {[
                 {
-                  question: "What does film review actually do?",
-                  answer: "Decisions only happen in games, so film is the only place to coach them. Jaiden finds the possessions where you had the answer and didn't see it, and every drill you get is built off those moments.",
+                  question: "Is the program online or in person?",
+                  answer: "The coaching is fully online, through our app. You can review film, receive feedback and work with Jaiden there. If you don't have film yet, we still start with practical steps and help you set up a simple capture routine from week one.",
                 },
                 {
-                  question: "Why am I better in practice than in games?",
-                  answer: "Practice tells you what's coming. You know the set, you know the call, and if you blow it you get another rep in thirty seconds. A game gives you one look, half a second, and no answer key. The move was never the problem. The moment was.",
+                  question: "What do the 100 days actually involve?",
+                  answer: "100 days is the length of the program. The process is to work through film, review Jaiden’s feedback, practice your personalized drills and bring new footage as you go. If you're just getting started, we begin with a simple first-step plan and build from there.",
                 },
                 {
-                  question: "Isn't this just confidence?",
-                  answer: "That's the first thing everyone says, and it's why it never gets fixed. Confidence comes after you know what you're looking at. Right now he's deciding from scratch every possession. That's not nerves, that's a gap in what he was taught.",
+                  question: "What do I need to do to get started?",
+                  answer: "You need internet access to use the app and a commitment to follow through on your plan. Film is helpful, but not a strict starting requirement. If you are unsure about your device or where to start, we will help you solve that during the call.",
                 },
                 {
-                  question: "Why can't I just watch my own film back?",
-                  answer: "You can't see the read you don't know exists. That's what makes this hard to fix alone. The gap sits exactly where you can't look. You'll watch the possession and see a shot that didn't fall. Jaiden sees the pass that was open two seconds earlier.",
+                  question: "What if I do not have game film yet?",
+                  answer: "You do not need a polished highlight reel. Team footage, league footage or a parent filming a game can provide the starting point. If you do not have any yet, tell us in your application and we can discuss how to get suitable footage.",
                 },
                 {
-                  question: "How does this fit with my school team and my trainer?",
-                  answer: "Your coach is coaching a team, live, with a season to win. He'll tell you what to do in the moment. Nobody has time to sit down with your film afterward and go through when and why. That was never the job.\n\nNothing here asks you to change what he runs or stop working with your trainer. They're teaching what to do. We're teaching when. It sits on top of the work you're already doing.",
+                  question: "Can I keep working with my team and trainer?",
+                  answer: "Yes. The program is designed to complement the basketball work you are already doing. Jaiden uses your game film to help you understand when and why to use your skills, then connects that feedback to your practice.",
                 },
                 {
-                  question: "What if I don't have film yet?",
-                  answer: "Most players have more than they think. Team footage, league footage, a parent filming from the stands. Any of it works. It doesn't need to be edited or good quality. It just needs to be a real game.",
+                  question: "Is this the right fit for my child?",
+                  answer: "This is for players who already train and play, but want help translating that work into games. They need to be open to feedback and consistent effort. The application and call help us understand the player’s goals and whether this approach fits.",
                 },
                 {
-                  question: "Is my son ready for this?",
-                  answer: "This is for players who already put the work in and can't understand why it isn't showing up on Friday. If he's still learning to handle the ball, this isn't the right hundred days. If he's good in practice and quiet in games, this was built for him.",
+                  question: "What happens after I apply?",
+                  answer: "After submitting your application, you can book a call. We will talk about your goals, explain the program and answer your questions. For younger players, choose a time when a parent can join too.",
                 },
               ].map((item, index) => {
                 const isOpen = openFaq === index;
@@ -2066,7 +1008,7 @@ export default function Home() {
                       aria-expanded={isOpen}
                       aria-controls={`faq-panel-${index}`}
                     >
-                      <span className="flex-1 text-[14px] md:text-[16px] font-normal leading-[22px] md:leading-[19px] tracking-[-0.02em] text-[rgba(0,0,0,0.7)]">
+                      <span className="flex-1 text-[14px] md:text-[16px] font-normal leading-[1.5] tracking-[-0.01em] text-[#3F3229]">
                         {item.question}
                       </span>
                       <svg
@@ -2093,7 +1035,7 @@ export default function Home() {
                         transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease',
                       }}
                     >
-                      <p className="pb-[20px] text-[14px] font-normal leading-[22px] tracking-[-0.02em] text-[rgba(0,0,0,0.5)]">
+                      <p className="max-w-[740px] pb-[24px] pr-6 text-[13px] md:text-[14px] font-normal leading-[1.65] text-[#74655B]">
                         {item.answer}
                       </p>
                     </div>
@@ -2102,20 +1044,10 @@ export default function Home() {
               })}
             </div>
 
-            <a
-              href="/apply"
-              className="group self-start mt-[20px] inline-flex items-center gap-[4px] text-[14px] font-medium tracking-[-0.02em]"
-              style={{ color: '#B34929' }}
-            >
-              Apply now
-              <span
-                className="inline-block transition-transform duration-300 ease-out group-hover:translate-x-[6px]"
-              >
-                →
-              </span>
-            </a>
           </div>
         </section>
+
+        <LandingFinalCTA />
 
         {/* ── Footer ── */}
         <section className="w-full bg-[#FBF6F2] text-black">

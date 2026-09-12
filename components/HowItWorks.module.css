@@ -1,0 +1,185 @@
+/* Figma source: 1440 × 1024, 1240px content, 569px panel. Only this
+   section owns these styles; shared landing/apply styles stay independent. */
+.section { --pin-top: 88px; --travel: 240svh; --step-width: 220px; position: relative; background: #000; color: #fff; overflow: visible; }
+.track { position: relative; min-height: calc(100svh + var(--travel)); }
+.headingFrame { padding-top: 54px; padding-bottom: 14px; }
+.anchor { position: absolute; top: 0; scroll-margin-top: 98px; }
+.pin { position: sticky; top: var(--pin-top); padding: 14px 0 32px; background: #000; }
+.frame { width: calc(100% - 200px); max-width: 1440px; margin-inline: auto; }
+.intro p { margin: 0 0 10px; color: #c4431f; font-size: 14px; font-weight: 400; line-height: 17px; }
+.intro h2 { margin: 0; font-size: 46px; line-height: 55px; font-weight: 400; letter-spacing: -.02em; }
+.steps { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 0; margin: 0 0 20px; min-height: 148px; }
+.line { position: absolute; left: 0; right: 0; top: 10px; height: 1px; background: #2b2b2b; }
+.lineFill { position: absolute; left: 10px; top: 0; width: calc(100% - var(--step-width)); height: 1px; background: linear-gradient(90deg, #622613, #c4431f); transform: scaleX(var(--line-progress, 0)); transform-origin: left center; will-change: transform; }
+.step { position: relative; display: flex; flex-direction: column; align-items: flex-start; flex: 0 1 var(--step-width); padding: 0; text-align: left; color: #fff; background: transparent; border: 0; cursor: pointer; }
+.stepDot { position: relative; display: grid; place-items: center; width: 20px; height: 20px; margin-bottom: 8px; border: 1px solid #373737; border-radius: 50%; background: #262626; color: #fff; font-size: 14px; line-height: 17px; transition: background .35s, border-color .35s, box-shadow .35s; }
+.step[data-active="true"] .stepDot { background: linear-gradient(180deg, #b34929, #9c3617); border-color: transparent; box-shadow: 0 0 0 4px #3b170c; }
+.stepTitle { display: block; margin-bottom: 10px; font-size: 14px; line-height: 17px; color: rgba(255,255,255,.85); transition: color .3s; }
+.stepBody { display: block; font-size: 16px; line-height: 19px; font-weight: 400; letter-spacing: -.02em; color: rgba(255,255,255,.5); transition: color .4s; }
+.step[data-active="true"] .stepTitle { color: #c4431f; }
+.step[data-active="true"] .stepBody { color: #fff; }
+.step:focus-visible { outline: 2px solid #e69e7c; outline-offset: 6px; border-radius: 4px; }
+.stepMobileTitle, .mobileStepSummary, .mobilePagination, .profileClose { display: none; }
+.panel { box-sizing: border-box; display: grid; grid-template-columns: minmax(0,587fr) minmax(0,541fr); align-items: center; gap: 10px; height: 569px; padding: 50px; background: linear-gradient(106.36deg, #171010 29.12%, #0f0401 98.13%); border: 1px solid #232323; border-radius: 8px; }
+.product { position: relative; height: 100%; min-width: 0; }
+.productLayer { position: absolute; inset: 0; display: flex; align-items: center; opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity .45s ease, transform .65s cubic-bezier(.16,1,.3,1), visibility .45s; }
+.productLayer[data-active="true"] { opacity: 1; visibility: visible; transform: none; }
+.productLayer img { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; border-radius: 12px; object-fit: contain; }
+.upload { display: flex; position: relative; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; gap: 10px; padding: 20px; background: linear-gradient(180deg,#f2d4bc -14.79%,#f5ddd0 2.42%,#f8ede4 19.64%,#fbf6f2 42.6%,#fbf6f2 100%); border-radius: 12px; color: #000; }
+.uploadIcon { display: grid; place-items: center; flex-shrink: 0; width: 60px; height: 60px; background: linear-gradient(180deg,#e07551,#91391c 134.17%); border-radius: 50%; color: #fff; }
+.uploadText { display: flex; flex-direction: column; align-items: center; gap: 5px; max-width: 100%; }
+.uploadText strong { font-size: 16px; line-height: 19px; font-weight: 500; }
+.uploadText span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 17px; color: rgba(0,0,0,.4); }
+.selectFile { min-height: 30px; padding: 6px 20px; font-size: 14px; line-height: 17px; }
+.selectFile:focus-visible { outline: 2px solid #91391c; outline-offset: 4px; }
+.uploadFeedback { max-width: 240px; margin: 0; color: #68574c; text-align: center; font-size: 12px; line-height: 16px; }
+.interaction { position: relative; min-width: 0; height: 100%; }
+.chatLayer, .communityPanel { position: absolute; inset: 0; transition: opacity .35s, visibility .35s; opacity: 0; visibility: hidden; }
+.chatLayer[data-active="true"], .communityPanel[data-active="true"] { opacity: 1; visibility: visible; }
+.chat { height: 100%; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 10px; }
+.chatLog { min-height: 0; max-height: 370px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #51382c transparent; scroll-behavior: smooth; scroll-padding-block: 10px; }
+.chatLog:focus-visible { outline: 1px solid #e6a182; outline-offset: 3px; border-radius: 8px; }
+.chatMessages { display: flex; flex-direction: column; gap: 20px; padding: 10px 0; }
+.message { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; width: 100%; }
+.message[data-animate="true"] { animation: messageArrive .72s cubic-bezier(.22,1,.36,1) both; transform-origin: 24px bottom; }
+.outgoing[data-animate="true"] { transform-origin: calc(100% - 24px) bottom; }
+.outgoing { align-items: flex-end; }
+.messageRow { display: flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; }
+.outgoing .messageRow { justify-content: flex-end; }
+.chatAvatar { display: block; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background-size: cover; background-repeat: no-repeat; }
+/* Reuse the exact example avatars already embedded in the supplied app asset. */
+.coachAvatar { background-image: url('/how-it-works/avatar-training.webp'); }
+.visitorAvatar { background-image: url('/how-it-works/avatar-player.webp'); }
+.bubble { display: block; margin: 0; width: fit-content; max-width: 309px; padding: 8px 10px; background: #f0ede9; color: #4a4947; border-radius: 16px; font-size: 14px; line-height: 17px; font-weight: 400; overflow-wrap: anywhere; white-space: pre-wrap; }
+.outgoing .bubble { background: #b34929; color: #f8ded4; }
+.timestamp { font-size: 14px; line-height: 17px; color: rgba(255,255,255,.4); }
+.composer { flex-shrink: 0; display: flex; align-items: center; gap: 8px; height: 45px; padding: 0 8px 0 10px; background: #fff; border-radius: 69px; }
+.composer:focus-within { outline: 2px solid #e0a085; outline-offset: 4px; }
+.composer input { display: block; min-width: 0; flex: 1; height: 100%; border: 0; padding: 0; color: #282322; background: transparent; font: inherit; font-size: 14px; outline: none; }
+.composer input::placeholder { color: #858585; opacity: 1; }
+.composer button { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 40px; position: relative; border: 0; padding: 0; color: #fff; background: transparent; cursor: pointer; }
+.composer button::before { content: ''; position: absolute; width: 25px; height: 25px; background: #b34929; border-radius: 50%; }
+.composer svg { position: relative; }
+.composer button:disabled { opacity: .45; cursor: default; }
+.composer button:focus-visible { outline: 2px solid #91391c; outline-offset: 1px; border-radius: 50%; }
+.applicationReply { color: #9f391d; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.applicationReply:hover { color: #702510; }
+.applicationReply:focus-visible { outline: 2px solid #b34929; outline-offset: 4px; border-radius: 2px; }
+.typing { display: flex; align-items: center; gap: 4px; min-height: 33px; padding-inline: 14px; }
+.typing i { width: 5px; height: 5px; border-radius: 50%; background: #8b7d73; animation: typing .9s ease-in-out infinite; }
+.typing i:nth-child(2) { animation-delay: .12s; }.typing i:nth-child(3) { animation-delay: .24s; }
+.communityNote { margin: 12px 0 0; color: #b6a59b; font-size: 11px; line-height: 15px; text-align: center; }
+.community { position: relative; width: min(100%,419px); margin: auto; padding: 16.76px 27.65px; }
+.communityPanel { display: flex; align-items: center; justify-content: center; }
+.people { display: flex; flex-direction: column; gap: 12.57px; }
+.person { display: flex; align-items: center; width: 100%; height: 83.8px; gap: 8.38px; padding: 12.57px; border: 0; border-radius: 16.76px; background: #3d2419; color: white; text-align: left; cursor: pointer; transition: background .25s; }
+.person:hover { background: #472a1c; }.person:focus-visible { outline: 2px solid #e6a182; outline-offset: 3px; }
+.initials { display: grid; place-items: center; flex-shrink: 0; width: 42.32px; height: 42.32px; border-radius: 50%; background: linear-gradient(180deg,#ffeedf,#e4b386); color: #aa692d; font-size: 18.44px; font-weight: 500; }
+.personText { display: flex; flex-direction: column; min-width: 0; gap: 4.19px; }
+.personText strong { font-size: 16.76px; line-height: 20px; font-weight: 500; }
+.personText > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.41px; line-height: 16px; }
+.profile { position: absolute; z-index: 2; width: min(286.6px, calc(100% - 44px)); min-height: 293.3px; left: 0; top: 0; transform: translateY(var(--profile-arrival-y, -10px)) scale(.96); padding: 12.57px; border-radius: 10.06px; border: 1px solid rgba(245,218,192,.2); background: linear-gradient(140deg,rgba(73,48,35,.58),rgba(54,29,19,.42)); box-shadow: 0 10px 40px #0005, inset 0 1px 0 #ffffff0c; opacity: 0; visibility: hidden; transition: opacity .2s, transform .3s cubic-bezier(.16,1,.3,1), top .28s cubic-bezier(.16,1,.3,1), left .28s cubic-bezier(.16,1,.3,1), visibility .2s; pointer-events: none; }
+.profile[data-open="true"] { opacity: 1; visibility: visible; transform: translateY(0) scale(1); pointer-events: auto; }
+.profileTop { display: flex; gap: 8.38px; align-items: flex-start; margin-bottom: 12.57px; }
+.profileTop .initials { width: 50.28px; height: 50.28px; }
+.profileTop > div { display: flex; flex-direction: column; gap: 4.19px; }
+.athleteLabel { color: #fba57b; font-size: 11.73px; line-height: 14px; }
+.profileTop strong { color: #fff; font-size: 13.41px; line-height: 16px; font-weight: 500; }
+.position { display: inline-block; padding: 6px 12.57px; border: 1px solid rgba(238,220,200,.3); border-radius: 15.08px; background: rgba(172,171,171,.2); font-size: 11.73px; line-height: 14px; margin-bottom: 12.57px; }
+.profileDetails { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8.38px 10px; margin: 0; }
+.profileDetails > div { min-width: 0; }.school { grid-column: 1/-1; }
+.profileDetails dt { display: flex; align-items: center; gap: 4px; color: #c6a795; font-size: 11.73px; line-height: 14px; margin-bottom: 4.19px; }
+.profileDetails dd { color: #f6eae0; font-size: 15.08px; line-height: 18px; margin: 0; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@keyframes typing { 0%,60%,100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-3px); opacity: 1; } }
+@keyframes messageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes messageArrive { from { opacity: 0; transform: translateY(14px) scale(.975); } 65% { opacity: 1; } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes resolve { from { opacity: 0; } to { opacity: 1; } }
+
+@media (min-width: 1600px) and (min-height: 1000px) { .headingFrame { padding-top: 70px; } }
+@media (max-width: 1199px) {
+  .frame { width: calc(100% - 96px); }.section { --step-width: 200px; }.panel { padding: 28px; }
+  .intro h2 { font-size: 40px; line-height: 47px; }.steps { min-height: 152px; }.stepBody { font-size: 15px; }
+  .chatAvatar { width: 32px; height: 32px; }.messageRow { gap: 8px; }.chatMessages { gap: 14px; }
+  .community { padding-inline: 10px; }
+}
+@media (max-width: 1023px) {
+  .section { --pin-top: 64px; --step-width: 23%; }.frame { width: calc(100% - 48px); }
+  .intro h2 { font-size: 36px; line-height: 42px; }.steps { min-height: 171px; }.panel { padding: 24px; }
+  .chat { padding: 4px; }.chatMessages { gap: 12px; }.bubble { font-size: 13px; line-height: 17px; }.timestamp { font-size: 11px; }
+}
+/* Preserve the 467px content area. Only decorative outer padding decreases
+   on a short laptop; the heading is outside the pinned progression. */
+@media (min-width: 768px) and (max-height: 900px) {
+  .pin { padding: 8px 0 12px; }.steps { margin-bottom: 12px; }
+  .panel { height: 517px; padding: 24px; }
+}
+@media (min-width: 1024px) and (max-width: 1199px) and (max-height: 800px) {
+  .panel { height: 501px; padding: 16px; }
+}
+@media (max-width: 767px) {
+  .section { --pin-top: calc(64px + env(safe-area-inset-top, 0px)); }
+  .track { min-height: 0; }
+  .pin { position: relative; top: auto; padding: 12px 0 48px; }
+  .frame { width: calc(100% - 32px); max-width: 560px; }
+  .headingFrame { padding-top: 40px; padding-bottom: 0; }
+  .intro p { font-size: 13px; line-height: 18px; margin-bottom: 8px; }
+  .intro h2 { font-size: clamp(27px, 7vw, 36px); line-height: 1.15; }
+  /* Only the compact topic controls stick. The full scene scrolls naturally,
+     including on short phones and when the software keyboard is open. */
+  .steps { position: sticky; top: var(--pin-top); z-index: 10; align-items: stretch; gap: 0; min-height: 0; height: auto; margin: 0 0 16px; padding: 12px 0; background: #000; border-bottom: 1px solid #24201d; }
+  .line { left: 12.5%; right: 12.5%; top: 25px; }
+  .lineFill { left: 0; width: 100%; transition: transform .5s cubic-bezier(.22,1,.36,1); }
+  .step { flex: 1 1 0; min-width: 0; min-height: 52px; align-items: center; justify-content: center; gap: 8px; }
+  .stepDot { width: 26px; height: 26px; margin: 0; font-size: 13px; }
+  .stepMobileTitle { display: block; font-size: 11px; line-height: 16px; color: #c5bbb5; transition: color .3s; }
+  .step[data-active="true"] .stepMobileTitle { color: #e69e7c; }
+  .stepTitle, .stepBody { display: none; }
+  .step:focus-visible { outline-offset: 0; border-radius: 8px; }
+  .mobileStepSummary { display: block; margin-bottom: 20px; }
+  .mobileStepSummary h3 { margin: 0 0 8px; color: #e69e7c; font-size: 19px; font-weight: 400; line-height: 25px; }
+  .mobileStepSummary p { margin: 0; color: #e0d9d4; font-size: 15px; line-height: 22px; }
+  .panel { height: auto; grid-template-columns: minmax(0,1fr); gap: 24px; padding: 16px; scroll-margin-top: calc(var(--pin-top) + 92px); }
+  .product { height: auto; aspect-ratio: 1500 / 1385; }
+  .productLayer img { height: auto; width: auto; max-height: 100%; max-width: 100%; object-fit: contain; background: transparent; border-radius: 9px; }
+  .upload { padding: 16px; gap: 8px; border-radius: 9px; }
+  .uploadIcon { width: 52px; height: 52px; }.uploadIcon svg { width: 24px; height: 24px; }
+  .uploadText { gap: 4px; }.uploadText strong { font-size: 16px; }.uploadText span { font-size: 13px; }
+  .selectFile { min-height: 44px; font-size: 14px; padding: 10px 20px; }
+  .uploadFeedback { position: static; font-size: 11px; line-height: 15px; }
+  .interaction { height: auto; min-height: 0; }
+  .chatLayer, .communityPanel { position: relative; inset: auto; display: none; }
+  .chatLayer[data-active="true"] { display: block; }
+  .communityPanel[data-active="true"] { display: flex; }
+  .chat { height: auto; padding: 0; gap: 16px; justify-content: flex-start; }
+  .chatLog { max-height: none; scroll-behavior: auto; }
+  .chatLog[data-extended="true"] { max-height: 420px; }
+  .chatMessages { gap: 18px; padding: 4px 0; }
+  .bubble { max-width: 100%; font-size: 14px; line-height: 20px; }
+  .timestamp { font-size: 11px; line-height: 14px; }.message { gap: 5px; }.chatAvatar { width: 32px; height: 32px; }
+  .composer { height: 50px; padding-right: 4px; }.composer input { font-size: 16px; }.composer button { width: 44px; height: 44px; }.composer button::before { width: 30px; height: 30px; }
+  .applicationReply { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; white-space: normal; }
+  .community { padding: 0; }.person { min-height: 78px; height: auto; padding: 12px; border-radius: 13px; }.people { gap: 12px; }
+  .initials { width: 36px; height: 36px; font-size: 16px; }.personText strong { font-size: 15px; }.personText > span { font-size: 12px; }
+  .profile { z-index: 20; min-height: 270px; width: min(280px, calc(100% - 12px)); }
+  .profileTop { padding-right: 28px; }
+  .profileClose { display: grid; place-items: center; position: absolute; top: 0; right: 0; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #f6eae0; cursor: pointer; }
+  .profileClose:focus-visible { outline: 2px solid #e6a182; outline-offset: -4px; }
+  .mobilePagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+  .mobilePagination button { min-height: 44px; padding: 10px 14px; border: 1px solid #44332a; border-radius: 24px; background: #1b110d; color: #f0ded4; font: inherit; font-size: 14px; cursor: pointer; }
+  .mobilePagination button:disabled { opacity: .35; cursor: default; }
+  .mobilePagination button:focus-visible { outline: 2px solid #e69e7c; outline-offset: 3px; }
+  .mobilePagination > span { color: #b6a59b; font-size: 12px; white-space: nowrap; }
+}
+@media (max-width: 767px) and (max-height: 400px) {
+  .profile { min-height: 0; }
+  .profileTop, .position { margin-bottom: 8px; }
+  .profileDetails { gap: 6px 10px; }
+  .profileDetails dd { font-size: 14px; line-height: 17px; }
+}
+@media (min-width: 768px) and (max-height: 759px), (min-width: 768px) and (prefers-reduced-motion: reduce) {
+  .track { min-height: 0; }.pin { position: relative; top: auto; padding-bottom: 60px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section *, .section *::before { animation: none !important; transition: none !important; scroll-behavior: auto !important; }.lineFill { will-change: auto; }
+}

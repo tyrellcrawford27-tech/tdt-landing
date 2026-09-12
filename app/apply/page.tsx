@@ -219,7 +219,7 @@ const EMPTY_NUDGES: Partial<Record<ApplicationField, string[]>> = {
   guardian_phone: ['Add their number', 'Their phone number please', 'THEIR NUMBER. GO.'],
   guardian_email: ["We'll need their email", 'Their email please', 'THEIR EMAIL. NOW.'],
   guardian_aware: ['Yes or not yet?', 'Pick one', 'HAVE YOU TOLD THEM?!'],
-  investment_readiness: ['How do you feel about the investment?', 'Choose the honest answer', 'PICK WHAT FITS.'],
+  investment_readiness: ['What would help you feel ready?', 'Choose the answer that feels right', 'PICK WHAT FITS.'],
   heard_about: ['How did you find us?', 'Pick the closest answer', 'HOW DID YOU HEAR ABOUT US?!'],
   heard_about_detail: ['Tell us where', 'A few words is enough', 'WHERE DID YOU FIND US?!'],
 };
@@ -285,6 +285,8 @@ function ApplyPageInner() {
   const [nudgeAttempts, setNudgeAttempts] = useState(0);
   const [shaking, setShaking]       = useState(false);
   const [editingReview, setEditingReview] = useState(false);
+  const [expandedReview, setExpandedReview] = useState<string | null>(null);
+  const [expandedReviewSection, setExpandedReviewSection] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<ApplicationField | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const inputRef   = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
@@ -927,6 +929,10 @@ const choose = (field: ApplicationField, value: string) => {
       <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
     </p>
   );
+  const reviewGroups = visibleQuestions.reduce<Record<string, Q[]>>((groups, question) => {
+    (groups[question.section] ??= []).push(question);
+    return groups;
+  }, {});
 
   if (screen === REVIEW) return (
     <main className={styles.root} style={{ background: BG }}>
@@ -935,58 +941,100 @@ const choose = (field: ApplicationField, value: string) => {
         <p className={styles.eyebrow}>Your application</p>
         <h1>Make sure this sounds like you.</h1>
         <p className={styles.description}>
-          Review your answers, then choose a time to talk with Jaiden.
+          Review your answers, then choose a time for the next step.
           Applying is not a commitment to join.
         </p>
-        <div className={styles.reviewList}>
-          {visibleQuestions.map(question => {
+        <div className={styles.reviewColumns}>
+          <div className={styles.reviewAnswers}>
+            <div className={styles.reviewList}>
+              {Object.entries(reviewGroups).map(([section, groupQuestions]) => {
+                const sectionOpen = expandedReviewSection === section;
+                return (
+                  <section key={section} className={`${styles.reviewSection} ${sectionOpen ? styles.reviewSectionOpen : ''}`}>
+                    <button
+                      type="button"
+                      className={styles.reviewSectionToggle}
+                      onClick={() => setExpandedReviewSection(current => current === section ? null : section)}
+                      aria-expanded={sectionOpen}
+                      aria-controls={`review-section-${section.replace(/\W+/g, '-')}`}
+                    >
+                      <span>{section}</span>
+                      <span className={styles.reviewSectionMeta}>{groupQuestions.length} {groupQuestions.length === 1 ? 'answer' : 'answers'} <span aria-hidden="true">＋</span></span>
+                    </button>
+                    <div id={`review-section-${section.replace(/\W+/g, '-')}`} className={`${styles.reviewSectionDetails} ${sectionOpen ? styles.reviewSectionDetailsOpen : ''}`}>
+                      <div className={styles.reviewSectionDetailsInner}>
+              {groupQuestions.map(question => {
             const answers = question.type === 'group'
               ? visibleSubFields(question, form).map(sub => ({ label: sub.label, value: form[sub.field] }))
               : [{ label: '', value: form[question.field] + (
                 'detailField' in question && question.detailField && form[question.field] === question.detailOption && form[question.detailField]
                   ? ': ' + form[question.detailField] : ''
               ) }];
-            return (
-              <section key={question.key} className={styles.reviewItem}>
+            const preview = answers.map(answer => answer.value).filter(Boolean).join(' · ');
+            const expanded = expandedReview === question.key;
+                return (
+                  <section key={question.key} className={`${styles.reviewItem} ${expanded ? styles.reviewItemExpanded : ''}`}>
                 <div className={styles.reviewHeading}>
-                  <h2>{question.question}</h2>
+                  <button
+                    type="button"
+                    className={styles.reviewToggle}
+                    onClick={() => setExpandedReview(current => current === question.key ? null : question.key)}
+                    aria-expanded={expanded}
+                    aria-controls={`review-answer-${question.key}`}
+                  >
+                    <span className={styles.reviewQuestion}>{question.question}</span>
+                    <span className={styles.reviewPreview}>{preview || 'Answer needed'}</span>
+                  </button>
                   <button type="button" onClick={() => editQuestion(question.key)} aria-label={'Edit: ' + question.question}>Edit</button>
                 </div>
-                {answers.map((answer, index) => (
-                  <p key={index}>
-                    {answer.label && <span className={styles.answerLabel}>{answer.label}: </span>}
-                    {answer.value || <span className={styles.missing}>Answer needed</span>}
-                  </p>
-                ))}
+                <div id={`review-answer-${question.key}`} className={`${styles.reviewDetails} ${expanded ? styles.reviewDetailsOpen : ''}`}>
+                  <div className={styles.reviewDetailsInner}>
+                    {answers.map((answer, index) => (
+                      <p key={index}>
+                        {answer.label && <span className={styles.answerLabel}>{answer.label}: </span>}
+                        {answer.value || <span className={styles.missing}>Answer needed</span>}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                </section>
+              );
+            })}
+                      </div>
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          </div>
+          <aside className={styles.reviewActions}>
+            {isMinor(form) && (
+              <section className={styles.notice}>
+                <h2>A quick check with your parent or guardian</h2>
+                {form.guardian_aware !== 'Yes' ? (
+                  <>
+                    <p>You can keep this draft, but your parent or legal guardian needs to review it with you before you submit.</p>
+                    <button type="button" className={styles.textButton} onClick={() => editQuestion('guardian_aware')}>Update parent awareness</button>
+                  </>
+                ) : (
+                  <label className={styles.consent}>
+                    <input type="checkbox" checked={form.guardian_consent === 'Yes'} onChange={e => choose('guardian_consent', e.target.checked ? 'Yes' : '')} />
+                    <span>My parent or legal guardian has reviewed this application and the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> with me and agrees to my applying.</span>
+                  </label>
+                )}
               </section>
-            );
-          })}
-        </div>
-        {isMinor(form) && (
-          <section className={styles.notice}>
-            <h2>A quick check with your parent or guardian</h2>
-            {form.guardian_aware !== 'Yes' ? (
-              <>
-                <p>You can keep this draft, but your parent or legal guardian needs to review it with you before you submit.</p>
-                <button type="button" className={styles.textButton} onClick={() => editQuestion('guardian_aware')}>Update parent awareness</button>
-              </>
-            ) : (
-              <label className={styles.consent}>
-                <input type="checkbox" checked={form.guardian_consent === 'Yes'} onChange={e => choose('guardian_consent', e.target.checked ? 'Yes' : '')} />
-                <span>My parent or legal guardian has reviewed this application and the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> with me and agrees to my applying.</span>
-              </label>
             )}
-          </section>
-        )}
-        {error && <p role="alert" className={styles.error}>{error}</p>}
-        <div className={styles.navigation}>
-          <GoBackButton onClick={retreat} />
-          <CTAButton onClick={handleSubmit} disabled={submitting} className="min-h-[42px] flex-[2] px-4 py-2 text-[18px] font-normal tracking-[-0.02em]">
-            {submitting ? 'Submitting…' : 'Submit and choose a call time'}
-          </CTAButton>
+            {error && <p role="alert" className={styles.error}>{error}</p>}
+            <div className={styles.navigation}>
+              <GoBackButton onClick={retreat} />
+              <CTAButton onClick={handleSubmit} disabled={submitting} className="min-h-[42px] flex-[2] whitespace-nowrap px-4 py-2 text-[18px] font-normal tracking-[-0.02em]">
+                {submitting ? 'Submitting…' : 'Submit and choose a time'}
+              </CTAButton>
+            </div>
+            {legalLinks}
+            <p className={styles.hint}>This browser remembers your draft for 7 days. Your saved answers are visible to the coaching team.</p>
+          </aside>
         </div>
-        {legalLinks}
-        <p className={styles.hint}>This browser remembers your draft for 7 days. Your saved answers are visible to the coaching team.</p>
       </div>
     </main>
   );

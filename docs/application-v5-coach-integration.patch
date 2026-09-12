@@ -1,0 +1,513 @@
+diff --git a/artifacts/api-server/src/lib/applicationAnalyticsEvidence.ts b/artifacts/api-server/src/lib/applicationAnalyticsEvidence.ts
+index 0e9c4ea..558b926 100644
+--- a/artifacts/api-server/src/lib/applicationAnalyticsEvidence.ts
++++ b/artifacts/api-server/src/lib/applicationAnalyticsEvidence.ts
+@@ -547,7 +547,9 @@ function progressForms(rows: Row[], now: Date): ApplicationAnalyticsSnapshot["pr
+       trackedStarts: formRows.length,
+       totalQuestions,
+       sampleStatus: sampleStatus(formRows.length),
+-      steps,
++      // v5 has conditional branches. A single current snapshot cannot establish
++      // reliable per-question reach history; never mix different keys by ordinal.
++      steps: formVersion >= 5 ? [] : steps,
+     };
+   });
+ }
+diff --git a/artifacts/api-server/src/lib/applicationLiveProgress.ts b/artifacts/api-server/src/lib/applicationLiveProgress.ts
+index 215a5d0..0cc8e86 100644
+--- a/artifacts/api-server/src/lib/applicationLiveProgress.ts
++++ b/artifacts/api-server/src/lib/applicationLiveProgress.ts
+@@ -18,6 +18,13 @@ function applicationIdFromPayload(payload: string | undefined): string | null {
+ 
+ /** Only additive schema; events carry an invalidation, never applicant data. */
+ export async function ensureApplicationLiveProgress(): Promise<void> {
++  await db.execute(sql`ALTER TABLE public.applications
++    ADD COLUMN IF NOT EXISTS film_readiness TEXT,
++    ADD COLUMN IF NOT EXISTS film_access TEXT,
++    ADD COLUMN IF NOT EXISTS decision_support TEXT,
++    ADD COLUMN IF NOT EXISTS guardian_consent TEXT,
++    ADD COLUMN IF NOT EXISTS investment_readiness TEXT
++  `);
+   await db.execute(sql`ALTER TABLE applications ADD COLUMN IF NOT EXISTS progress_revision BIGINT`);
+   await db.execute(sql`
+     CREATE OR REPLACE FUNCTION public.notify_application_progress()
+diff --git a/artifacts/api-server/src/routes/coachApplications.ts b/artifacts/api-server/src/routes/coachApplications.ts
+index 37e3ae8..f955acf 100644
+--- a/artifacts/api-server/src/routes/coachApplications.ts
++++ b/artifacts/api-server/src/routes/coachApplications.ts
+@@ -47,6 +47,10 @@ type ApplicationStatus = (typeof STATUSES)[number];
+ const BASE_APPLICATION_COLUMNS =
+   "id, created_at, submitted_at, athlete_name, athlete_email, athlete_phone, age, city, state_province, position, years_playing, current_team_school, current_team, social_link, device_access, biggest_weakness, goal, why_this_program, why_program, time_commitment, why_basketball, guardian_name, guardian_phone, guardian_email, guardian_aware, parent_name, parent_phone, parent_email, parent_aware, anything_else, additional_notes, status, reviewed_at, reviewer_notes, early_pricing_requested, call_notes, call_recording_url, recording_consent, heard_about, payment_session_id, payment_url, payment_expires_at, paid_at, payment_expired_at, call_booked_at, cal_booking_uid, reminder_sent_at";
+ 
++const QUALIFICATION_APPLICATION_COLUMNS = "film_readiness, film_access, decision_support, guardian_consent, investment_readiness";
++let hasQualificationColumns: boolean | null = null;
++let qualificationColumnsProbedAt = 0;
++
+ const PROGRESS_APPLICATION_COLUMNS =
+   "application_state, form_version, years_playing_answer, total_questions, current_question_key, current_question_label, current_question_number, last_answered_question_key, last_answered_question_label, last_answered_question_number, last_answered_at, progress_updated_at, progress_revision";
+ 
+@@ -109,7 +113,16 @@ async function applicationColumns(sb: ReturnType<typeof getSupabaseAdmin>): Prom
+     }
+   }
+ 
++  const qualificationStale = hasQualificationColumns === false && now - qualificationColumnsProbedAt > SCHEDULED_AT_PROBE_TTL_MS;
++  if (hasQualificationColumns === null || qualificationStale) {
++    qualificationColumnsProbedAt = now;
++    const { error } = await sb.from("applications").select(QUALIFICATION_APPLICATION_COLUMNS).limit(1);
++    hasQualificationColumns = !error;
++    if (error) logger.warn({ err: error }, "application qualification columns unavailable; retaining existing application fields");
++  }
++
+   return [
++    hasQualificationColumns ? QUALIFICATION_APPLICATION_COLUMNS : null,
+     BASE_APPLICATION_COLUMNS,
+     hasScheduledAt ? "call_scheduled_at" : null,
+     hasProgressColumns ? PROGRESS_APPLICATION_COLUMNS : null,
+@@ -126,6 +139,11 @@ async function applicationColumns(sb: ReturnType<typeof getSupabaseAdmin>): Prom
+ function normalizeApplication(row: Record<string, unknown>): Record<string, unknown> {
+   return {
+     ...row,
++    film_readiness: row.film_readiness ?? null,
++    film_access: row.film_access ?? null,
++    decision_support: row.decision_support ?? null,
++    guardian_consent: row.guardian_consent ?? null,
++    investment_readiness: row.investment_readiness ?? null,
+     guardian_name:      row.guardian_name      ?? row.parent_name      ?? null,
+     guardian_phone:     row.guardian_phone     ?? row.parent_phone     ?? null,
+     guardian_email:     row.guardian_email     ?? row.parent_email     ?? null,
+diff --git a/artifacts/tdt-app/src/lib/application-progress.ts b/artifacts/tdt-app/src/lib/application-progress.ts
+index b463963..6832bc5 100644
+--- a/artifacts/tdt-app/src/lib/application-progress.ts
++++ b/artifacts/tdt-app/src/lib/application-progress.ts
+@@ -9,13 +9,18 @@ export interface ApplicationQuestionAnswer {
+   optional?: boolean;
+ }
+ 
++/** Unversioned and older records must never inherit newly introduced questions. */
++export function usesNewApplicationQuestions(app: Pick<Application, "form_version">): boolean {
++  return Number(app.form_version) === 5;
++}
++
+ const text = (value: unknown): string | null => {
+   if (value === null || value === undefined) return null;
+   const answer = String(value).trim();
+   return answer || null;
+ };
+ 
+-export function applicationQuestionAnswers(app: Application): ApplicationQuestionAnswer[] {
++function legacyApplicationQuestionAnswers(app: Application): ApplicationQuestionAnswer[] {
+   return [
+     { key: "full_name", number: 1, question: "What's your full name?", answers: [{ label: "Answer", value: text(app.athlete_name) }] },
+     { key: "age", number: 2, question: "How old are you?", answers: [{ label: "Answer", value: text(app.age) }] },
+@@ -34,6 +39,95 @@ export function applicationQuestionAnswers(app: Application): ApplicationQuestio
+   ];
+ }
+ 
++const V5_QUESTIONS = [
++  {
++    "key": "full_name",
++    "label": "What's your full name?"
++  },
++  {
++    "key": "goal",
++    "label": "Where would you like basketball to take you?"
++  },
++  {
++    "key": "age",
++    "label": "How old are you?"
++  },
++  {
++    "key": "game",
++    "label": "Tell us about your game"
++  },
++  {
++    "key": "current_team_school",
++    "label": "What team or school do you play for?"
++  },
++  {
++    "key": "biggest_weakness",
++    "label": "What's one part of your game you'd most like help improving?"
++  },
++  {
++    "key": "city_state",
++    "label": "Where are you based?"
++  },
++  {
++    "key": "contact",
++    "label": "Where can we reach you about your application?"
++  },
++  {
++    "key": "social_link",
++    "label": "What's your Instagram or X handle?"
++  },
++  {
++    "key": "time_commitment",
++    "label": "On a typical training day, how much time could you set aside for this program?"
++  },
++  {
++    "key": "film_readiness",
++    "label": "How do you feel about learning through game film and personalised drills?"
++  },
++  {
++    "key": "device_access",
++    "label": "What device do you have access to for reviewing film?"
++  },
++  {
++    "key": "guardian",
++    "label": "Who will be involved in deciding whether to join?"
++  },
++  {
++    "key": "guardian_aware",
++    "label": "Have you told your parent or supporter you're applying?"
++  },
++  {
++    "key": "investment_readiness",
++    "label": "If the coaching fits your goals, are you open to investing in your development?"
++  },
++  {
++    "key": "heard_about",
++    "label": "How did you hear about us?"
++  }
++] as const;
++
++export function applicationQuestionAnswers(app: Application): ApplicationQuestionAnswer[] {
++  const legacy = legacyApplicationQuestionAnswers(app);
++  if (!usesNewApplicationQuestions(app)) return legacy;
++  const definitions = new Map(legacy.map(question => [question.key, question]));
++  definitions.set("film_readiness", {
++    key: "film_readiness", number: 0, question: "",
++    answers: [{ label: "Film coaching", value: text(app.film_readiness) }, { label: "Game footage", value: text(app.film_access) }],
++  });
++  definitions.set("investment_readiness", {
++    key: "investment_readiness", number: 0, question: "",
++    answers: [{ label: "Openness to paid coaching", value: text(app.investment_readiness) }],
++  });
++  definitions.get("guardian")!.answers.unshift({ label: "Decision support", value: text(app.decision_support) });
++  definitions.get("guardian_aware")!.answers.push({ label: "Reported guardian consent", value: text(app.guardian_consent) });
++  const adultAlone = Number(app.age) >= 18 && app.decision_support === "I'm deciding for myself";
++  const declinesFilm = app.film_readiness === "I don't want film coaching right now";
++  return V5_QUESTIONS
++    .filter(q => !(q.key === "device_access" && declinesFilm))
++    .filter(q => !(q.key === "guardian_aware" && adultAlone))
++    .map((q, index) => ({ ...definitions.get(q.key)!, number: index + 1, question: q.label, optional: false }));
++}
++
+ function questionHasAnswer(question: ApplicationQuestionAnswer): boolean {
+   return question.answers.some(answer => answer.value !== null);
+ }
+@@ -44,41 +138,31 @@ export function applicationProgress(app: Application) {
+     ? false
+     : app.application_state === "submitted" || isApplicationComplete(app);
+ 
+-  const storedCurrent = Number(app.current_question_number);
+-  const hasProgressState = Number.isInteger(storedCurrent)
+-    && storedCurrent >= 1
+-    && storedCurrent <= questions.length;
+-  const formVersion = Number(app.form_version);
+-  const trackedByVersion = Number.isInteger(formVersion) && formVersion >= 3;
+-  const hasProgressMarker = hasProgressState && Boolean(
+-    app.current_question_key || app.current_question_label || app.last_answered_question_number || app.last_answered_question_label || app.progress_updated_at,
+-  );
+-  const tracked = trackedByVersion || hasProgressMarker;
+-  const inferredCurrent = questions.find(question => !question.optional && !questionHasAnswer(question))?.number
+-    ?? questions.length;
+-  const currentNumber = complete
+-    ? questions.length
+-    : tracked
+-      ? storedCurrent
+-      : inferredCurrent;
+-  const current = questions[currentNumber - 1] ?? questions[0]!;
+-
+-  const storedLast = Number(app.last_answered_question_number);
+-  const inferredLast = questions.reduce(
+-    (last, question) => questionHasAnswer(question) ? Math.max(last, question.number) : last,
+-    0,
+-  );
+-  const lastAnsweredNumber = Number.isInteger(storedLast) && storedLast >= 1
+-    ? storedLast
+-    : inferredLast;
+-
++  const positiveInteger = (value: unknown): number | null => {
++    const n = Number(value);
++    return Number.isInteger(n) && n > 0 ? n : null;
++  };
++  const totalQuestions = positiveInteger(app.total_questions) ?? questions.length;
++  const storedCurrent = positiveInteger(app.current_question_number);
++  const storedLast = positiveInteger(app.last_answered_question_number);
++  const byKey = questions.find(q => q.key === app.current_question_key);
++  const lastByKey = questions.find(q => q.key === app.last_answered_question_key);
++  const inferredCurrent = questions.find(q => !q.optional && !questionHasAnswer(q)) ?? questions[questions.length - 1]!;
++  const hasStoredKey = Boolean(text(app.current_question_key));
++  const tracked = Number(app.form_version) >= 3 || hasStoredKey || Boolean(storedCurrent && app.progress_updated_at);
++  const currentNumber = complete ? totalQuestions
++    : storedCurrent && storedCurrent <= totalQuestions ? storedCurrent : byKey?.number ?? inferredCurrent.number;
++  const resolved = byKey ?? (hasStoredKey
++    ? { key: app.current_question_key!, number: currentNumber, question: text(app.current_question_label) ?? "Application question", answers: [] }
++    : questions.find(q => q.number === currentNumber) ?? inferredCurrent);
++  const current: ApplicationQuestionAnswer = {
++    ...resolved, number: currentNumber,
++    question: hasStoredKey && text(app.current_question_label) ? text(app.current_question_label)! : resolved.question,
++  };
++  const inferredLast = questions.reduce((last, q) => questionHasAnswer(q) ? Math.max(last, q.number) : last, 0);
++  const lastAnsweredNumber = storedLast && storedLast <= totalQuestions ? storedLast : lastByKey?.number ?? inferredLast;
+   return {
+-    questions,
+-    complete,
+-    tracked,
+-    current,
+-    currentNumber,
+-    lastAnsweredNumber,
++    questions, totalQuestions, complete, tracked, current, currentNumber, lastAnsweredNumber,
+     answeredCount: questions.filter(questionHasAnswer).length,
+     lastActivityAt: app.progress_updated_at ?? app.last_answered_at ?? app.created_at,
+   };
+diff --git a/artifacts/tdt-app/src/lib/applications-api.ts b/artifacts/tdt-app/src/lib/applications-api.ts
+index 4a06d08..3c6386e 100644
+--- a/artifacts/tdt-app/src/lib/applications-api.ts
++++ b/artifacts/tdt-app/src/lib/applications-api.ts
+@@ -33,6 +33,11 @@ export interface Application {
+   current_team_school: string | null;
+   social_link: string | null;
+   device_access: string | null;
++  film_readiness?: string | null;
++  film_access?: string | null;
++  decision_support?: string | null;
++  guardian_consent?: string | null;
++  investment_readiness?: string | null;
+   biggest_weakness: string | null;
+   goal: string | null;
+   why_this_program: string | null;
+diff --git a/artifacts/tdt-app/src/pages/coach/CoachApplicationAnalytics.tsx b/artifacts/tdt-app/src/pages/coach/CoachApplicationAnalytics.tsx
+index 9c495c9..4fe599e 100644
+--- a/artifacts/tdt-app/src/pages/coach/CoachApplicationAnalytics.tsx
++++ b/artifacts/tdt-app/src/pages/coach/CoachApplicationAnalytics.tsx
+@@ -580,7 +580,9 @@ function ApplicationTab({ snapshot }: { snapshot: ApplicationAnalyticsSnapshot }
+               </div>
+             ))}
+           </div>
+-        ) : <p className="caa-empty">Question-level tracking is ready for newer forms, but this cohort does not yet contain a mature version-specific sample.</p>}
++        ) : <p className="caa-empty">{form && form.formVersion >= 5
++          ? "This form has different question paths. Current-question details are available on each application, but comparable per-question drop-off needs a reach-event history."
++          : "Question-level tracking is ready for newer forms, but this cohort does not yet contain a mature version-specific sample."}</p>}
+         <div className="caa-data-note"><AlertTriangle size={15} /><span>{snapshot.progress.note} Per-question elapsed time is not recorded.</span></div>
+       </section>
+       <section className="caa-subsection caa-subsection-border">
+diff --git a/artifacts/tdt-app/src/pages/coach/CoachApplications.tsx b/artifacts/tdt-app/src/pages/coach/CoachApplications.tsx
+index fa14c51..5c0d1f1 100644
+--- a/artifacts/tdt-app/src/pages/coach/CoachApplications.tsx
++++ b/artifacts/tdt-app/src/pages/coach/CoachApplications.tsx
+@@ -78,7 +78,7 @@ import { fetchNotifications, markNotificationRead } from "@/lib/notifications-ap
+ import { useCoachMarkAnchor } from "@/components/coachmarks";
+ import { PEACH_GRADIENT } from "@/lib/theme";
+ import { isApplicationComplete } from "@/lib/application-insights";
+-import { applicationProgress } from "@/lib/application-progress";
++import { usesNewApplicationQuestions, applicationProgress } from "@/lib/application-progress";
+ import { onEvent, onConnection, openRealtime } from "@/lib/realtime";
+ 
+ // Charts are substantial and most visits are still for reviewing a person.
+@@ -2070,7 +2070,7 @@ function ListView({
+                       color: ACCENT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                     }}>
+                       {rowProgress.tracked
+-                        ? `Question ${rowProgress.currentNumber}/${rowProgress.questions.length} · ${rowProgress.current.question}`
++                        ? `Question ${rowProgress.currentNumber}/${rowProgress.totalQuestions} · ${rowProgress.current.question}`
+                         : `Legacy save · ${rowProgress.answeredCount}/${rowProgress.questions.length} answers stored · exact stop not tracked`}
+                     </span>
+                   ) : null}
+@@ -3479,11 +3479,11 @@ function ApplicationProgressCard({ app }: { app: Application }) {
+     && Date.now() - lastActivityMs >= 24 * 60 * 60 * 1000;
+   const activityLabel = hasBeenInactive ? "Paused" : "Last seen";
+   const answeredQuestions = progress.questions.filter((question) => (
+-    question.number !== progress.currentNumber
++    question.key !== progress.current.key
+     && question.answers.some((answer) => answer.value !== null)
+   ));
+   const remainingQuestions = progress.questions.filter((question) => (
+-    question.number !== progress.currentNumber
++    question.key !== progress.current.key
+     && !question.answers.some((answer) => answer.value !== null)
+   ));
+   const currentAnswers = progress.current.answers.filter((answer) => answer.value !== null);
+@@ -3545,7 +3545,7 @@ function ApplicationProgressCard({ app }: { app: Application }) {
+             fontWeight: 600,
+           }}>
+             {progress.tracked
+-              ? `${progress.currentNumber}/${progress.questions.length}`
++              ? `${progress.currentNumber}/${progress.totalQuestions}`
+               : `${progress.answeredCount}/${progress.questions.length}`}
+           </span>
+           <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+@@ -3628,7 +3628,7 @@ function ApplicationProgressCard({ app }: { app: Application }) {
+               </div>
+               <span style={{ fontFamily: FONT, fontSize: 13, lineHeight: "17px", fontWeight: 400, color: "rgba(0,0,0,0.38)", whiteSpace: "nowrap" }}>
+                 {progress.tracked
+-                  ? `${progress.currentNumber} of ${progress.questions.length}`
++                  ? `${progress.currentNumber} of ${progress.totalQuestions}`
+                   : `${progress.answeredCount} saved`}
+               </span>
+             </div>
+@@ -4155,7 +4155,7 @@ function DetailView({
+               <InfoChip
+                 icon={<Share2 size={18} />}
+                 label="Social"
+-                value={app.social_link
++                value={app.social_link && /^(https?:\/\/)?(www\.)?(instagram\.com|twitter\.com|x\.com)\//i.test(app.social_link)
+                   ? <a
+                       href={app.social_link.startsWith("http") ? app.social_link : `https://${app.social_link}`}
+                       target="_blank"
+@@ -4165,24 +4165,28 @@ function DetailView({
+                     >
+                       {app.social_link}
+                     </a>
+-                  : null}
++                  : app.social_link}
+               />
+               <InfoChip icon={<Shirt size={20} />} label="Position" value={app.position} />
+               <InfoChip icon={<Timer size={18} />} label="Years Playing" value={app.years_playing_answer ?? (app.years_playing != null ? `${app.years_playing} Years` : null)} />
+               <InfoChip icon={<GraduationCap size={20} />} label="School" value={app.current_team_school} />
+               <InfoChip icon={<Tablet size={18} />} label="Device Access" value={app.device_access} />
++              {usesNewApplicationQuestions(app) && <InfoChip icon={<Tablet size={18} />} label="Film Coaching" value={app.film_readiness} />}
++              {usesNewApplicationQuestions(app) && <InfoChip icon={<Tablet size={18} />} label="Game Footage" value={app.film_access} />}
+               <InfoChip icon={<Megaphone size={18} />} label="Heard About Us" value={app.heard_about} />
+             </div>
+             {app.biggest_weakness?.trim() ? (
+               <div style={{ padding: "0 20px 20px" }}>
+-                <TextChip icon={<AlertCircle size={16} />} label="Biggest Weakness" value={app.biggest_weakness} />
++                <TextChip icon={<AlertCircle size={16} />} label={usesNewApplicationQuestions(app) ? "Coaching Priority" : "Biggest Weakness"} value={app.biggest_weakness} />
+               </div>
+             ) : null}
+           </SpecCard>
+ 
+           {/* Parent / Guardian */}
+-          <SpecCard title="Parent/Guardian">
++          <SpecCard title={usesNewApplicationQuestions(app) ? "Parent / Supporter" : "Parent/Guardian"}>
+             <div className="ca-chip-grid">
++              {usesNewApplicationQuestions(app) && <InfoChip icon={<Users size={20} />} label="Decision Support" value={app.decision_support} />}
++              {usesNewApplicationQuestions(app) && <InfoChip icon={<Users size={20} />} label="Reported Guardian Consent" value={app.guardian_consent} />}
+               <InfoChip icon={<User size={22} />} label="Name" value={app.guardian_name} />
+               <InfoChip icon={<Contact2 size={20} />} label="Contact Info" value={guardianContact} />
+               <InfoChip
+@@ -4190,7 +4194,7 @@ function DetailView({
+                 label="Told them applying?"
+                 value={
+                   app.guardian_aware
+-                    ? <span style={{ color: /^no$/i.test(app.guardian_aware.trim()) ? "#D64545" : undefined }}>
++                    ? <span style={{ color: /^(no|not yet)$/i.test(app.guardian_aware.trim()) ? "#D64545" : undefined }}>
+                         {app.guardian_aware}
+                       </span>
+                     : null
+@@ -4206,8 +4210,9 @@ function DetailView({
+               going for you, and what makes you believe it?" */}
+           <SpecCard title="The Ceiling">
+             <div style={{ display: "flex", flexDirection: "column", padding: 20, gap: 20 }}>
+-              <TextChip icon={<Target size={16} />} label="Highest level & why" value={app.goal} />
++              <TextChip icon={<Target size={16} />} label={usesNewApplicationQuestions(app) ? "Basketball Goal" : "Highest level & why"} value={app.goal} />
+               <TextChip icon={<Clock3 size={16} />} label="Time Commitment" value={app.time_commitment} />
++              {usesNewApplicationQuestions(app) && <TextChip icon={<Target size={16} />} label="Openness to Paid Coaching" value={app.investment_readiness} />}
+               {app.anything_else?.trim() ? (
+                 <TextChip icon={<MessageSquare size={16} />} label="Anything else" value={app.anything_else} />
+               ) : null}
+diff --git a/lib/db/migrations/2026-09-11-application-v5.sql b/lib/db/migrations/2026-09-11-application-v5.sql
+new file mode 100644
+--- /dev/null
++++ b/lib/db/migrations/2026-09-11-application-v5.sql
+@@ -0,0 +1,13 @@
++-- Additive only. Apply before deploying the v5 public form or coach API.
++-- Keep existing v4 answers, progress columns, defaults and constraints intact.
++BEGIN;
++SET LOCAL lock_timeout = '5s';
++SET LOCAL statement_timeout = '30s';
++ALTER TABLE public.applications
++  ADD COLUMN IF NOT EXISTS film_readiness TEXT,
++  ADD COLUMN IF NOT EXISTS film_access TEXT,
++  ADD COLUMN IF NOT EXISTS decision_support TEXT,
++  ADD COLUMN IF NOT EXISTS guardian_consent TEXT,
++  ADD COLUMN IF NOT EXISTS investment_readiness TEXT;
++NOTIFY pgrst, 'reload schema';
++COMMIT;
+diff --git a/artifacts/tdt-app/tests/application-progress-v5.test.mjs b/artifacts/tdt-app/tests/application-progress-v5.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/artifacts/tdt-app/tests/application-progress-v5.test.mjs
+@@ -0,0 +1,81 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { registerHooks } from 'node:module';
++registerHooks({
++  resolve(specifier, context, next) {
++    if (specifier === './application-insights') return {url:new URL('./application-insights.ts',context.parentURL).href,shortCircuit:true};
++    return next(specifier,context);
++  },
++});
++const {applicationProgress, applicationQuestionAnswers, usesNewApplicationQuestions} = await import('../src/lib/application-progress.ts');
++const row = (changes = {}) => ({
++  application_state:'draft', form_version:5, age:17, created_at:'2026-09-11T12:00:00Z',
++  current_question_key:'goal', current_question_number:2, current_question_label:'Where would you like basketball to take you?',
++  total_questions:16, goal:'Play professionally', ...changes,
++});
++
++test('v4 keeps its original descriptors; v5 uses the goal-first order', () => {
++  assert.equal(applicationQuestionAnswers(row({form_version:4})).find(q=>q.key==='goal').number,10);
++  const progress=applicationProgress(row());
++  assert.equal(progress.current.key,'goal');
++  assert.equal(progress.current.number,2);
++  assert.equal(progress.current.answers[0].value,'Play professionally');
++});
++
++test('old and unversioned records never acquire new question labels or qualification fields', () => {
++  const original=applicationQuestionAnswers(row({form_version:4,goal:'Original essay'}));
++  for(const version of [undefined,null,0,3,4]) {
++    const app=row({form_version:version,goal:'Original essay'});
++    const before=structuredClone(app);
++    assert.equal(usesNewApplicationQuestions(app),false);
++    assert.deepEqual(applicationQuestionAnswers(app),original);
++    assert.equal(applicationQuestionAnswers(app).length,14);
++    assert.equal(applicationQuestionAnswers(app).some(q=>q.key==='film_readiness'||q.key==='investment_readiness'),false);
++    assert.equal(applicationQuestionAnswers(app).find(q=>q.key==='guardian').answers.some(a=>a.label==='Decision support'),false);
++    assert.deepEqual(app,before);
++  }
++  assert.equal(usesNewApplicationQuestions(row()),true);
++});
++
++test('conditional paths keep stable identities and the saved visible count', () => {
++  for(const adult of [false,true]) for(const decline of [false,true]) {
++    const app=row({
++      age:adult?20:17, decision_support:adult?"I'm deciding for myself":'A parent or guardian',
++      film_readiness:decline?"I don't want film coaching right now":"I'd like that kind of coaching",
++      total_questions:16-Number(adult)-Number(decline),
++      current_question_key:'heard_about',current_question_number:16-Number(adult)-Number(decline),current_question_label:'How did you hear about us?',
++    });
++    const progress=applicationProgress(app);
++    assert.equal(progress.questions.length,app.total_questions);
++    assert.equal(progress.current.key,'heard_about');
++    assert.equal(progress.totalQuestions,app.total_questions);
++  }
++});
++
++test('stored key wins over an ordinal reconstructed from temporarily missing qualification columns', () => {
++  const progress=applicationProgress(row({
++    current_question_key:'guardian',current_question_number:12,current_question_label:'Who will be involved in deciding whether to join?',
++    total_questions:15,film_readiness:null,decision_support:null,
++  }));
++  assert.equal(progress.current.key,'guardian');
++  assert.equal(progress.current.number,12);
++  assert.equal(progress.totalQuestions,15);
++});
++
++test('unknown future keys preserve their stored label rather than displaying an unrelated question', () => {
++  const progress=applicationProgress(row({current_question_key:'new_question',current_question_number:3,current_question_label:'New question'}));
++  assert.equal(progress.current.key,'new_question');
++  assert.equal(progress.current.question,'New question');
++  assert.deepEqual(progress.current.answers,[]);
++});
++
++test('all new qualification answers are available in coach progress descriptors', () => {
++  const questions=applicationQuestionAnswers(row({film_readiness:'Interested',film_access:'Yes',decision_support:'A parent or guardian',guardian_consent:'Yes',investment_readiness:'Open'}));
++  const answers=questions.flatMap(q=>q.answers).map(a=>a.value);
++  for(const value of ['Interested','Yes','A parent or guardian','Open']) assert.ok(answers.includes(value));
++});
++
++test('explicit submitted state completes even when film was declined and device is absent', () => {
++  assert.equal(applicationProgress(row({application_state:'submitted',device_access:null,film_readiness:"I don't want film coaching right now",total_questions:15})).complete,true);
++  assert.equal(applicationProgress(row({application_state:'draft',device_access:'Phone',time_commitment:'30 to 45 minutes',biggest_weakness:'Finishing'})).complete,false);
++});

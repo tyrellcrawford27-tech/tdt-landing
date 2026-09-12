@@ -1,0 +1,137 @@
+.darkSection {
+  background: #000;
+  color: #fbf6f2;
+  padding: 104px 24px;
+}
+
+.container { width: 100%; max-width: 1156px; margin: 0 auto; }
+.eyebrow { margin: 0 0 18px; color: #e18a64; font-size: 15px; font-weight: 500; letter-spacing: normal; }
+.heading { margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.12; font-weight: 500; letter-spacing: -0.03em; text-wrap: balance; }
+.sectionIntro { display: grid; grid-template-columns: 1.2fr 1fr; gap: 72px; align-items: end; }
+.introCopy { max-width: 510px; margin: 0; font-size: 17px; line-height: 1.65; color: #b5b1ae; }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; margin: 60px 0 0; padding: 0; list-style: none; }
+.step { padding-top: 22px; border-top: 1px solid #3e312b; }
+.stepNumber { display: block; margin-bottom: 22px; color: #e18a64; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: normal; }
+.step h3 { margin: 0 0 14px; color: #fbf6f2; font-size: 21px; line-height: 1.25; font-weight: 500; letter-spacing: -0.02em; }
+.step p { margin: 0; font-size: 15px; line-height: 1.6; color: #b5b1ae; }
+.quietNote { margin: 32px 0 0; color: #96918e; font-size: 14px; line-height: 1.6; }
+.appSection { padding-top: 56px; }
+.centerIntro { max-width: 660px; margin: 0 auto 52px; text-align: center; }
+.centerIntro .introCopy { margin: 22px auto 0; }
+.filmFeature { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); align-items: center; gap: 46px; margin: 0; }
+.screenLink { display: block; min-width: 0; border-radius: 22px; outline-offset: 6px; }
+.screenWindow { overflow: hidden; position: relative; border-radius: 22px; border: 1px solid #403632; background: #111; }
+.screenImage { display: block; width: 100%; height: 100%; object-fit: cover; }
+.filmWindow { aspect-ratio: 1.26; }
+.filmWindow .screenImage { object-position: center top; }
+.filmCaption h3, .appFigure h3 { margin: 0 0 16px; font-size: 27px; line-height: 1.22; font-weight: 500; letter-spacing: -0.025em; }
+.filmCaption p, .appFigure p { margin: 0; color: #b5b1ae; font-size: 16px; line-height: 1.65; }
+.textLink { display: inline-flex; align-items: center; gap: 9px; margin-top: 24px; color: #e6a182; font-size: 14px; line-height: 1.5; padding-block: 7px; text-underline-offset: 5px; }
+.textLink:hover { text-decoration: underline; }
+.textLink:focus-visible, .screenLink:focus-visible { outline: 2px solid #e18a64; outline-offset: 5px; }
+.appPair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 56px; }
+.appFigure { margin: 0; min-width: 0; }
+.drillWindow, .callWindow { aspect-ratio: 1.28; }
+.drillWindow .screenImage { object-position: center top; }
+.callWindow .screenImage { object-position: center 75%; }
+.appFigure figcaption { position: relative; padding: 24px 4px 0 44px; }
+.appFigure .stepNumber { position: absolute; top: 29px; left: 4px; }
+.appFigure h3 { font-size: 24px; margin-bottom: 10px; }
+.appSection .quietNote { text-align: center; margin-top: 40px; }
+.daysSection { padding-block: 32px 80px; }
+.daysPanel { display: grid; grid-template-columns: 1.05fr 1fr; gap: 64px; padding: 52px; border-radius: 28px; border: 1px solid #493229; background: radial-gradient(ellipse at 0 0, #352117 0%, #17110e 48%, #100d0b 100%); }
+.daysIntro > p:not(.eyebrow) { margin: 24px 0 0; color: #c1b5ad; font-size: 16px; line-height: 1.65; }
+.daysPanel .heading { font-size: clamp(30px, 3vw, 39px); }
+.daysDetails { margin: 0; }
+.daysDetails > div { padding: 22px 0; border-bottom: 1px solid #47362c; }
+.daysDetails > div:first-child { padding-top: 0; }
+.daysDetails > div:last-child { padding-bottom: 0; border: 0; }
+.daysDetails dt { margin-bottom: 8px; font-size: 20px; line-height: 1.3; font-weight: 500; letter-spacing: -0.02em; }
+.daysDetails dd { margin: 0; font-size: 15px; line-height: 1.6; color: #c1b5ad; }
+.lightSection { background: #fbf6f2; color: #1a0f0a; padding: 112px 24px 64px; }
+.lightSection .eyebrow, .finalSection .eyebrow { color: #b34929; }
+.pricingLayout { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 90px; }
+.pricingIntro > p:not(.eyebrow) { max-width: 410px; margin: 24px 0 0; color: #71635a; font-size: 17px; line-height: 1.65; }
+.pricingIntro .textLink { color: #a54426; }
+.priceCard { padding: 32px; border-radius: 28px; border: 1px solid #decfc5; background: linear-gradient(145deg, #fffdfb 0%, #f3e8df 100%); box-shadow: 0 16px 50px -28px #75452f45, inset 0 1px 0 #fff; }
+.priceCardTop { display: flex; justify-content: space-between; align-items: center; gap: 24px; font-size: 16px; font-weight: 500; }
+.cardLogo { width: 34px; height: 42px; display: flex; align-items: center; }
+.price { margin: 28px 0 4px; font-size: 60px; line-height: 1; letter-spacing: -0.04em; font-weight: 500; }
+.priceDescription { margin: 0; font-size: 15px; line-height: 1.5; color: #76665c; }
+.inclusions { list-style: none; padding: 24px 0 0; margin: 24px 0; border-top: 1px solid #dccdc3; }
+.inclusions li { position: relative; padding: 6px 0 6px 23px; font-size: 15px; line-height: 1.5; color: #57483f; }
+.inclusions li::before { content: '✓'; position: absolute; left: 0; color: #b34929; }
+.applyButton { min-height: 48px; padding: 12px 26px; font-size: 16px; }
+.applyButton:focus-visible { outline: 2px solid #b34929; outline-offset: 4px; }
+.priceCard .applyButton { width: 100%; }
+.cardNote { max-width: 340px; margin: 16px auto 0; text-align: center; color: #76665c; font-size: 13px; line-height: 1.6; }
+.finalSection { padding: 30px 24px 100px; background: #fbf6f2; color: #1a0f0a; }
+.finalContent { max-width: 760px; margin: 0 auto; text-align: center; }
+.finalContent > p:not(.eyebrow) { max-width: 590px; margin: 24px auto 28px; color: #71635a; font-size: 17px; line-height: 1.65; }
+
+@media (min-width: 1024px) {
+  .darkSection, .lightSection { padding-inline: 100px; }
+}
+
+/* The pricing block lives inside the desktop light-beam scene. Its surface is
+   supplied by that scene, so this section must not paint a second rectangular
+   cream layer over it. The tighter vertical rhythm keeps the entire first view
+   of the newly light page on screen. */
+@media (min-width: 768px) {
+  .pricingTransition {
+    min-height: 100svh;
+    display: grid;
+    align-items: center;
+    padding-top: 28px;
+    padding-bottom: 28px;
+    background: transparent;
+  }
+
+  .pricingTransition .priceCard { padding: 26px; }
+  .pricingTransition .price { margin-top: 22px; font-size: 54px; }
+  .pricingTransition .inclusions { margin: 18px 0; padding-top: 18px; }
+}
+
+@media (max-width: 1023px) {
+  .sectionIntro { gap: 32px; }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+  .filmFeature { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 28px; }
+  .daysPanel { gap: 32px; padding: 32px; }
+  .pricingLayout { gap: 40px; }
+}
+
+@media (max-width: 767px) {
+  .darkSection { padding: 72px 24px; }
+  .sectionIntro { grid-template-columns: 1fr; gap: 22px; }
+  .introCopy { font-size: 16px; line-height: 1.6; }
+  .eyebrow { margin-bottom: 14px; font-size: 14px; }
+  .steps { grid-template-columns: 1fr; gap: 0; margin-top: 32px; }
+  .step { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 16px; padding: 23px 0; }
+  .stepNumber { margin-bottom: 16px; }
+  .step .stepNumber { margin-top: 4px; margin-bottom: 0; }
+  .step h3 { margin-bottom: 9px; }
+  .quietNote { margin-top: 10px; }
+  .appSection { padding-top: 24px; }
+  .centerIntro { text-align: left; margin-bottom: 32px; }
+  .centerIntro .introCopy { margin-top: 20px; }
+  .filmFeature { display: flex; flex-direction: column; gap: 22px; align-items: stretch; }
+  .filmCaption { position: relative; padding-left: 36px; }
+  .filmCaption .stepNumber { position: absolute; left: 0; top: 4px; }
+  .filmCaption h3, .appFigure h3 { font-size: 23px; }
+  .filmCaption p, .appFigure p { font-size: 15px; }
+  .filmWindow { aspect-ratio: 1.08; }
+  .screenLink, .screenWindow { border-radius: 16px; }
+  .appPair { grid-template-columns: 1fr; gap: 36px; margin-top: 36px; }
+  .appFigure figcaption { padding-left: 36px; }
+  .appFigure .stepNumber { left: 0; }
+  .appSection .quietNote { text-align: left; margin-top: 28px; }
+  .daysSection { padding-top: 0; padding-bottom: 32px; }
+  .daysPanel { grid-template-columns: 1fr; gap: 30px; padding: 28px 24px; border-radius: 22px; }
+  .lightSection { padding: 72px 24px 32px; }
+  .pricingLayout { grid-template-columns: 1fr; gap: 36px; }
+  .pricingIntro > p:not(.eyebrow) { font-size: 16px; margin-top: 20px; }
+  .priceCard { padding: 26px 24px; border-radius: 24px; }
+  .price { font-size: 54px; }
+  .finalSection { padding: 20px 24px 76px; }
+  .finalContent > p:not(.eyebrow) { font-size: 16px; }
+}

@@ -23,6 +23,14 @@ export type ApplicationScreen = BaseQuestion & (
 export const SELF_SUPPORTED = "I'm deciding for myself";
 export const FILM_DECLINED = "I don't want film coaching right now";
 export const NO_SOCIAL = "I don't have an Instagram or X account";
+// Kept valid for drafts and submissions that started before the friendlier
+// investment wording shipped. These values are not shown to new applicants.
+const LEGACY_INVESTMENT_OPTIONS = [
+  'Yes, if the coaching is right for me',
+  'I need to discuss it with my parent or supporter',
+  "I'd like to understand what's included before deciding",
+  "I'm not looking for paid coaching right now",
+];
 export const GOAL_OPTIONS = [
   'Earn a bigger role on my team', 'Make a school, club or prep team',
   'Play in college or university', 'Play professionally', "I'm still figuring that out", 'Another goal',
@@ -51,13 +59,13 @@ export const APPLICATION_SCREENS: ApplicationScreen[] = [
   ] },
   { key: 'device_access', section: 'Your fit', question: 'What device do you have access to for reviewing film?', subtext: "Any of these can work. We'll help you get set up.", field: 'device_access', type: 'radio-grid', options: ['Laptop or desktop', 'iPad or tablet', 'Phone', 'I need help finding an option'], fields: ['device_access'] },
   { key: 'guardian', section: 'Your support', question: 'Who will be involved in deciding whether to join?', subtext: 'If someone is helping you make this decision, share their contact details so they can be included in the call.', type: 'group', kind: 'parent', fields: ['decision_support', 'parent_name', 'guardian_name', 'parent_phone', 'guardian_phone', 'parent_email', 'guardian_email'], subs: [
-    { field: 'decision_support', kind: 'radio-grid', label: 'Who is supporting your application?', options: ['A parent or guardian', 'Another supporter', SELF_SUPPORTED] },
+    { field: 'decision_support', kind: 'radio-grid', label: 'Who is supporting your application?', options: ['A parent or guardian', 'Another supporter'] },
     { field: 'guardian_name', kind: 'text', label: 'Their full name', placeholder: 'Full name' },
     { field: 'guardian_phone', kind: 'tel', label: 'Their phone number', placeholder: '416-555-0123' },
     { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'their@email.com' },
   ] },
   { key: 'guardian_aware', section: 'Your support', question: "Have you told your parent or supporter you're applying?", subtext: 'This helps us understand where you are in the conversation.', field: 'guardian_aware', type: 'choice', options: ['Yes', 'Not yet'], fields: ['parent_aware', 'guardian_aware', 'guardian_consent'] },
-  { key: 'investment_readiness', section: 'Your fit', question: 'If the coaching fits your goals, are you open to investing in your development?', subtext: 'This is a paid coaching program. You do not need to make a commitment in this application.', field: 'investment_readiness', type: 'radio-grid', options: ['Yes, if the coaching is right for me', 'I need to discuss it with my parent or supporter', "I'd like to understand what's included before deciding", "I'm not looking for paid coaching right now"], fields: ['investment_readiness'] },
+  { key: 'investment_readiness', section: 'Your fit', question: 'What would help you feel ready to take the next step?', subtext: 'This helps us understand what matters most to you. You are not committing to anything in this application.', field: 'investment_readiness', type: 'radio-grid', options: ['See whether coaching fits my goals', 'Understand how the program works', 'Talk it over with a parent or supporter', 'I’m still deciding if coaching is right for me'], fields: ['investment_readiness'] },
   { key: 'heard_about', section: 'One last detail', question: 'How did you hear about us?', subtext: 'This helps us understand how players find the program.', field: 'heard_about', type: 'radio-grid', options: ['Instagram post', 'Instagram DM', 'Instagram story', 'A friend or teammate', 'From Jaiden directly', 'Other', "I don't remember"], detailField: 'heard_about_detail', detailOption: 'Other', fields: ['heard_about'] },
 ];
 
@@ -201,7 +209,14 @@ export function applicationScreenError(question: ApplicationScreen, form: Applic
   const choices = question.type === 'group' ? visibleSubFields(question, form).filter(sub => sub.kind === 'radio-grid')
     : question.type === 'radio-grid' || question.type === 'choice' ? [question] : [];
   for (const choice of choices) {
-    if ('options' in choice && !choice.options.includes(form[choice.field])) return { field: choice.field, message: 'Choose one of the available options.' };
+    if ('options' in choice) {
+      const options = choice.field === 'investment_readiness'
+        ? [...choice.options, ...LEGACY_INVESTMENT_OPTIONS]
+        : choice.field === 'decision_support'
+          ? [...choice.options, SELF_SUPPORTED]
+          : choice.options;
+      if (!options.includes(form[choice.field])) return { field: choice.field, message: 'Choose one of the available options.' };
+    }
   }
   if (question.key === 'guardian' && isMinor(form) && form.decision_support !== 'A parent or guardian') return { field: 'decision_support', message: 'A parent or legal guardian needs to be involved for players under 18.' };
   if (question.type === 'radio-grid' && question.detailField && form[question.field] === question.detailOption && !form[question.detailField].trim()) return { field: question.detailField, message: question.key === 'goal' ? 'Tell us the goal you have in mind. A few words are enough.' : 'Tell us where you heard about the program.' };

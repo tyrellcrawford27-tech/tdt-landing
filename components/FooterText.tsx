@@ -7,10 +7,11 @@ const HOVER_TEXT   = 'BE DIFFERENT';
 const MEASURE_TEXT = REST_TEXT; // longer string sets the container width
 const MEASURE_SIZE = 100;
 
-const COLOR_REST  = 'rgba(26, 15, 10, 0.11)';
-const COLOR_HOVER = 'rgba(26, 15, 10, 0.28)';
+type FooterTextProps = {
+  darkBackground?: boolean;
+};
 
-export function FooterText() {
+export function FooterText({ darkBackground = false }: FooterTextProps) {
   const [hovered, setHovered]   = useState(false);
   const [filterOn, setFilterOn] = useState(false);
   const [fontSize, setFontSize] = useState(MEASURE_SIZE);
@@ -80,6 +81,8 @@ export function FooterText() {
   const onEnter = () => { setHovered(true);  runFilter(); };
   const onLeave = () => { setHovered(false); runFilter(); };
   const onClick = () => runFilter();
+  const colorRest = darkBackground ? 'rgba(255, 255, 255, 0.65)' : 'rgba(26, 15, 10, 0.11)';
+  const colorHover = darkBackground ? 'rgba(255, 255, 255, 0.95)' : 'rgba(26, 15, 10, 0.28)';
 
   return (
     <>
@@ -152,7 +155,7 @@ export function FooterText() {
           }}
         >
           {REST_TEXT.split('').map((char, i) => (
-            <span key={i} style={{ ...SHARED, color: COLOR_REST }}>
+            <span key={i} style={{ ...SHARED, color: colorRest }}>
               {char === ' ' ? ' ' : char}
             </span>
           ))}
@@ -178,7 +181,7 @@ export function FooterText() {
                 key={i}
                 style={{
                   ...SHARED,
-                  color: COLOR_HOVER,
+                  color: colorHover,
                   opacity: hovered ? 1 : 0,
                   transform: `translateY(${hovered ? waveY : -14}px) scale(${hovered ? 1.015 : 0.95})`,
                   transition: [
