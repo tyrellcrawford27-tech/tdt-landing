@@ -136,3 +136,9 @@ The owner's latest direction supersedes the previous mobile chat/profile refinem
 - `components/HowItWorks.module.css`: whole-scene mobile pinning, preserved screenshot ratios, visual-only mobile previews and reduced-motion behavior.
 - `scripts/verify-how-it-works.mjs`: six phone/landscape sizes, real native forward/backward touch swipes, automatic stage progression, contained products, animated spine, chapter taps and untrapped section exit; desktop chat coverage remains.
 - `docs/how-it-works-implementation.md`: latest mobile behavior.
+
+## Short desktop browser windows
+
+The previous desktop `max-height: 759px` rule removed the sticky pin and scroll track. This made progression stop entirely on smaller laptop windows, including MacBooks with less vertical space after browser chrome or display scaling. Short desktop windows now retain the native scroll track and a stable viewport-height pin. A flex frame reserves the actual topic height and assigns the remaining space to the original two-column product/chat panel. Screenshots remain fully contained at their original aspect ratios. Community cards fit the available interaction area; desktop chat retains its scrollable history and visible composer. Larger desktop windows and mobile are unchanged. Reduced-motion users retain the existing manual topic selection.
+
+`scripts/verify-how-it-works-desktop-scroll.mjs` verifies native forward/backward wheel progression, all four stages in order, the animated spine, complete frame visibility, screenshot proportions and desktop chat at 1366×600, 1366×650, 1440×700, 1280×720, 1440×759, 768×650 and 1440×900. Set `TDT_TEST_URL` to run the same checks against production. No new environment variables are required by the site.
