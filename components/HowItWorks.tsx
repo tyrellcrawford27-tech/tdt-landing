@@ -31,7 +31,7 @@ const STORY_PROFILES = [...PROFILES].sort((a, b) => Number(b.initials === 'EJ') 
 
 function Community() {
   const [open, setOpen] = useState<number | null>(null);
-  const [dismissed, setDismissed] = useState(false);
+  const dismissedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -82,22 +82,22 @@ function Community() {
     const close = (event: PointerEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) setOpen(null);
     };
-    const escape = (event: globalThis.KeyboardEvent) => { if (event.key === 'Escape') { setOpen(null); setDismissed(true); } };
+    const escape = (event: globalThis.KeyboardEvent) => { if (event.key === 'Escape') { dismissedRef.current = true; setOpen(null); } };
     document.addEventListener('pointerdown', close);
     document.addEventListener('keydown', escape);
     return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape); };
   }, []);
   const profile = open === null ? null : STORY_PROFILES[open];
-  return <div className={styles.community} ref={containerRef} onPointerLeave={event => { if (event.pointerType === 'mouse') { setOpen(null); setDismissed(false); } }} onKeyDown={event => { if (event.key === 'Escape') { setOpen(null); setDismissed(true); } }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
+  return <div className={styles.community} ref={containerRef} onPointerLeave={event => { if (event.pointerType === 'mouse') { dismissedRef.current = false; setOpen(null); } }} onKeyDown={event => { if (event.key === 'Escape') { dismissedRef.current = true; setOpen(null); } }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
     <div className={styles.people} aria-label="Community profile previews">
-      {STORY_PROFILES.map((person, index) => <button key={person.initials} ref={element => { cardsRef.current[index] = element; }} type="button" className={styles.person} onPointerEnter={event => { if (event.pointerType === 'mouse') { setDismissed(false); setOpen(index); } }} onFocus={() => { if (!dismissed) setOpen(index); }} onClick={() => { setDismissed(false); setOpen(index); }} aria-expanded={open === index} aria-controls="community-profile" aria-label={`View ${person.name}’s profile`}>
+      {STORY_PROFILES.map((person, index) => <button key={person.initials} ref={element => { cardsRef.current[index] = element; }} type="button" className={styles.person} onPointerEnter={event => { if (event.pointerType === 'mouse' && !dismissedRef.current) setOpen(index); }} onFocus={() => { if (!dismissedRef.current) setOpen(index); }} onClick={() => { dismissedRef.current = false; setOpen(index); }} aria-expanded={open === index} aria-controls="community-profile" aria-label={`View ${person.name}’s profile`}>
         <span className={styles.initials}>{person.initials}</span>
         <span className={styles.personText}><strong>{person.name}</strong><span>{COMMUNITY_STORY_MESSAGES[person.initials as keyof typeof COMMUNITY_STORY_MESSAGES] || person.message}</span></span>
       </button>)}
     </div>
     <div id="community-profile" ref={profileRef} className={styles.profile} style={{ backdropFilter: 'blur(22px) saturate(1.15)', WebkitBackdropFilter: 'blur(22px) saturate(1.15)' }} data-open={!!profile} aria-hidden={!profile} role="region" aria-label={profile ? `${profile.name}’s profile preview` : 'Profile preview'}>
       {profile && <>
-        <button type="button" className={styles.profileClose} aria-label="Close profile preview" onClick={() => { setOpen(null); setDismissed(true); }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></button>
+        <button type="button" className={styles.profileClose} aria-label="Close profile preview" onClick={() => { dismissedRef.current = true; setOpen(null); if (open !== null) cardsRef.current[open]?.focus({ preventScroll: true }); }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></button>
         <div className={styles.profileTop}><span className={styles.initials}>{profile.initials}</span><div><span className={styles.athleteLabel}>Athlete</span><strong>{profile.name}</strong></div></div>
         <span className={styles.position}>{profile.position}</span>
         <dl className={styles.profileDetails}>
@@ -133,10 +133,15 @@ export function HowItWorks() {
   const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const lineRef = useRef<HTMLSpanElement>(null);
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const activeRef = useRef(0);
   const [active, setActive] = useState(0);
+
+  useLayoutEffect(() => {
+    if (matchMedia('(max-width: 767px)').matches && panelRef.current) panelRef.current.scrollTop = 0;
+  }, [active]);
 
   useEffect(() => {
     const section = trackRef.current;
@@ -159,6 +164,15 @@ export function HowItWorks() {
     const measure = () => {
       if (getComputedStyle(pin).position !== 'sticky') return;
       const top = parseFloat(getComputedStyle(pin).top) || 0;
+      const panel = panelRef.current;
+      if (matchMedia('(max-width: 767px)').matches && panel) {
+        // Reserve the actual height of the controls and description. Mobile
+        // shows only the product preview, contained at its original ratio.
+        const beforePanel = panel.getBoundingClientRect().top - pin.getBoundingClientRect().top;
+        const paddingBottom = parseFloat(getComputedStyle(pin).paddingBottom) || 0;
+        const available = Math.max(64, Math.floor(pin.clientHeight - beforePanel - paddingBottom));
+        pin.style.setProperty('--mobile-panel-height', `${available}px`);
+      }
       const distance = section.offsetHeight - pin.offsetHeight;
       const progress = Math.max(0, Math.min(1, (top - section.getBoundingClientRect().top) / Math.max(1, distance)));
       const next = Math.min(3, Math.floor(progress * 4 + .001));
@@ -169,6 +183,7 @@ export function HowItWorks() {
     };
     const observer = new ResizeObserver(measure);
     observer.observe(pin);
+    if (panelRef.current?.previousElementSibling) observer.observe(panelRef.current.previousElementSibling);
     window.addEventListener('scroll', measure, { passive: true });
     window.addEventListener('resize', measure);
     reduced.addEventListener('change', measure);
@@ -232,7 +247,7 @@ export function HowItWorks() {
           </button>)}
         </div>
         <div className={styles.mobileStepSummary} aria-live="polite" aria-atomic="true"><h3>{STEPS[active].title}</h3><p>{STEPS[active].body}</p></div>
-        <div className={styles.panel} id="how-step-panel" role="tabpanel" aria-labelledby={`how-tab-${active}`} data-stage={active + 1}>{panelContents(active)}</div>
+        <div ref={panelRef} className={styles.panel} id="how-step-panel" role="tabpanel" tabIndex={0} aria-labelledby={`how-tab-${active}`} data-stage={active + 1}>{panelContents(active)}</div>
         <div className={styles.mobilePagination} aria-label="Explore the program steps">
           <button type="button" onClick={() => choose(active - 1)} disabled={active === 0} aria-label="Previous program step">← Previous</button>
           <span>{active + 1} / {STEPS.length}</span>

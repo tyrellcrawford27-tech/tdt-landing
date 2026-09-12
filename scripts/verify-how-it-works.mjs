@@ -24,7 +24,7 @@ async function position(page, stage = 0, settle = true) {
   await page.waitForFunction(index => document.querySelector(`#how-tab-${index}`)?.getAttribute('aria-selected') === 'true', stage);
   if (settle) {
     await page.waitForTimeout(700);
-    if (stage < 3) await page.locator('[data-example="true"]').first().waitFor();
+    if (stage < 3 && page.viewportSize().width >= 768) await page.locator('[data-example="true"]').first().waitFor();
   }
 }
 function panel(page, stage = 0) {
@@ -46,11 +46,12 @@ async function open(viewport, mobile = false) {
   const page = await context.newPage();
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(base, { waitUntil: 'networkidle' });
-  await page.getByRole('textbox', { name: 'Message Jaiden’s chat demo' }).first().waitFor();
+  await page.getByRole('tablist', { name: 'How the 100 day program works' }).waitFor();
   return { page, context };
 }
 
 try {
+  if (!process.env.TDT_VERIFY_MOBILE_ONLY) {
   const { page, context } = await open({ width: 1440, height: 1024 });
   const initialHtml = await (await page.request.get(base)).text();
   for (const text of ['Just uploaded my first full game', 'find your first focus', 'rush or hesitate']) assert.ok(initialHtml.includes(text), 'Example exchange is in the initial HTML, not a delayed effect');
@@ -90,14 +91,17 @@ try {
   assert.match(await page.locator('#community-profile').innerText(), /Holy Trinity/);
   await page.screenshot({ path: `${output}/desktop-profile.png` });
   await page.keyboard.press('Escape');
+  await page.waitForFunction(() => document.querySelector('#community-profile').getAttribute('aria-hidden') === 'true');
   assert.equal(await page.locator('#community-profile').getAttribute('aria-hidden'), 'true');
   for (const name of ['Andre Narciso', 'Tyler-perry London', 'Elijah', 'Tyrell Crawford']) {
     await page.mouse.move(0, 0);
     const person = page.getByRole('button', { name: 'View ' + name + '’s profile' });
     await person.hover({ position: { x: 10, y: 10 } });
+    await page.waitForFunction(() => document.querySelector('#community-profile').getAttribute('aria-hidden') === 'false');
     assert.equal(await page.locator('#community-profile').getAttribute('aria-hidden'), 'false');
     assert.match(await page.locator('#community-profile').innerText(), new RegExp(name));
     await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.querySelector('#community-profile').getAttribute('aria-hidden') === 'true');
   }
   await position(page, 0);
   assert.equal(await page.locator('[data-example="true"]').first().getAttribute('data-animate'), 'false', 'Returning does not replay the example');
@@ -171,6 +175,7 @@ try {
   await context.close();
   console.log('Desktop: preloaded story, plain composer, link-only replies, Enter/click, typing, deduplication, topic isolation and old-session recovery passed.');
 
+  if (!process.env.TDT_VERIFY_DESKTOP_ONLY) {
   const mobile = await open({ width: 390, height: 844 }, true);
   for (let stage = 0; stage < 4; stage++) {
     await position(mobile.page, stage);
@@ -178,33 +183,17 @@ try {
     await mobile.page.screenshot({ path: `${output}/mobile-step-${stage + 1}.png` });
     assert.equal(layout.width, layout.viewport, 'No mobile horizontal overflow');
     await assertImages(mobile.page);
-    const mobileLayout = await panel(mobile.page, stage).evaluate(el => ({ panel: el.getBoundingClientRect().toJSON(), product: el.firstElementChild.getBoundingClientRect().toJSON(), interaction: el.lastElementChild.getBoundingClientRect().toJSON() }));
-    assert.ok(mobileLayout.product.bottom <= mobileLayout.interaction.top, 'Product and conversation do not overlap');
-    assert.ok(mobileLayout.interaction.bottom <= mobileLayout.panel.bottom, 'Natural mobile panel contains the entire conversation');
+    const mobileLayout = await panel(mobile.page, stage).evaluate(el => ({ panel: el.getBoundingClientRect().toJSON(), product: el.firstElementChild.getBoundingClientRect().toJSON(), interaction: getComputedStyle(el.lastElementChild).display }));
+    assert.equal(mobileLayout.interaction, 'none', 'Mobile is a visual walkthrough without chat or profile interactions');
+    assert.ok(mobileLayout.product.bottom <= mobileLayout.panel.bottom, 'The entire mobile product preview is visible');
+    assert.ok(mobileLayout.panel.bottom <= 844, 'The pinned mobile scene fits below the site header');
   }
-  await mobile.page.getByRole('button', { name: 'View Andre Narciso’s profile' }).tap();
-  assert.equal(await mobile.page.locator('#community-profile').getAttribute('aria-hidden'), 'false');
-  await mobile.page.waitForTimeout(350);
-  await mobile.page.screenshot({ path: `${output}/mobile-profile.png` });
-  await mobile.page.getByRole('button', { name: 'Close profile preview' }).tap();
-  assert.equal(await mobile.page.locator('#community-profile').getAttribute('aria-hidden'), 'true', 'Profile can be dismissed without a keyboard');
-  await position(mobile.page, 0);
-  await mobile.page.route('**/api/training-chat', route => route.abort());
-  const mobileInput = panel(mobile.page).getByRole('textbox', { name: 'Message Jaiden’s chat demo' });
-  await mobileInput.fill('I get nervous during games'); await panel(mobile.page).getByRole('button', { name: 'Send message' }).tap();
-  await panel(mobile.page).locator('a[href="/apply"]').waitFor();
-  assert.match(await panel(mobile.page).getByRole('log').innerText(), /hesitate/);
-  assert.equal(await panel(mobile.page).getByRole('log').locator('a[href="/apply"]').count(), 1, 'Link-only reply also works without an API');
-  assert.equal(await panel(mobile.page).locator('[data-chat-feedback]').count(), 0);
-  await position(mobile.page, 1);
-  assert.doesNotMatch(await panel(mobile.page, 1).getByRole('log').innerText(), /hesitate/, 'Each mobile topic has its own conversation');
-  await position(mobile.page, 0);
-  assert.match(await panel(mobile.page).getByRole('log').innerText(), /hesitate/, 'Returning preserves the conversation');
-  await mobile.page.waitForTimeout(500);
-  await mobileInput.scrollIntoViewIfNeeded();
-  await mobile.page.screenshot({ path: `${output}/mobile-chat-link.png` });
+  assert.equal(await mobile.page.getByRole('textbox', { name: 'Message Jaiden’s chat demo' }).count(), 0);
+  assert.equal(await mobile.page.getByRole('button', { name: 'Select file' }).count(), 0);
+  assert.equal(await mobile.page.getByRole('button', { name: 'View Andre Narciso’s profile' }).count(), 0);
   await mobile.context.close();
-  console.log('Mobile: single full-height panel, all four step controls, loaded uncropped images, touch profile and local application reply passed.');
+  console.log('Mobile: pinned visual walkthrough, all four topics, loaded uncropped images and hidden chat/profile/file interactions passed.');
+  }
 
   const reduced = await open({ width: 1280, height: 720 });
   await reduced.page.emulateMedia({ reducedMotion: 'reduce' });
@@ -220,6 +209,7 @@ try {
   await reduced.context.close();
 
   for (const viewport of [{ width: 375, height: 812 }, { width: 320, height: 740 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }, { width: 1496, height: 784 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
+    if (process.env.TDT_VERIFY_DESKTOP_ONLY && viewport.width < 768) continue;
     const check = await open(viewport, viewport.width < 768);
     const sticky = await check.page.locator('[data-how-track]').evaluate(el => getComputedStyle(el.firstElementChild).position === 'sticky');
     await position(check.page, 3);
@@ -238,7 +228,7 @@ try {
     assert.equal(await check.page.locator('#how-it-works [role="tabpanel"]').count(), 1, 'Keep the original single transitioning panel');
     if (sticky) {
       const product = await check.page.locator('#how-step-panel > div').first().boundingBox();
-      assert.ok(product.height >= 465, `Full product height is preserved: ${JSON.stringify(product)}`);
+      assert.ok(product.height >= (viewport.width < 768 ? 100 : 465), `Product preview retains a useful size: ${JSON.stringify(product)}`);
       const navigation = await check.page.getByRole('tablist').boundingBox();
       assert.ok(navigation.y >= 60 && navigation.y + navigation.height < boxes.panel.y, 'All topics stay above the full panel without overlap');
     }
@@ -256,7 +246,9 @@ try {
   assert.match(directSource, /\/how-it-works\/final-per\.webp$/);
   await delivery.close();
   console.log('Reduced motion, keyboard navigation, seven additional viewports, natural image proportions and failed-optimizer recovery passed.');
+  }
 
+  if (!process.env.TDT_VERIFY_DESKTOP_ONLY) {
   for (const viewport of [{ width: 320, height: 568 }, { width: 360, height: 800 }, { width: 375, height: 667 }, { width: 390, height: 844 }, { width: 430, height: 932 }, { width: 667, height: 375 }]) {
     const check = await open(viewport, true);
     const page = check.page;
@@ -264,71 +256,68 @@ try {
     const nav = page.getByRole('tablist', { name: 'How the 100 day program works' });
     const touchTargets = await nav.getByRole('tab').evaluateAll(tabs => tabs.map(tab => ({ width: tab.clientWidth, height: tab.clientHeight })));
     assert.ok(touchTargets.every(target => target.width >= 44 && target.height >= 44), 'All four topics have phone-sized touch targets');
-    assert.equal(await page.getByRole('button', { name: 'Previous program step' }).isDisabled(), true);
+    assert.equal(await page.locator('[data-how-track]').evaluate(el => getComputedStyle(el.firstElementChild).position), 'sticky', 'The complete mobile scene pins, not only its topic bar');
     for (let stage = 0; stage < 4; stage++) {
       if (stage) {
-        await page.getByRole('button', { name: 'Next program step' }).tap();
+        await nav.getByRole('tab').nth(stage).tap();
         await page.waitForTimeout(700);
       }
-      assert.equal(await nav.getByRole('tab').nth(stage).getAttribute('aria-selected'), 'true', 'Native Next tap selects the next scene');
+      assert.equal(await nav.getByRole('tab').nth(stage).getAttribute('aria-selected'), 'true', 'Topic taps select the correct pinned scene');
       const layout = await page.locator('#how-it-works').evaluate(el => {
         const tabs = el.querySelector('[role="tablist"]');
         const summary = tabs.nextElementSibling;
         const scene = el.querySelector('[role="tabpanel"]');
-        const log = el.querySelector('[role="log"]');
-        return { width: document.documentElement.scrollWidth, tabs: tabs.getBoundingClientRect().toJSON(), summary: summary.getBoundingClientRect().toJSON(), scene: scene.getBoundingClientRect().toJSON(), logClipped: log.scrollHeight > log.clientHeight + 1 };
+        return { width: document.documentElement.scrollWidth, tabs: tabs.getBoundingClientRect().toJSON(), summary: summary.getBoundingClientRect().toJSON(), scene: scene.getBoundingClientRect().toJSON(), product: scene.firstElementChild.getBoundingClientRect().toJSON() };
       });
       assert.equal(layout.width, viewport.width, 'Phone and landscape scenes never overflow horizontally');
       assert.ok(layout.tabs.top >= 63 && layout.tabs.bottom <= layout.summary.top + 1, 'Sticky topics sit below the site header, above the full description');
       assert.ok(layout.summary.bottom <= layout.scene.top, 'Description never collides with product preview');
-      if (stage < 3) assert.equal(layout.logClipped, false, 'The complete preloaded athlete conversation is visible without an inner scroll');
+      assert.ok(layout.product.bottom <= layout.scene.bottom + 1 && layout.scene.bottom <= viewport.height, 'Every complete product fits inside the pinned mobile scene');
+      assert.equal(await page.getByRole('textbox', { name: 'Message Jaiden’s chat demo' }).count(), 0, 'Mobile has no chat composer');
+      assert.equal(await page.getByRole('button', { name: 'Select file' }).count(), 0, 'Mobile has no file picker');
       await assertImages(page);
       await page.screenshot({ path: `${output}/phone-${viewport.width}-${viewport.height}-step-${stage + 1}.png` });
-      if (stage < 3) {
-        await page.getByRole('textbox', { name: 'Message Jaiden’s chat demo' }).scrollIntoViewIfNeeded();
-        const sticky = await nav.boundingBox();
-        assert.ok(Math.abs(sticky.y - 64) < 2, 'Topics remain reachable while reading or messaging');
+    }
+    await position(page, 0);
+    const cdp = await page.context().newCDPSession(page);
+    const swipe = async (direction = -1) => {
+      const scene = await page.locator('#how-step-panel').boundingBox();
+      const x = viewport.width / 2;
+      const y = Math.min(viewport.height - 24, scene.y + scene.height * .6);
+      const delta = Math.min(80, viewport.height / 8) * direction;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      for (let i = 1; i <= 10; i++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + delta * i / 10 }] });
+        await page.waitForTimeout(25);
       }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.waitForTimeout(200);
+    };
+    const seen = new Set([0]);
+    for (let attempt = 0; !seen.has(3) && attempt < 100; attempt++) {
+      await swipe();
+      const stage = Number((await page.locator('[role="tab"][aria-selected="true"]').getAttribute('id')).split('-').at(-1));
+      seen.add(stage);
+      const scene = await page.locator('#how-step-panel').boundingBox();
+      assert.ok(scene.y >= 64 && scene.y + scene.height <= viewport.height + 1, 'The full scene stays pinned and visible during real phone swipes');
     }
-    assert.equal(await page.getByRole('button', { name: 'Next program step' }).isDisabled(), true);
-    for (const name of ['Elijah', 'Andre Narciso', 'Tyler-perry London', 'Tyrell Crawford']) {
-      await page.getByRole('button', { name: `View ${name}’s profile` }).tap();
-      const overlay = page.locator('#community-profile');
-      await overlay.locator('..').dispatchEvent('pointerleave', { pointerType: 'touch' });
-      assert.equal(await overlay.getAttribute('aria-hidden'), 'false', 'Touch release keeps the profile open');
-      await page.waitForTimeout(350);
-      const box = await overlay.boundingBox();
-      assert.ok(box.x >= 0 && box.x + box.width <= viewport.width + 1 && box.y >= 0 && box.y + box.height <= viewport.height + 1, 'Every profile stays fully inside the phone viewport');
-      assert.ok(box.y >= await page.locator('header').evaluate(el => el.getBoundingClientRect().bottom), 'Profile stays below the fixed site header');
-      assert.ok(await overlay.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.left + 20, r.top + 20)); }), 'Sticky topics cannot cover the top of the profile');
-      assert.ok(await page.getByRole('button', { name: 'Close profile preview' }).evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)); }), 'The close button is visible and receives touches');
-      if (name === 'Tyrell Crawford') await page.screenshot({ path: `${output}/phone-${viewport.width}-${viewport.height}-profile.png` });
-      await page.getByRole('button', { name: 'Close profile preview' }).tap();
-      assert.equal(await overlay.getAttribute('aria-hidden'), 'true');
-    }
-    await page.getByRole('button', { name: 'Previous program step' }).tap();
+    assert.deepEqual([...seen].sort(), [0, 1, 2, 3], 'Real native phone swipes advance through all four stages');
     await page.waitForTimeout(700);
-    assert.equal(await nav.getByRole('tab').nth(2).getAttribute('aria-selected'), 'true');
-    await nav.getByRole('tab').nth(0).tap();
-    await page.waitForTimeout(700);
-    const field = page.getByRole('textbox', { name: 'Message Jaiden’s chat demo' });
-    assert.equal(await field.getAttribute('enterkeyhint'), 'send');
-    assert.equal(await field.evaluate(el => getComputedStyle(el).fontSize), '16px', 'Phone inputs avoid focus zoom');
-    await field.fill('I want to make better reads in games');
-    await field.press('Enter');
-    await page.getByRole('log').locator('a[href="/apply"]').waitFor();
-    await page.waitForTimeout(800);
-    const logState = await page.getByRole('log').evaluate(el => ({ height: el.clientHeight, bottom: el.scrollHeight - el.clientHeight - el.scrollTop }));
-    assert.ok(logState.height <= 421 && logState.bottom < 2, 'New replies stay in a bounded chat and scroll into view');
-    await page.setViewportSize({ width: viewport.width, height: 350 });
-    await field.scrollIntoViewIfNeeded();
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), viewport.width, 'A keyboard-sized viewport does not squash or overflow the scene');
+    const progress = await page.locator('#how-it-works').evaluate(el => Number([...el.querySelectorAll('span')].find(span => span.style.getPropertyValue('--line-progress'))?.style.getPropertyValue('--line-progress')));
+    assert.ok(progress > .95, 'The animated spine progresses with mobile scrolling');
+    for (let attempt = 0; await nav.getByRole('tab').nth(3).getAttribute('aria-selected') === 'true' && attempt < 20; attempt++) await swipe(1);
+    assert.equal(await nav.getByRole('tab').nth(2).getAttribute('aria-selected'), 'true', 'Swiping back reverses the progression');
+    await page.locator('[data-how-track]').evaluate(el => window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().bottom + 40, behavior: 'instant' }));
+    const after = await page.locator('[data-how-track]').boundingBox();
+    assert.ok(after.y + after.height < 0, 'Native scrolling can leave the section without being trapped');
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await position(page, 0);
     await nav.getByRole('tab').nth(1).tap();
     assert.equal(await nav.getByRole('tab').nth(1).getAttribute('aria-selected'), 'true');
     assert.equal(await nav.evaluate(el => getComputedStyle(el).position), 'sticky', 'Mobile controls stay reachable with reduced motion');
     await check.context.close();
   }
   assert.deepEqual(errors, []);
-  console.log('Six phone/landscape sizes: real topic/Next/Previous taps, sticky navigation, full initial conversations, all touch profiles, dismissal, chat replies, narrow keyboard layouts and reduced motion passed.');
+  console.log('Six phone/landscape sizes: visual-only scenes, full contained products, real forward/backward swipes, automatic sticky progression, animated spine, topic taps, scroll exit and reduced motion passed.');
+  }
 } finally { await browser.close(); }
