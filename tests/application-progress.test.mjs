@@ -101,7 +101,7 @@ test('v4 and v5 clients retain their own question ordering and reject unsupporte
   assert.equal(rows[0].total_questions, 14);
   await post(save, { ...body(), form_version: 5, completed: true });
   assert.equal(rows[1].form_version, 5);
-  assert.equal(rows[1].current_question_key, 'goal');
+  assert.equal(rows[1].current_question_key, 'contact');
   assert.equal(rows[1].current_question_number, 2);
   assert.equal(rows[1].total_questions, 16);
   for (const invalid of [{form_version: 6}, {form_version: '5'}, {form_version: null}, {form_version: 4, question_key: 'film_readiness'}, {form_version: 5, question_key: 'made-up'}]) {
@@ -247,7 +247,7 @@ test('old drafts retain names, goal prose, contacts, referral and playing answer
   assert.equal(restored.guardian_email, old.guardian_email);
   assert.equal(restored.heard_about, old.heard_about);
   assert.equal(restored.film_readiness, FILM_DECLINED);
-  assert.equal(firstIncompleteApplicationScreen(restored), 3);
+  assert.equal(firstIncompleteApplicationScreen(restored), 2);
   const before = normalizeApplicationDraft({full_name: 'Valid Name', device_access: 'Phone'});
   assert.equal(before.film_readiness, '');
 });
@@ -385,4 +385,22 @@ test('resuming a legacy contact save tracks separately and finishes the original
   assert.equal(response.status, 200, await response.text());
   assert.equal(rows[0].application_state, 'submitted'); assert.equal(rows[0].reviewer_notes, 'Keep this note');
   assert.ok(rows[1].deleted_at);
+});
+
+test('time estimate updates per valid answer and respects conditional branches', async () => {
+  const { applicationTimeEstimate: estimate, formatApplicationTime } = await import('../lib/applicationTime.ts');
+  const empty = {...EMPTY_APPLICATION};
+  assert.equal(estimate(empty).remainingSeconds, 300);
+  assert.equal(formatApplicationTime(estimate({...empty, full_name: 't'}).remainingSeconds), '5 min');
+  const position = {...empty, position: 'Point Guard'};
+  assert.equal(estimate(empty).remainingSeconds - estimate(position).remainingSeconds, 15 * 255 / 400);
+  assert.equal(estimate(position).remainingSeconds, estimate({...position, position: 'Center'}).remainingSeconds);
+  assert.equal(estimate(position).remainingSeconds - estimate({...position, years_playing: '5+ years'}).remainingSeconds, 15 * 255 / 400);
+  assert.equal(estimate(empty).remainingSeconds, estimate({...empty, email: 'invalid'}).remainingSeconds);
+  assert.equal(estimate(empty).remainingSeconds - estimate({...empty, email: 'valid@example.com'}).remainingSeconds, 25 * 255 / 400);
+  assert.ok(estimate({...empty, age:'20',decision_support:SELF_SUPPORTED}).remainingSeconds < estimate({...empty, age:'17'}).remainingSeconds);
+  assert.ok(estimate({...empty,film_readiness:FILM_DECLINED}).remainingSeconds < estimate(empty).remainingSeconds);
+  assert.equal(estimate(validV5()).remainingSeconds, 45);
+  assert.equal(formatApplicationTime(45), '45 sec');
+  assert.equal(formatApplicationTime(65), '1 min 5 sec');
 });

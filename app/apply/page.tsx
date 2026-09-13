@@ -23,6 +23,7 @@ import {
   type ApplicationFormData as FormData, type ApplicationScreen as Q, type ApplicationField,
 } from '@/lib/applicationForm';
 import styles from './application.module.css';
+import { applicationTimeEstimate, formatApplicationTime } from '@/lib/applicationTime';
 import { createProgressQueue } from '@/lib/progressQueue';
 import Cal, { getCalApi } from '@calcom/embed-react';
 
@@ -401,7 +402,7 @@ function ApplyPageInner() {
         // Hydrate browser-only storage after the server-rendered intro matches.
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm(restored);
-        if (v === DRAFT_VERSION && s >= 1) {
+        if (v === DRAFT_VERSION && saved.questionOrder === 'contact-second' && s >= 1) {
           resumeScreenRef.current = s <= REVIEW && (s === REVIEW || screenIsVisible(questions[s - 1].key, restored)) ? s : firstIncompleteApplicationScreen(restored);
         } else {
           // Stale draft from before a question-order change (or from before
@@ -467,7 +468,7 @@ function ApplyPageInner() {
   // Auto-save draft whenever form or screen changes (skip intro + success)
   useEffect(() => {
     if (screen < 1 || screen > REVIEW) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION, savedAt: Date.now() })); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION, questionOrder: 'contact-second', savedAt: Date.now() })); } catch {}
   }, [form, screen, REVIEW]);
 
   // Save while they type/select, not just when they eventually submit. A short
@@ -810,6 +811,9 @@ function ApplyPageInner() {
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let&apos;s Begin
         </CTAButton>
+        <p style={{ ...text(12, 400, 'rgba(0,0,0,0.4)'), margin: 0, textAlign: 'center', lineHeight: '18px' }}>
+          Takes about 5 minutes
+        </p>
       </div>
     </div>
   );
@@ -940,6 +944,10 @@ const choose = (field: ApplicationField, value: string) => {
       <div className={styles.review} style={fadeStyle}>
         <p className={styles.eyebrow}>Your application</p>
         <h1>Make sure this sounds like you.</h1>
+        <p className={`${styles.timeLabel} ${styles.completionMessage}`} role="status">
+          <svg className={styles.completionCheck} viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>
+          Complete. Thank you
+        </p>
         <p className={styles.description}>
           Review your answers, then choose a time for the next step.
           Applying is not a commitment to join.
@@ -1039,6 +1047,10 @@ const choose = (field: ApplicationField, value: string) => {
     </main>
   );
 
+  const timeEstimate = applicationTimeEstimate(form);
+  const allAnswered = firstIncompleteApplicationScreen(form) > TOTAL;
+  const almostThere = timeEstimate.remainingSeconds <= 60;
+  const timeLabel = allAnswered ? 'Complete. Thank you' : almostThere ? 'Almost there!!' : formatApplicationTime(timeEstimate.remainingSeconds);
   const q = questions[screen - 1];
   const ordinal = visibleQuestions.findIndex(item => item.key === q.key) + 1;
   const isFirst = ordinal === 1;
@@ -1051,7 +1063,7 @@ const choose = (field: ApplicationField, value: string) => {
     'aria-describedby': invalidField === field && nudgeMsg ? 'answer-error' : undefined,
   });
   const inputStyle: React.CSSProperties = {
-    boxSizing: 'border-box', width: '100%', padding: '20px 10px', borderRadius: 12,
+    boxSizing: 'border-box', width: '100%', height: 60, padding: '20px 10px', borderRadius: 12,
     border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0px 6px 14px rgba(0,0,0,0.08)',
     color: '#000000', background: '#ffffff', outline: 'none',
     fontFamily: 'inherit', fontSize: 16, fontWeight: 400, letterSpacing: '-0.02em', lineHeight: '18px',
@@ -1185,6 +1197,12 @@ const choose = (field: ApplicationField, value: string) => {
               {renderInput()}
             </div>
           </section>
+          <div className={styles.timeEstimate}>
+            <p className={styles.timeLabel}>
+              {allAnswered && <svg className={styles.completionCheck} viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
+              {!almostThere && 'Approx. '}<span key={timeLabel} className={styles.timeValue}>{timeLabel}</span>{!almostThere && ' left'}
+            </p>
+          </div>
           {progressSaveFailed && <p role="status" className={styles.saveNotice}>Connection interrupted. Retrying your save. Your draft is also stored on this browser when storage is available.</p>}
           <div className={styles.navigation}>
             {!isFirst && <GoBackButton onClick={retreat} />}

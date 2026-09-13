@@ -38,6 +38,10 @@ export const GOAL_OPTIONS = [
 
 export const APPLICATION_SCREENS: ApplicationScreen[] = [
   { key: 'full_name', section: 'Your goals', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'Your name', fields: ['athlete_name', 'first_name', 'last_name'] },
+  { key: 'contact', section: 'Your details', question: 'Where can we reach you about your application?', subtext: "We'll use these details to contact you about your application and call.", type: 'group', kind: 'contact', fields: ['email', 'phone', 'athlete_email', 'athlete_phone'], subs: [
+    { field: 'email', kind: 'email', label: 'Email', placeholder: 'you@email.com' },
+    { field: 'phone', kind: 'tel', label: 'Phone number', placeholder: '416-555-0123' },
+  ] },
   { key: 'goal', section: 'Your goals', question: 'Where would you like basketball to take you?', subtext: 'Choose the goal that matters most to you right now.', field: 'goal', type: 'radio-grid', options: GOAL_OPTIONS, detailField: 'goal_detail', detailOption: 'Another goal', fields: ['goal'] },
   { key: 'age', section: 'Your game', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17', fields: ['age'] },
   { key: 'game', section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game', fields: ['position', 'years_playing', 'years_playing_answer'], subs: [
@@ -47,10 +51,6 @@ export const APPLICATION_SCREENS: ApplicationScreen[] = [
   { key: 'current_team_school', section: 'Your game', question: 'What team or school do you play for?', subtext: 'Your current team or school is enough.', field: 'current_team_school', type: 'school', alternative: "I'm not on a team right now", fields: ['current_team', 'current_team_school'] },
   { key: 'biggest_weakness', section: 'Your game', question: "What's one part of your game you'd most like help improving?", subtext: 'A short answer is enough. A recent game example helps if one comes to mind.', field: 'biggest_weakness', type: 'textarea', placeholder: 'For example, I rush my decisions when defenders pressure me.', alternative: "I'm not sure what to focus on yet", fields: ['biggest_weakness'] },
   { key: 'city_state', section: 'Your details', question: 'Where are you based?', subtext: 'Your city and province or state help us understand where you play.', field: 'city_state', type: 'location', fields: ['city'] },
-  { key: 'contact', section: 'Your details', question: 'Where can we reach you about your application?', subtext: "We'll use these details to contact you about your application and call.", type: 'group', kind: 'contact', fields: ['email', 'phone', 'athlete_email', 'athlete_phone'], subs: [
-    { field: 'email', kind: 'email', label: 'Email', placeholder: 'you@email.com' },
-    { field: 'phone', kind: 'tel', label: 'Phone number', placeholder: '416-555-0123' },
-  ] },
   { key: 'social_link', section: 'Your details', question: "What's your Instagram or X handle?", subtext: 'Share the account you use most, or let us know if you don\'t have one.', field: 'social_link', type: 'text', placeholder: '@yourusername or a profile link', alternative: NO_SOCIAL, fields: ['social_link'] },
   { key: 'time_commitment', section: 'Your fit', question: 'On a typical training day, how much time could you set aside for this program?', subtext: 'Think about what fits alongside your team, school or work.', field: 'time_commitment', type: 'radio-grid', options: ['Less than 30 minutes', '30 to 45 minutes', 'More than 45 minutes, up to an hour', 'More than an hour', 'I need help working out a schedule'], fields: ['time_commitment'] },
   { key: 'film_readiness', section: 'Your fit', question: 'How do you feel about learning through game film and personalised drills?', subtext: 'Jaiden uses your game film to identify what to work on and build your drills.', type: 'group', kind: 'film', fields: ['film_readiness', 'film_access'], subs: [
