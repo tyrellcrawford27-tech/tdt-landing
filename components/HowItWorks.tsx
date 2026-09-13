@@ -52,7 +52,7 @@ const PROFILES: CommunityProfile[] = [
   { initials: 'TL', name: 'Tyler-perry London', message: 'Focused on shooting, handles and a stronger left hand', position: 'Point Guard', school: 'KBA', goal: 'Semi-pro / overseas', age: '19 years', from: 'Toronto, Ontario', height: '6′0″ tall', flag: '🇨🇦', country: 'Canada' },
   // Illustrative details, not claims about these members' real backgrounds.
   { initials: 'EJ', name: 'Ibra', message: 'Building confidence to attack and finish through contact', position: 'Shooting Guard', school: 'London sixth form', goal: 'College basketball', age: '16 years', from: 'London, England', height: '5′8″ tall', flag: '🏴', country: 'England' },
-  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Sydney secondary school', goal: 'Professional basketball', age: '18 years', from: 'Sydney, Australia', height: '6′3″ tall', flag: '🇦🇺', country: 'Australia' },
+  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Secondary school', goal: 'Professional basketball', age: '18 years', from: 'United States', height: '6′3″ tall', flag: '🇺🇸', country: 'United States' },
 ];
 
 // Keep existing profile information and overlay behaviour; the example thread
