@@ -811,8 +811,12 @@ function ApplyPageInner() {
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let&apos;s Begin
         </CTAButton>
-        <p style={{ ...text(12, 400, 'rgba(0,0,0,0.4)'), margin: 0, textAlign: 'center', lineHeight: '18px' }}>
-          Takes about 5 minutes
+        <p aria-label="Estimated application time: 5 minutes" style={{ ...text(12, 400, 'rgba(0,0,0,0.4)'), margin: 0, display: 'flex', alignItems: 'center', gap: 5, lineHeight: '18px' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          5min
         </p>
       </div>
     </div>
