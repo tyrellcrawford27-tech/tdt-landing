@@ -128,12 +128,13 @@ function Community() {
     <div id="community-profile" ref={profileRef} className={styles.profile} style={{ backdropFilter: 'blur(22px) saturate(1.15)', WebkitBackdropFilter: 'blur(22px) saturate(1.15)' }} data-open={!!profile} aria-hidden={!profile} role="region" aria-label={profile ? `${profile.name}’s profile preview` : 'Profile preview'}>
       {profile && <>
         <button type="button" className={styles.profileClose} aria-label="Close profile preview" onClick={() => { dismissedRef.current = true; setOpen(null); if (open !== null) cardsRef.current[open]?.focus({ preventScroll: true }); }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></button>
+        <Image src={profile.flagSrc} alt={`${profile.country} flag`} width={80} height={52} className={styles.profileFlag} />
         <div className={styles.profileTop}><CommunityAvatar person={profile} /><div><span className={styles.athleteLabel}>Athlete</span><strong>{profile.name}</strong></div></div>
         <span className={styles.position}>{profile.position}</span>
         <dl className={styles.profileDetails}>
           <div className={styles.school}><dt><svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6l6 3 6-3v-6M22 8v8" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>School</dt><dd>{profile.school}</dd></div>
           <div><dt>Goal</dt><dd>{profile.goal}</dd></div><div><dt>Age</dt><dd>{profile.age}</dd></div>
-          <div><dt>From</dt><dd className={styles.fromValue}>{profile.from}<Image src={profile.flagSrc} alt={`${profile.country} flag`} width={80} height={52} className={styles.profileFlag} /></dd></div><div><dt>Height</dt><dd>{profile.height}</dd></div>
+          <div><dt>From</dt><dd>{profile.from}</dd></div><div><dt>Height</dt><dd>{profile.height}</dd></div>
         </dl>
       </>}
     </div>
