@@ -38,7 +38,7 @@ const SECTION_LABELS: Record<string, string> = {
   '': 'Top',
   'hero': 'Top',
   'how-it-works': 'How it works',
-  '100-days': '100-day program',
+  '100-days': 'Why online',
   'coach': 'The coach',
   'difference': 'Difference',
   'pricing': 'Program Details',
