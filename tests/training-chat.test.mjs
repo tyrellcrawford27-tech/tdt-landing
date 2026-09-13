@@ -248,3 +248,37 @@ test('provider uses server key, store:false, constrained instructions, bounded h
     }
   } finally { global.fetch = oldFetch; if (oldKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = oldKey; }
 });
+
+test('provider diagnostics expose only fixed categories and status, never secrets or visitor text', async () => {
+  const oldFetch = global.fetch, oldKey = process.env.OPENAI_API_KEY, oldWarn = console.warn;
+  const logs = [];
+  console.warn = (...args) => logs.push(args);
+  try {
+    process.env.OPENAI_API_KEY = '  private-test-credential  ';
+    global.fetch = async (_url, options) => {
+      assert.equal(options.headers.Authorization, 'Bearer private-test-credential');
+      return new Response('sensitive-provider-body', { status: 401 });
+    };
+    assert.equal((await generateTrainingReply(input('private visitor content'))).fallback, true);
+    delete process.env.OPENAI_API_KEY;
+    assert.equal((await generateTrainingReply(input())).fallback, true);
+    process.env.OPENAI_API_KEY = 'private-test-credential';
+    global.fetch = async () => { throw new Error('private-test-credential private visitor content'); };
+    assert.equal((await generateTrainingReply(input())).fallback, true);
+    global.fetch = async () => { throw new DOMException('sensitive-provider-body', 'TimeoutError'); };
+    assert.equal((await generateTrainingReply(input())).fallback, true);
+    global.fetch = async () => Response.json({ output: [] });
+    assert.equal((await generateTrainingReply(input())).fallback, true);
+    assert.deepEqual(logs, [
+      ['[training-chat] provider_http_error', { status: 401 }],
+      ['[training-chat] provider_key_missing'],
+      ['[training-chat] provider_connection_error'],
+      ['[training-chat] provider_timeout'],
+      ['[training-chat] provider_reply_rejected'],
+    ]);
+    assert.doesNotMatch(JSON.stringify(logs), /private-test-credential|private visitor content|sensitive-provider-body/);
+  } finally {
+    global.fetch = oldFetch; console.warn = oldWarn;
+    if (oldKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = oldKey;
+  }
+});

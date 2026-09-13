@@ -88,8 +88,11 @@ export function allowChatRequest(sessionId: string, ip: string, now = Date.now()
 export async function generateTrainingReply(input: ChatInput): Promise<{ reply: string; fallback: boolean }> {
   const topic = TRAINING_TOPICS[input.topic || 'film'];
   const fallback = { reply: trainingFallback(input.message, input.history, input.topic), fallback: true };
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return fallback;
+  const key = process.env.OPENAI_API_KEY?.trim();
+  if (!key) {
+    console.warn('[training-chat] provider_key_missing');
+    return fallback;
+  }
   try {
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
@@ -104,7 +107,11 @@ export async function generateTrainingReply(input: ChatInput): Promise<{ reply: 
       signal: AbortSignal.timeout(6000),
       cache: 'no-store',
     });
-    if (!response.ok) return fallback;
+    if (!response.ok) {
+      // Operational status only: no key, visitor content or provider body.
+      console.warn('[training-chat] provider_http_error', { status: response.status });
+      return fallback;
+    }
     const data = await response.json();
     const raw = Array.isArray(data.output) ? data.output
       .filter((item: { type?: string; role?: string }) => item.type === 'message' && item.role === 'assistant')
@@ -112,9 +119,12 @@ export async function generateTrainingReply(input: ChatInput): Promise<{ reply: 
       .filter((part: { type: string }) => part.type === 'output_text')
       .map((part: { text?: string }) => part.text ?? '').join(' ') : null;
     const reply = conciseTrainingReply(raw);
+    if (!reply) console.warn('[training-chat] provider_reply_rejected');
     return reply ? { reply, fallback: false } : fallback;
-  } catch {
-    // Do not log messages, provider responses, or request headers.
+  } catch (error) {
+    const timeout = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+    // Only a fixed category is logged, never exception text or headers.
+    console.warn(timeout ? '[training-chat] provider_timeout' : '[training-chat] provider_connection_error');
     return fallback;
   }
 }
