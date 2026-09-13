@@ -79,12 +79,15 @@
 .community { position: relative; width: min(100%,419px); margin: auto; padding: 16.76px 27.65px; }
 .communityPanel { display: flex; align-items: center; justify-content: center; }
 .people { display: flex; flex-direction: column; gap: 12.57px; }
-.person { display: flex; align-items: center; width: 100%; height: 83.8px; gap: 8.38px; padding: 12.57px; border: 0; border-radius: 16.76px; background: #3d2419; color: white; text-align: left; cursor: pointer; transition: background .25s; }
+.person { display: flex; align-items: center; position: relative; width: 100%; height: 83.8px; gap: 8.38px; padding: 12.57px; border: 0; border-radius: 16.76px; background: #3d2419; color: white; text-align: left; cursor: pointer; transition: background .25s; }
 .person:hover { background: #472a1c; }.person:focus-visible { outline: 2px solid #e6a182; outline-offset: 3px; }
+.personFlag { position: absolute; top: 10px; right: 12px; display: inline-flex; align-items: center; justify-content: center; width: 25px; height: 19px; border-radius: 4px; font-size: 17px; line-height: 1; filter: saturate(1.12); }
 .initials { display: grid; place-items: center; flex-shrink: 0; width: 42.32px; height: 42.32px; border-radius: 50%; background: linear-gradient(180deg,#ffeedf,#e4b386); color: #aa692d; font-size: 18.44px; font-weight: 500; }
-.initials[data-community-avatar="AN"] { overflow: hidden; background: transparent; border: 0; outline: none; box-shadow: none; }
+.initials[data-community-avatar="AN"],
+.initials[data-community-avatar="TC"],
+.initials[data-community-avatar="EJ"] { overflow: hidden; background: transparent; border: 0; outline: none; box-shadow: none; }
 .communityAvatarImage { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-.personText { display: flex; flex-direction: column; min-width: 0; gap: 4.19px; }
+.personText { display: flex; flex-direction: column; min-width: 0; gap: 4.19px; padding-right: 34px; }
 .personText strong { font-size: 16.76px; line-height: 20px; font-weight: 500; }
 .personText > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.41px; line-height: 16px; }
 .profile { position: absolute; z-index: 2; width: min(286.6px, calc(100% - 44px)); min-height: 293.3px; left: 0; top: 0; transform: translateY(var(--profile-arrival-y, -10px)) scale(.96); padding: 12.57px; border-radius: 10.06px; border: 1px solid rgba(245,218,192,.2); background: linear-gradient(140deg,rgba(73,48,35,.58),rgba(54,29,19,.42)); box-shadow: 0 10px 40px #0005, inset 0 1px 0 #ffffff0c; opacity: 0; visibility: hidden; transition: opacity .2s, transform .3s cubic-bezier(.16,1,.3,1), top .28s cubic-bezier(.16,1,.3,1), left .28s cubic-bezier(.16,1,.3,1), visibility .2s; pointer-events: none; }

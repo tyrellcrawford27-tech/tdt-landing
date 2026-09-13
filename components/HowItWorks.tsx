@@ -10,9 +10,9 @@ import { activeTopicForLine, progressionLineProgress } from '@/lib/howItWorksPro
 import styles from './HowItWorks.module.css';
 
 const STEPS = [
-  { title: 'Share your film', body: 'Upload footage from a real game so Jaiden can see your decisions, habits and execution not just your highlights.' },
-  { title: 'See what Jaiden sees', body: 'Get your film broken down with on-video annotations and personal feedback so you understand what needs to change.' },
-  { title: 'Take it to the court', body: 'Train with personalised drills built around what your film revealed. The coaching is online. The work happens on your court.' },
+  { title: 'Share your film', body: 'Upload footage from a real game so Jaiden can spot your decisions, habits, and execution gaps, not just your highlights.' },
+  { title: 'See what Jaiden sees', body: 'Get your film broken down with direct feedback and on video notes, so your next game isn’t the same old mistakes.' },
+  { title: 'Take it to the court', body: 'Work through personalized modules on your time, turning what your film revealed into habits that hold up on the court.' },
   { title: 'Learn from peers around the world', body: 'Share what you’re working on, ask questions and learn alongside players chasing their own next level.' },
 ];
 const MOBILE_STEP_TITLES = ['Film', 'Review', 'Training', 'Community'];
@@ -31,20 +31,28 @@ function markerFractions(line: HTMLSpanElement | null, tabs: (HTMLButtonElement 
   };
 }
 
-type CommunityProfile = { initials: string; name: string; message: string; position: string; school: string; goal: string; age: string; from: string; height: string };
+type CommunityProfile = { initials: string; name: string; message: string; position: string; school: string; goal: string; age: string; from: string; height: string; flag: string; country: string };
 
 function CommunityAvatar({ person }: { person: CommunityProfile }) {
   return <span className={styles.initials} aria-hidden="true" data-community-avatar={person.initials}>
-    {person.initials === 'AN' ? <Image src="/how-it-works/avatar-andre.webp" alt="" width={104} height={104} unoptimized className={styles.communityAvatarImage} /> : person.initials}
+    {(person.initials === 'AN' || person.initials === 'TC' || person.initials === 'EJ')
+      ? <Image src={
+          person.initials === 'AN'
+            ? '/how-it-works/avatar-andre.webp'
+            : person.initials === 'TC'
+              ? '/how-it-works/avatar-training.webp'
+              : '/ibra-pfp.jpeg'
+        } alt="" width={104} height={104} unoptimized className={styles.communityAvatarImage} />
+      : person.initials}
   </span>;
 }
 
 const PROFILES: CommunityProfile[] = [
-  { initials: 'AN', name: 'Andre Narciso', message: 'What’s up guys just want to know how to get better', position: 'Point Guard', school: 'Holy Trinity', goal: 'D1/Pro basketball', age: '14 years', from: 'Fort McMurray, Alberta', height: '5′9″ tall' },
-  { initials: 'TL', name: 'Tyler-perry London', message: 'Focused on shooting, handles and a stronger left hand', position: 'Point Guard', school: 'KBA', goal: 'Semi-pro / overseas', age: '19 years', from: 'Toronto, Ontario', height: '6′0″ tall' },
+  { initials: 'AN', name: 'Andre Narciso', message: 'What’s up guys just want to know how to get better', position: 'Point Guard', school: 'Holy Trinity', goal: 'D1/Pro basketball', age: '14 years', from: 'Fort McMurray, Alberta', height: '5′9″ tall', flag: '🇨🇦', country: 'Canada' },
+  { initials: 'TL', name: 'Tyler-perry London', message: 'Focused on shooting, handles and a stronger left hand', position: 'Point Guard', school: 'KBA', goal: 'Semi-pro / overseas', age: '19 years', from: 'Toronto, Ontario', height: '6′0″ tall', flag: '🇨🇦', country: 'Canada' },
   // Illustrative details, not claims about these members' real backgrounds.
-  { initials: 'EJ', name: 'Elijah', message: 'Building confidence to attack and finish through contact', position: 'Shooting Guard', school: 'London sixth form', goal: 'College basketball', age: '17 years', from: 'London, England', height: '6′2″ tall' },
-  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Sydney secondary school', goal: 'Professional basketball', age: '18 years', from: 'Sydney, Australia', height: '6′3″ tall' },
+  { initials: 'EJ', name: 'Ibra', message: 'Building confidence to attack and finish through contact', position: 'Shooting Guard', school: 'London sixth form', goal: 'College basketball', age: '16 years', from: 'London, England', height: '5′8″ tall', flag: '🏴', country: 'England' },
+  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Sydney secondary school', goal: 'Professional basketball', age: '18 years', from: 'Sydney, Australia', height: '6′3″ tall', flag: '🇦🇺', country: 'Australia' },
 ];
 
 // Keep existing profile information and overlay behaviour; the example thread
@@ -113,7 +121,7 @@ function Community() {
   return <div className={styles.community} ref={containerRef} onPointerLeave={event => { if (event.pointerType === 'mouse') { dismissedRef.current = false; setOpen(null); } }} onKeyDown={event => { if (event.key === 'Escape') { dismissedRef.current = true; setOpen(null); } }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
     <div className={styles.people} aria-label="Community profile previews">
       {STORY_PROFILES.map((person, index) => <button key={person.initials} ref={element => { cardsRef.current[index] = element; }} type="button" className={styles.person} onPointerEnter={event => { if (event.pointerType === 'mouse' && !dismissedRef.current) setOpen(index); }} onFocus={() => { if (!dismissedRef.current) setOpen(index); }} onClick={() => { dismissedRef.current = false; setOpen(index); }} aria-expanded={open === index} aria-controls="community-profile" aria-label={`View ${person.name}’s profile`}>
-        <CommunityAvatar person={person} />
+        <CommunityAvatar person={person} /><span className={styles.personFlag} aria-label={`${person.country} flag`} role="img">{person.flag}</span>
         <span className={styles.personText}><strong>{person.name}</strong><span>{COMMUNITY_STORY_MESSAGES[person.initials as keyof typeof COMMUNITY_STORY_MESSAGES] || person.message}</span></span>
       </button>)}
     </div>

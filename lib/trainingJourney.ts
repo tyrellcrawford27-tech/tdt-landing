@@ -25,7 +25,7 @@ export const TRAINING_STORIES = {
 
 export const COMMUNITY_STORY_MESSAGES = {
   EJ: 'Reading the help early. Any tips?',
-  AN: 'I’m working on that too, Elijah.',
+  AN: 'I’m working on that too, Ibra.',
   TL: 'I mix up reads with a teammate.',
   TC: 'Let’s compare our next game clips.',
 };

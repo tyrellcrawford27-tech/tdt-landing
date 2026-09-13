@@ -16,13 +16,13 @@ export function HundredDays({ onOpenFilmFaq }: HundredDaysProps) {
           <div className={styles.daysIntro}>
             <p className={styles.eyebrow}>Why online</p>
             <h2 id="days-heading" className={styles.heading}>Online coaching for<br />real film-led progress.</h2>
-            <p>Everything we know works better online: film catches what you can’t see in the moment, structure keeps you moving forward for 100 days, and you get focused guidance from a coach who knows the level you want to reach.</p>
+            <p>In-person training is great for reps and coaching touch, but most growth happens when you’re alone. Online coaching keeps your work honest with film review, structure, and direct feedback.</p>
             <a href="#faq-film" onClick={onOpenFilmFaq} className={styles.textLink}>Don&apos;t have film? <span aria-hidden="true">↗</span></a>
           </div>
           <dl className={styles.daysDetails}>
-            <div><dt>See what happens between the lines.</dt><dd>Film review highlights missed reads, habits, and decision points you miss in real time, so your next workout has purpose.</dd></div>
-            <div><dt>Guidance that compounds over 100 days.</dt><dd>Weekly checkpoints and a clear roadmap make it easier to stay consistent, adjust fast, and build a stable routine.</dd></div>
-            <div><dt>Coaching from someone who&apos;s been there.</dt><dd>You get direct input from a coach with experience at the level you&apos;re aiming for, not a generic program.</dd></div>
+            <div><dt>Execution, not vibes.</dt><dd>Film points out missed reads and habits so your training is based on what actually happens in your game, not guessing.</dd></div>
+            <div><dt>Complete guidance.</dt><dd>You get direct, on-demand feedback while training solo, so you are never working without a clear plan.</dd></div>
+            <div><dt>Consistent progress.</dt><dd>Short feedback loops create better routines and make your 100-day journey feel simple, repeatable, and trackable.</dd></div>
           </dl>
         </div>
       </div>
@@ -40,9 +40,9 @@ export function ProgramPricing({ transition = false }: { transition?: boolean })
       <div className={`${styles.container} ${styles.pricingLayout}`}>
         <div className={styles.pricingIntro}>
           <p className={styles.eyebrow}>Program details</p>
-          <h2 id="pricing-heading" className={styles.heading}>This is your focused, film-first coaching program.</h2>
-          <p>We keep class size intentionally small so each athlete gets personal attention, faster feedback, and a clear plan built around their game goals.</p>
-          <p>Jaiden can only serve 10 players at a time, so every spot requires commitment, fast turnaround on work, and honest communication.</p>
+          <h2 id="pricing-heading" className={styles.heading}>Personal coaching, built around your game.</h2>
+          <p>We keep class size intentionally small so every athlete gets personal attention, faster feedback, and a clear game plan.</p>
+          <p>Jaiden can only serve ten players at a time, so every spot requires commitment, fast turnaround, and honest communication.</p>
           <a href="#faq" className={styles.textLink}>Have a question first? <span aria-hidden="true">↗</span></a>
         </div>
         <div className={styles.priceCard}>
@@ -60,7 +60,7 @@ export function ProgramPricing({ transition = false }: { transition?: boolean })
             <li>Coaching conversations and progress review</li>
           </ul>
           <CTAButton href="/apply" className={styles.applyButton}>Apply for coaching</CTAButton>
-          <p className={styles.cardNote}>If this spot opens up, it fills quickly because each player gets dedicated time and a full coaching load.</p>
+          <p className={styles.cardNote}>If a spot opens up, it fills quickly because each player gets dedicated coaching time.</p>
         </div>
       </div>
     </section>

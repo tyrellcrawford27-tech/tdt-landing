@@ -160,7 +160,8 @@ export default function Home() {
       const question = document.getElementById('faq-question-3');
       if (!question) return;
       const header = document.querySelector('header');
-      const headerOffset = (header?.offsetHeight || 88) + 26;
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      const headerOffset = (header?.offsetHeight || 88) + 26 + (isMobile ? 20 : 10);
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const top = question.getBoundingClientRect().top + window.scrollY - headerOffset;
       const safeTop = Math.max(0, Math.round(top));
@@ -172,7 +173,7 @@ export default function Home() {
     const el = document.getElementById(id);
     if (!el) return;
     const header = document.querySelector('header');
-    const idBias = id === 'pricing' ? 90 : 0;
+    const idBias = id === 'pricing' ? -340 : 0;
     const headerOffset = (header?.offsetHeight || 88) + 20 + idBias + extraOffset;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
@@ -1041,9 +1042,9 @@ export default function Home() {
                     id={`faq-question-${index}`}
                     className="flex w-full flex-col border-b border-[rgba(0,0,0,0.15)] transition-colors duration-300"
                     style={highlightFaq === index ? {
-                      backgroundColor: 'rgba(26, 15, 10, 0.06)',
-                      borderColor: 'rgba(26, 15, 10, 0.25)',
-                      borderLeft: '3px solid rgba(26, 15, 10, 0.45)',
+                      backgroundColor: 'rgba(250, 215, 58, 0.12)',
+                      borderColor: 'rgba(250, 215, 58, 0.55)',
+                      borderLeft: '4px solid #FAD73A',
                       paddingLeft: '13px',
                     } : undefined}
                   >
