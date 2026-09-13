@@ -34,25 +34,33 @@ function markerFractions(line: HTMLSpanElement | null, tabs: (HTMLButtonElement 
 type CommunityProfile = { initials: string; name: string; message: string; position: string; school: string; goal: string; age: string; from: string; height: string; flagSrc: string; country: string };
 
 function CommunityAvatar({ person }: { person: CommunityProfile }) {
+  const avatarByInitials: Record<string, string> = {
+    AN: '/how-it-works/avatar-andre.webp',
+    TC: '/how-it-works/avatar-training.webp',
+    EJ: '/ibra-pfp.jpeg',
+    TL: '/tyler-pfp.jpeg',
+  };
+  const avatarSrc = avatarByInitials[person.initials];
   return <span className={styles.initials} aria-hidden="true" data-community-avatar={person.initials}>
-    {(person.initials === 'AN' || person.initials === 'TC' || person.initials === 'EJ')
-      ? <Image src={
-          person.initials === 'AN'
-            ? '/how-it-works/avatar-andre.webp'
-            : person.initials === 'TC'
-              ? '/how-it-works/avatar-training.webp'
-              : '/ibra-pfp.jpeg'
-        } alt="" width={104} height={104} unoptimized className={styles.communityAvatarImage} />
+    {avatarSrc
+      ? <Image
+          src={avatarSrc}
+          alt=""
+          fill
+          unoptimized
+          sizes="42px"
+          className={`${styles.communityAvatarImage} ${person.initials === 'TL' ? styles.tylerAvatarImage : ''}`.trim()}
+        />
       : person.initials}
   </span>;
 }
 
 const PROFILES: CommunityProfile[] = [
   { initials: 'AN', name: 'Andre Narciso', message: 'What’s up guys just want to know how to get better', position: 'Point Guard', school: 'Holy Trinity', goal: 'D1/Pro basketball', age: '14 years', from: 'Fort McMurray, Alberta', height: '5′9″ tall', flagSrc: '/flags/canada.svg', country: 'Canada' },
-  { initials: 'TL', name: 'Tyler-perry London', message: 'Focused on shooting, handles and a stronger left hand', position: 'Point Guard', school: 'KBA', goal: 'Semi-pro / overseas', age: '19 years', from: 'Toronto, Ontario', height: '6′0″ tall', flagSrc: '/flags/canada.svg', country: 'Canada' },
+  { initials: 'TL', name: 'Tyler-perry London', message: 'Focused on shooting, handles and a stronger left hand', position: 'Point Guard', school: 'Humber College', goal: 'Semi-pro / overseas', age: '19 years', from: 'Toronto, Ontario', height: '6′0″ tall', flagSrc: '/flags/canada.svg', country: 'Canada' },
   // Illustrative details, not claims about these members' real backgrounds.
   { initials: 'EJ', name: 'Ibra', message: 'Building confidence to attack and finish through contact', position: 'Shooting Guard', school: 'London sixth form', goal: 'College basketball', age: '16 years', from: 'London, England', height: '5′8″ tall', flagSrc: '/flags/england.svg', country: 'England' },
-  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Secondary school', goal: 'Professional basketball', age: '18 years', from: 'United States', height: '6′3″ tall', flagSrc: '/flags/usa.svg', country: 'United States' },
+  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Sierra Canyon', goal: 'Professional basketball', age: '18 years', from: 'Chatsworth, California', height: '6′3″ tall', flagSrc: '/flags/usa.svg', country: 'United States' },
 ];
 
 // Keep existing profile information and overlay behaviour; the example thread

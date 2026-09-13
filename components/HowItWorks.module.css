@@ -82,10 +82,13 @@
 .person { display: flex; align-items: center; position: relative; width: 100%; height: 83.8px; gap: 8.38px; padding: 12.57px; border: 0; border-radius: 16.76px; background: #3d2419; color: white; text-align: left; cursor: pointer; transition: background .25s; }
 .person:hover { background: #472a1c; }.person:focus-visible { outline: 2px solid #e6a182; outline-offset: 3px; }
 .initials { display: grid; place-items: center; flex-shrink: 0; width: 42.32px; height: 42.32px; border-radius: 50%; background: linear-gradient(180deg,#ffeedf,#e4b386); color: #aa692d; font-size: 18.44px; font-weight: 500; }
+.initials[data-community-avatar] { position: relative; }
 .initials[data-community-avatar="AN"],
 .initials[data-community-avatar="TC"],
-.initials[data-community-avatar="EJ"] { overflow: hidden; background: transparent; border: 0; outline: none; box-shadow: none; }
-.communityAvatarImage { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.initials[data-community-avatar="EJ"],
+.initials[data-community-avatar="TL"] { overflow: hidden; background: transparent; border: 0; outline: none; box-shadow: none; }
+.communityAvatarImage { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.tylerAvatarImage { object-position: 50% 38%; }
 .personText { display: flex; flex-direction: column; min-width: 0; gap: 4.19px; padding-right: 34px; }
 .personText strong { font-size: 16.76px; line-height: 20px; font-weight: 500; }
 .personText > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.41px; line-height: 16px; }
@@ -114,6 +117,30 @@
   .intro h2 { font-size: 40px; line-height: 47px; }.steps { min-height: 152px; }.stepBody { font-size: 15px; }
   .chatAvatar { width: 32px; height: 32px; }.messageRow { gap: 8px; }.chatMessages { gap: 14px; }
   .community { padding-inline: 10px; }
+}
+@media (min-width: 1024px) and (max-width: 1440px) {
+  .person { gap: 10px; height: 92px; padding: 13px 15px; }
+  .initials { width: 46px; height: 46px; font-size: 18px; }
+  .personText strong { font-size: 18px; line-height: 21px; }
+  .personText > span { font-size: 14px; line-height: 18px; }
+  .community { width: min(100%, 440px); }
+  .profile { width: min(312px, calc(100% - 20px)); min-height: 315px; }
+  .profileTop .initials { width: 54px; height: 54px; }
+  .profileTop strong { font-size: 14px; line-height: 17px; }
+  .position { font-size: 13px; line-height: 16px; padding: 7px 12px; }
+  .profileDetails dt { font-size: 12px; line-height: 14px; }
+  .profileDetails dd { font-size: 15.5px; line-height: 19px; }
+}
+
+@media (min-width: 1024px) and (max-width: 1366px) and (min-height: 760px) and (max-height: 920px) {
+  .community { width: min(100%, 452px); }
+  .people { gap: 14px; }
+  .person { height: 94px; }
+  .personText strong { font-size: 18px; line-height: 21px; }
+  .personText > span { font-size: 14px; line-height: 18px; }
+  .profile { width: min(318px, calc(100% - 12px)); }
+  .profileTop strong { font-size: 15px; }
+  .profileDetails dd { font-size: 16px; line-height: 19px; }
 }
 @media (max-width: 1023px) {
   .section { --pin-top: 64px; --step-width: 23%; }.frame { width: calc(100% - 48px); }
@@ -210,9 +237,12 @@
   .community { height: 100%; padding: 0; }
   .people { height: 100%; display: grid; grid-template-rows: repeat(4, minmax(44px, 1fr)); gap: 10px; }
   .person { height: 100%; min-height: 0; padding: 8px 10px; border-radius: 13px; }
-  .person .initials { width: 32px; height: 32px; font-size: 15px; }
-  .personText strong { font-size: 15px; line-height: 18px; }
-  .personText > span { font-size: 12px; line-height: 15px; }
+  .person .initials { width: 34px; height: 34px; font-size: 16px; }
+  .personText strong { font-size: 16px; line-height: 19px; }
+  .personText > span { font-size: 13px; line-height: 16px; }
+  .profileTop .initials { width: 48px; height: 48px; }
+  .profileTop strong { font-size: 14px; }
+  .profileDetails dd { font-size: 15px; line-height: 18px; }
 }
 @media (min-width: 768px) and (prefers-reduced-motion: reduce) {
   .track { min-height: 0; }.pin { position: relative; top: auto; padding-bottom: 60px; }
