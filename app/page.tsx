@@ -41,7 +41,7 @@ const SECTION_LABELS: Record<string, string> = {
   '100-days': '100-day program',
   'coach': 'The coach',
   'difference': 'Difference',
-  'pricing': 'Pricing',
+  'pricing': 'Program Details',
   'faq': 'FAQ',
   'apply-cta': 'Apply',
 };
@@ -172,7 +172,8 @@ export default function Home() {
     const el = document.getElementById(id);
     if (!el) return;
     const header = document.querySelector('header');
-    const headerOffset = (header?.offsetHeight || 88) + 20 + extraOffset;
+    const idBias = id === 'pricing' ? 90 : 0;
+    const headerOffset = (header?.offsetHeight || 88) + 20 + idBias + extraOffset;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
     const safeTop = Math.max(0, Math.round(top));
