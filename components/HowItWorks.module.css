@@ -81,7 +81,6 @@
 .people { display: flex; flex-direction: column; gap: 12.57px; }
 .person { display: flex; align-items: center; position: relative; width: 100%; height: 83.8px; gap: 8.38px; padding: 12.57px; border: 0; border-radius: 16.76px; background: #3d2419; color: white; text-align: left; cursor: pointer; transition: background .25s; }
 .person:hover { background: #472a1c; }.person:focus-visible { outline: 2px solid #e6a182; outline-offset: 3px; }
-.personFlag { position: absolute; top: 10px; right: 12px; display: inline-flex; align-items: center; justify-content: center; width: 25px; height: 19px; border-radius: 4px; font-size: 17px; line-height: 1; filter: saturate(1.12); }
 .initials { display: grid; place-items: center; flex-shrink: 0; width: 42.32px; height: 42.32px; border-radius: 50%; background: linear-gradient(180deg,#ffeedf,#e4b386); color: #aa692d; font-size: 18.44px; font-weight: 500; }
 .initials[data-community-avatar="AN"],
 .initials[data-community-avatar="TC"],
@@ -102,6 +101,8 @@
 .profileDetails > div { min-width: 0; }.school { grid-column: 1/-1; }
 .profileDetails dt { display: flex; align-items: center; gap: 4px; color: #c6a795; font-size: 11.73px; line-height: 14px; margin-bottom: 4.19px; }
 .profileDetails dd { color: #f6eae0; font-size: 15.08px; line-height: 18px; margin: 0; }
+.fromValue { display: inline-flex; align-items: center; gap: 8px; }
+.profileFlag { width: 28px; height: 18px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 @keyframes typing { 0%,60%,100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-3px); opacity: 1; } }
 @keyframes messageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

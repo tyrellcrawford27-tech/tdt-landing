@@ -31,7 +31,7 @@ function markerFractions(line: HTMLSpanElement | null, tabs: (HTMLButtonElement 
   };
 }
 
-type CommunityProfile = { initials: string; name: string; message: string; position: string; school: string; goal: string; age: string; from: string; height: string; flag: string; country: string };
+type CommunityProfile = { initials: string; name: string; message: string; position: string; school: string; goal: string; age: string; from: string; height: string; flagSrc: string; country: string };
 
 function CommunityAvatar({ person }: { person: CommunityProfile }) {
   return <span className={styles.initials} aria-hidden="true" data-community-avatar={person.initials}>
@@ -48,11 +48,11 @@ function CommunityAvatar({ person }: { person: CommunityProfile }) {
 }
 
 const PROFILES: CommunityProfile[] = [
-  { initials: 'AN', name: 'Andre Narciso', message: 'What’s up guys just want to know how to get better', position: 'Point Guard', school: 'Holy Trinity', goal: 'D1/Pro basketball', age: '14 years', from: 'Fort McMurray, Alberta', height: '5′9″ tall', flag: '🇨🇦', country: 'Canada' },
-  { initials: 'TL', name: 'Tyler-perry London', message: 'Focused on shooting, handles and a stronger left hand', position: 'Point Guard', school: 'KBA', goal: 'Semi-pro / overseas', age: '19 years', from: 'Toronto, Ontario', height: '6′0″ tall', flag: '🇨🇦', country: 'Canada' },
+  { initials: 'AN', name: 'Andre Narciso', message: 'What’s up guys just want to know how to get better', position: 'Point Guard', school: 'Holy Trinity', goal: 'D1/Pro basketball', age: '14 years', from: 'Fort McMurray, Alberta', height: '5′9″ tall', flagSrc: '/flags/canada.svg', country: 'Canada' },
+  { initials: 'TL', name: 'Tyler-perry London', message: 'Focused on shooting, handles and a stronger left hand', position: 'Point Guard', school: 'KBA', goal: 'Semi-pro / overseas', age: '19 years', from: 'Toronto, Ontario', height: '6′0″ tall', flagSrc: '/flags/canada.svg', country: 'Canada' },
   // Illustrative details, not claims about these members' real backgrounds.
-  { initials: 'EJ', name: 'Ibra', message: 'Building confidence to attack and finish through contact', position: 'Shooting Guard', school: 'London sixth form', goal: 'College basketball', age: '16 years', from: 'London, England', height: '5′8″ tall', flag: '🏴', country: 'England' },
-  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Secondary school', goal: 'Professional basketball', age: '18 years', from: 'United States', height: '6′3″ tall', flag: '🇺🇸', country: 'United States' },
+  { initials: 'EJ', name: 'Ibra', message: 'Building confidence to attack and finish through contact', position: 'Shooting Guard', school: 'London sixth form', goal: 'College basketball', age: '16 years', from: 'London, England', height: '5′8″ tall', flagSrc: '/flags/england.svg', country: 'England' },
+  { initials: 'TC', name: 'Tyrell Crawford', message: 'Working on better reads and a more consistent jump shot', position: 'Small Forward', school: 'Secondary school', goal: 'Professional basketball', age: '18 years', from: 'United States', height: '6′3″ tall', flagSrc: '/flags/usa.svg', country: 'United States' },
 ];
 
 // Keep existing profile information and overlay behaviour; the example thread
@@ -121,7 +121,7 @@ function Community() {
   return <div className={styles.community} ref={containerRef} onPointerLeave={event => { if (event.pointerType === 'mouse') { dismissedRef.current = false; setOpen(null); } }} onKeyDown={event => { if (event.key === 'Escape') { dismissedRef.current = true; setOpen(null); } }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
     <div className={styles.people} aria-label="Community profile previews">
       {STORY_PROFILES.map((person, index) => <button key={person.initials} ref={element => { cardsRef.current[index] = element; }} type="button" className={styles.person} onPointerEnter={event => { if (event.pointerType === 'mouse' && !dismissedRef.current) setOpen(index); }} onFocus={() => { if (!dismissedRef.current) setOpen(index); }} onClick={() => { dismissedRef.current = false; setOpen(index); }} aria-expanded={open === index} aria-controls="community-profile" aria-label={`View ${person.name}’s profile`}>
-        <CommunityAvatar person={person} /><span className={styles.personFlag} aria-label={`${person.country} flag`} role="img">{person.flag}</span>
+        <CommunityAvatar person={person} />
         <span className={styles.personText}><strong>{person.name}</strong><span>{COMMUNITY_STORY_MESSAGES[person.initials as keyof typeof COMMUNITY_STORY_MESSAGES] || person.message}</span></span>
       </button>)}
     </div>
@@ -133,7 +133,7 @@ function Community() {
         <dl className={styles.profileDetails}>
           <div className={styles.school}><dt><svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6l6 3 6-3v-6M22 8v8" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>School</dt><dd>{profile.school}</dd></div>
           <div><dt>Goal</dt><dd>{profile.goal}</dd></div><div><dt>Age</dt><dd>{profile.age}</dd></div>
-          <div><dt>From</dt><dd>{profile.from}</dd></div><div><dt>Height</dt><dd>{profile.height}</dd></div>
+          <div><dt>From</dt><dd className={styles.fromValue}>{profile.from}<Image src={profile.flagSrc} alt={`${profile.country} flag`} width={80} height={52} className={styles.profileFlag} /></dd></div><div><dt>Height</dt><dd>{profile.height}</dd></div>
         </dl>
       </>}
     </div>
