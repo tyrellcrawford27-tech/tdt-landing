@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertLineTracksCircles } from './how-it-works-line-probe.mjs';
 import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
 const require = createRequire(import.meta.url);
@@ -32,6 +33,7 @@ function panel(page, stage = 0) {
 }
 async function assertImages(page) {
   for (const img of await page.locator('#how-it-works img').all()) {
+    if (await img.evaluate(image => !!image.closest('[data-community-avatar]'))) continue;
     if (!await img.isVisible()) continue;
     if (!await img.evaluate(image => image.getBoundingClientRect().top < innerHeight && image.getBoundingClientRect().bottom > 0)) continue;
     await img.evaluate(async image => { await image.decode(); });
@@ -56,6 +58,9 @@ try {
   const initialHtml = await (await page.request.get(base)).text();
   for (const text of ['Just uploaded my first full game', 'find your first focus', 'rush or hesitate']) assert.ok(initialHtml.includes(text), 'Example exchange is in the initial HTML, not a delayed effect');
   assert.equal(await page.locator('[data-example="true"]').count(), 3, 'The full example is preloaded, even before scrolling to the chat');
+  assert.match(await page.locator('[data-chat-avatar="coach"]').first().evaluate(el => getComputedStyle(el).backgroundImage), /avatar-jaiden\.webp/, 'The coach uses the newly uploaded Jaiden portrait');
+  assert.match(await page.locator('[data-chat-avatar="athlete"]').first().evaluate(el => getComputedStyle(el).backgroundImage), /avatar-training\.webp/, 'The previous coach avatar is now the athlete');
+  assert.equal((await page.request.get(`${base}/how-it-works/avatar-jaiden.webp`)).status(), 200, 'The compressed Jaiden avatar loads');
   assert.equal(await page.getByRole('status', { name: 'Demo coach is typing' }).count(), 0, 'No automatic greeting or staged playback');
   const requests = [];
   await page.route('**/api/training-chat', async route => {
@@ -116,6 +121,8 @@ try {
   assert.match(await panel(page).innerText(), /Choose a video file/);
   const input = page.getByRole('textbox', { name: 'Message Jaiden’s chat demo' });
   const send = page.getByRole('button', { name: 'Send message' });
+  await input.focus();
+  assert.equal(await input.evaluate(el => getComputedStyle(el.closest('form')).outlineStyle), 'none', 'Focusing the message field does not outline the composer');
   assert.equal(await send.isDisabled(), true);
   await input.fill('  '); assert.equal(await send.isDisabled(), true);
   await input.fill('x'.repeat(301)); assert.equal((await input.inputValue()).length, 300);
@@ -127,14 +134,18 @@ try {
   await input.press('Enter');
   const reply = page.locator('[data-role="assistant"][data-example="false"]');
   await reply.waitFor();
-  assert.equal(await reply.locator('[data-message-text]').textContent(), 'Apply for the 100-Day Program', 'The reply contains only the application link');
+  assert.match(await reply.locator('[data-message-text]').textContent(), /balance and shot preparation/, 'The reply first gives one relevant observation about the visitor’s challenge');
+  assert.match(await reply.innerText(), /Want to work on this together\?/);
+  assert.match(await reply.innerText(), /Automated chat preview/, 'The response is identified as a preview, not a live message');
+  assert.equal(await reply.locator('a').textContent(), 'Apply for the 100-Day Program ');
   assert.equal(await reply.locator('a').getAttribute('href'), '/apply');
   assert.match(await reply.evaluate(el => getComputedStyle(el).animationName), /messageArrive/);
   assert.equal(await reply.evaluate(el => getComputedStyle(el).animationDuration), '0.72s');
   assert.equal(await page.locator('[data-example="true"]').count(), 3, 'Real visitor messages append after the original exchange');
   await page.locator('#how-step-panel a[href="/apply"]').waitFor();
   assert.ok(Date.now() - start >= 650);
-  assert.equal(requests.length, 0, 'No visitor message is sent to an API');
+  assert.equal(requests.length, 1, 'Only the visitor message calls the secure API');
+  assert.equal(requests[0].message, 'I shoot well in practice but miss my shots in games');
   assert.equal(await page.locator('[data-chat-topic] > a').count(), 0, 'There is no separate footer CTA');
   await input.fill('I shoot well in practice but miss my shots in games');
   await input.press('Enter');
@@ -160,20 +171,31 @@ try {
   await position(page, 2);
   await input.fill('I also want to earn more minutes'); await send.click();
   await page.waitForFunction(() => !document.querySelector('[aria-label="Demo coach is typing"]'));
-  assert.equal(requests.length, 0);
+  assert.equal(requests.length, 3);
   assert.equal(await page.getByRole('log').locator('a').count(), 1);
-  assert.equal(await input.getAttribute('readonly'), null);
-  assert.equal(await page.evaluate(() => sessionStorage.getItem('tdt-training-chat-session-v1')), null, 'No messages or counters are stored');
-  await page.evaluate(() => sessionStorage.setItem('tdt-training-chat-session-v1', JSON.stringify({ id: crypto.randomUUID(), count: 3 })));
-  await page.reload({ waitUntil: 'networkidle' }); await position(page, 0);
+  assert.equal(await input.count(), 1, 'Each topic has its own four-message budget');
+  assert.equal(await input.evaluate(el => el.readOnly), false);
+  for (const message of ['I hesitate before a drive', 'How does execution help?', 'What are my next steps?']) {
+    await input.fill(message); await send.click();
+    await page.waitForFunction(() => !document.querySelector('[aria-label="Demo coach is typing"]'));
+  }
+  assert.equal(requests.length, 6);
+  assert.equal(await input.count(), 1, 'Composer stays visible after the fourth message');
+  assert.equal(await input.evaluate(el => el.readOnly), true);
   assert.equal(await send.isDisabled(), true);
-  assert.equal(await page.locator('#how-step-panel a[href="/apply"]').count(), 0, 'Old exhausted sessions do not show a permanent CTA');
-  assert.equal(await input.getAttribute('placeholder'), 'Message Jaiden…');
-  await input.fill('I want to improve my game');
-  assert.equal(await send.isEnabled(), true, 'Old AI cap does not lock the plain link-only demo');
+  const stored = JSON.parse(await page.evaluate(() => sessionStorage.getItem('tdt-training-chat-session-v2')));
+  assert.deepEqual(Object.keys(stored).sort(), ['counts', 'id'], 'Only an anonymous identifier and per-topic counts persist');
+  assert.deepEqual(stored.counts, { film: 1, review: 1, practice: 4 });
+  await position(page, 0);
+  assert.equal(await input.evaluate(el => el.readOnly), false, 'Finishing practice does not lock film');
+  await page.reload({ waitUntil: 'networkidle' }); await position(page, 2);
+  assert.equal(await input.evaluate(el => el.readOnly), true);
+  assert.equal(await page.locator('#how-step-panel a[href="/apply"]').count(), 1, 'Completed topics keep the application invitation after refresh');
+  await position(page, 0); await input.fill('I want to improve my game');
+  assert.equal(await send.isEnabled(), true, 'Other topic budgets remain available after refresh');
   assert.doesNotMatch(await page.getByRole('log').innerText(), /I shoot well in practice/);
   await context.close();
-  console.log('Desktop: preloaded story, plain composer, link-only replies, Enter/click, typing, deduplication, topic isolation and old-session recovery passed.');
+  console.log('Desktop: preloaded story, outline-free composer, useful replies and shared application CTA, Enter/click, typing, deduplication, topic isolation, four sends per topic and refresh-proof limits passed.');
 
   if (!process.env.TDT_VERIFY_DESKTOP_ONLY) {
   const mobile = await open({ width: 390, height: 844 }, true);
@@ -285,6 +307,7 @@ try {
       const x = viewport.width / 2;
       const y = Math.min(viewport.height - 24, scene.y + scene.height * .6);
       const delta = Math.min(80, viewport.height / 8) * direction;
+      const probe = assertLineTracksCircles(page, 500);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
       for (let i = 1; i <= 10; i++) {
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + delta * i / 10 }] });
@@ -292,6 +315,7 @@ try {
       }
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await page.waitForTimeout(200);
+      await probe;
     };
     const seen = new Set([0]);
     for (let attempt = 0; !seen.has(3) && attempt < 100; attempt++) {
@@ -303,8 +327,12 @@ try {
     }
     assert.deepEqual([...seen].sort(), [0, 1, 2, 3], 'Real native phone swipes advance through all four stages');
     await page.waitForTimeout(700);
-    const progress = await page.locator('#how-it-works').evaluate(el => Number([...el.querySelectorAll('span')].find(span => span.style.getPropertyValue('--line-progress'))?.style.getPropertyValue('--line-progress')));
-    assert.ok(progress > .95, 'The animated spine progresses with mobile scrolling');
+    const lineProgress = () => page.locator('#how-it-works').evaluate(el => Number([...el.querySelectorAll('span')].find(span => span.style.getPropertyValue('--line-progress'))?.style.getPropertyValue('--line-progress')));
+    const fourthStageProgress = await lineProgress();
+    assert.ok(fourthStageProgress > .7 && fourthStageProgress < 1, 'Mobile leaves a trailing line after entering step four');
+    for (let attempt = 0; await lineProgress() < .985 && attempt < 30; attempt++) await swipe();
+    await page.waitForTimeout(700);
+    assert.ok(await lineProgress() > .985 && await lineProgress() > fourthStageProgress, 'The mobile line keeps filling toward the page handoff');
     for (let attempt = 0; await nav.getByRole('tab').nth(3).getAttribute('aria-selected') === 'true' && attempt < 20; attempt++) await swipe(1);
     assert.equal(await nav.getByRole('tab').nth(2).getAttribute('aria-selected'), 'true', 'Swiping back reverses the progression');
     await page.locator('[data-how-track]').evaluate(el => window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().bottom + 40, behavior: 'instant' }));
@@ -318,6 +346,6 @@ try {
     await check.context.close();
   }
   assert.deepEqual(errors, []);
-  console.log('Six phone/landscape sizes: visual-only scenes, full contained products, real forward/backward swipes, automatic sticky progression, animated spine, topic taps, scroll exit and reduced motion passed.');
+  console.log('Six phone/landscape sizes: frame-exact circle activation, visual-only scenes, full contained products, real forward/backward swipes, automatic sticky progression, animated spine, topic taps, scroll exit and reduced motion passed.');
   }
 } finally { await browser.close(); }

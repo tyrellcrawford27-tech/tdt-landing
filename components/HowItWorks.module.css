@@ -10,7 +10,7 @@
 .intro h2 { margin: 0; font-size: 46px; line-height: 55px; font-weight: 400; letter-spacing: -.02em; }
 .steps { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 0; margin: 0 0 20px; min-height: 148px; }
 .line { position: absolute; left: 0; right: 0; top: 10px; height: 1px; background: #2b2b2b; }
-.lineFill { position: absolute; left: 10px; top: 0; width: calc(100% - var(--step-width)); height: 1px; background: linear-gradient(90deg, #622613, #c4431f); transform: scaleX(var(--line-progress, 0)); transform-origin: left center; will-change: transform; }
+.lineFill { position: absolute; left: 10px; top: 0; width: calc(100% - 10px); height: 1px; background: linear-gradient(90deg, #622613, #c4431f); transform: scaleX(var(--line-progress, 0)); transform-origin: left center; will-change: transform; }
 .step { position: relative; display: flex; flex-direction: column; align-items: flex-start; flex: 0 1 var(--step-width); padding: 0; text-align: left; color: #fff; background: transparent; border: 0; cursor: pointer; }
 .stepDot { position: relative; display: grid; place-items: center; width: 20px; height: 20px; margin-bottom: 8px; border: 1px solid #373737; border-radius: 50%; background: #262626; color: #fff; font-size: 14px; line-height: 17px; transition: background .35s, border-color .35s, box-shadow .35s; }
 .step[data-active="true"] .stepDot { background: linear-gradient(180deg, #b34929, #9c3617); border-color: transparent; box-shadow: 0 0 0 4px #3b170c; }
@@ -47,14 +47,14 @@
 .messageRow { display: flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; }
 .outgoing .messageRow { justify-content: flex-end; }
 .chatAvatar { display: block; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background-size: cover; background-repeat: no-repeat; }
-/* Reuse the exact example avatars already embedded in the supplied app asset. */
-.coachAvatar { background-image: url('/how-it-works/avatar-training.webp'); }
-.visitorAvatar { background-image: url('/how-it-works/avatar-player.webp'); }
+/* The supplied Jaiden portrait is the coach. The previous coach photo now
+   belongs to the example athlete, as requested. Originals stay untouched. */
+.coachAvatar { background-image: url('/how-it-works/avatar-jaiden.webp'); }
+.visitorAvatar { background-image: url('/how-it-works/avatar-training.webp'); }
 .bubble { display: block; margin: 0; width: fit-content; max-width: 309px; padding: 8px 10px; background: #f0ede9; color: #4a4947; border-radius: 16px; font-size: 14px; line-height: 17px; font-weight: 400; overflow-wrap: anywhere; white-space: pre-wrap; }
 .outgoing .bubble { background: #b34929; color: #f8ded4; }
 .timestamp { font-size: 14px; line-height: 17px; color: rgba(255,255,255,.4); }
 .composer { flex-shrink: 0; display: flex; align-items: center; gap: 8px; height: 45px; padding: 0 8px 0 10px; background: #fff; border-radius: 69px; }
-.composer:focus-within { outline: 2px solid #e0a085; outline-offset: 4px; }
 .composer input { display: block; min-width: 0; flex: 1; height: 100%; border: 0; padding: 0; color: #282322; background: transparent; font: inherit; font-size: 14px; outline: none; }
 .composer input::placeholder { color: #858585; opacity: 1; }
 .composer button { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 40px; position: relative; border: 0; padding: 0; color: #fff; background: transparent; cursor: pointer; }
@@ -62,9 +62,16 @@
 .composer svg { position: relative; }
 .composer button:disabled { opacity: .45; cursor: default; }
 .composer button:focus-visible { outline: 2px solid #91391c; outline-offset: 1px; border-radius: 50%; }
-.applicationReply { color: #9f391d; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
-.applicationReply:hover { color: #702510; }
-.applicationReply:focus-visible { outline: 2px solid #b34929; outline-offset: 4px; border-radius: 2px; }
+.responseBubble { max-width: 360px; padding: 14px; border-radius: 18px; white-space: normal; }
+.replyLabel { display: block; margin-bottom: 8px; color: #78695f; font-size: 10px; line-height: 14px; }
+.replyObservation { margin: 0; color: #403a35; font-size: 14px; line-height: 20px; }
+.replyInvitation { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #d9cec4; }
+.replyInvitation > span { color: #726259; font-size: 12px; line-height: 17px; }
+.completedChatAction { flex-shrink: 0; }
+.applicationReply { max-width: 100%; min-height: 44px; padding: 10px 16px; font-size: 12px; line-height: 17px; text-decoration: none; white-space: nowrap; }
+.applicationReplyContent { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
+.applicationReply svg { flex-shrink: 0; }
+.applicationReply:focus-visible { outline: 2px solid #b34929; outline-offset: 3px; }
 .typing { display: flex; align-items: center; gap: 4px; min-height: 33px; padding-inline: 14px; }
 .typing i { width: 5px; height: 5px; border-radius: 50%; background: #8b7d73; animation: typing .9s ease-in-out infinite; }
 .typing i:nth-child(2) { animation-delay: .12s; }.typing i:nth-child(3) { animation-delay: .24s; }
@@ -75,6 +82,8 @@
 .person { display: flex; align-items: center; width: 100%; height: 83.8px; gap: 8.38px; padding: 12.57px; border: 0; border-radius: 16.76px; background: #3d2419; color: white; text-align: left; cursor: pointer; transition: background .25s; }
 .person:hover { background: #472a1c; }.person:focus-visible { outline: 2px solid #e6a182; outline-offset: 3px; }
 .initials { display: grid; place-items: center; flex-shrink: 0; width: 42.32px; height: 42.32px; border-radius: 50%; background: linear-gradient(180deg,#ffeedf,#e4b386); color: #aa692d; font-size: 18.44px; font-weight: 500; }
+.initials[data-community-avatar="AN"] { overflow: hidden; background: transparent; border: 0; outline: none; box-shadow: none; }
+.communityAvatarImage { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .personText { display: flex; flex-direction: column; min-width: 0; gap: 4.19px; }
 .personText strong { font-size: 16.76px; line-height: 20px; font-weight: 500; }
 .personText > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.41px; line-height: 16px; }
@@ -128,8 +137,8 @@
   /* The visual walkthrough pins on phones too. Native page scrolling
      advances the stages; chat and file-picker interactions stay on desktop. */
   .steps { position: sticky; top: var(--pin-top); z-index: 10; align-items: stretch; gap: 0; min-height: 0; height: auto; margin: 0 0 16px; padding: 12px 0; background: #000; border-bottom: 1px solid #24201d; }
-  .line { left: 12.5%; right: 12.5%; top: 25px; }
-  .lineFill { left: 0; width: 100%; transition: transform .5s cubic-bezier(.22,1,.36,1); }
+  .line { left: 12.5%; right: 0; top: 25px; }
+  .lineFill { left: 0; width: 100%; transition: none; }
   .step { flex: 1 1 0; min-width: 0; min-height: 52px; align-items: center; justify-content: center; gap: 8px; }
   .stepDot { width: 26px; height: 26px; margin: 0; font-size: 13px; }
   .stepMobileTitle { display: block; font-size: 11px; line-height: 16px; color: #c5bbb5; transition: color .3s; }
@@ -158,7 +167,7 @@
   .bubble { max-width: 100%; font-size: 14px; line-height: 20px; }
   .timestamp { font-size: 11px; line-height: 14px; }.message { gap: 5px; }.chatAvatar { width: 32px; height: 32px; }
   .composer { height: 50px; padding-right: 4px; }.composer input { font-size: 16px; }.composer button { width: 44px; height: 44px; }.composer button::before { width: 30px; height: 30px; }
-  .applicationReply { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; white-space: normal; }
+  .applicationReply { min-height: 44px; }
   .community { padding: 0; }.person { min-height: 78px; height: auto; padding: 12px; border-radius: 13px; }.people { gap: 12px; }
   .initials { width: 36px; height: 36px; font-size: 16px; }.personText strong { font-size: 15px; }.personText > span { font-size: 12px; }
   .profile { z-index: 20; min-height: 0; max-height: calc(var(--mobile-panel-height, 300px) - 16px); overflow-y: auto; width: min(280px, calc(100% - 12px)); }

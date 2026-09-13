@@ -2,9 +2,11 @@
 
 import Image from 'next/image';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { flushSync } from 'react-dom';
 import { CTAButton } from '@/components/CTAButton';
 import { TrainingChat, TrainingChatProvider } from './TrainingChat';
 import { COMMUNITY_STORY_MESSAGES } from '@/lib/trainingJourney';
+import { activeTopicForLine, progressionLineProgress } from '@/lib/howItWorksProgress';
 import styles from './HowItWorks.module.css';
 
 const STEPS = [
@@ -15,7 +17,27 @@ const STEPS = [
 ];
 const MOBILE_STEP_TITLES = ['Film', 'Review', 'Training', 'Community'];
 
+function markerFractions(line: HTMLSpanElement | null, tabs: (HTMLButtonElement | null)[]) {
+  if (!line) return { lastCenter: .85, starts: [0, .28, .56, .84] };
+  // CSS width retains subpixel precision and is not shortened by scaleX.
+  const width = parseFloat(getComputedStyle(line).width);
+  if (!width) return { lastCenter: .85, starts: [0, .28, .56, .84] };
+  const left = line.getBoundingClientRect().left;
+  const circles = tabs.map(tab => tab?.firstElementChild?.getBoundingClientRect());
+  const last = circles.at(-1);
+  return {
+    lastCenter: last ? Math.max(0, Math.min(1, (last.left + last.width / 2 - left) / width)) : .85,
+    starts: circles.map((circle, index) => circle ? (circle.left - left) / width : index * .28),
+  };
+}
+
 type CommunityProfile = { initials: string; name: string; message: string; position: string; school: string; goal: string; age: string; from: string; height: string };
+
+function CommunityAvatar({ person }: { person: CommunityProfile }) {
+  return <span className={styles.initials} aria-hidden="true" data-community-avatar={person.initials}>
+    {person.initials === 'AN' ? <Image src="/how-it-works/avatar-andre.webp" alt="" width={104} height={104} unoptimized className={styles.communityAvatarImage} /> : person.initials}
+  </span>;
+}
 
 const PROFILES: CommunityProfile[] = [
   { initials: 'AN', name: 'Andre Narciso', message: 'What’s up guys just want to know how to get better', position: 'Point Guard', school: 'Holy Trinity', goal: 'D1/Pro basketball', age: '14 years', from: 'Fort McMurray, Alberta', height: '5′9″ tall' },
@@ -91,14 +113,14 @@ function Community() {
   return <div className={styles.community} ref={containerRef} onPointerLeave={event => { if (event.pointerType === 'mouse') { dismissedRef.current = false; setOpen(null); } }} onKeyDown={event => { if (event.key === 'Escape') { dismissedRef.current = true; setOpen(null); } }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(null); }}>
     <div className={styles.people} aria-label="Community profile previews">
       {STORY_PROFILES.map((person, index) => <button key={person.initials} ref={element => { cardsRef.current[index] = element; }} type="button" className={styles.person} onPointerEnter={event => { if (event.pointerType === 'mouse' && !dismissedRef.current) setOpen(index); }} onFocus={() => { if (!dismissedRef.current) setOpen(index); }} onClick={() => { dismissedRef.current = false; setOpen(index); }} aria-expanded={open === index} aria-controls="community-profile" aria-label={`View ${person.name}’s profile`}>
-        <span className={styles.initials}>{person.initials}</span>
+        <CommunityAvatar person={person} />
         <span className={styles.personText}><strong>{person.name}</strong><span>{COMMUNITY_STORY_MESSAGES[person.initials as keyof typeof COMMUNITY_STORY_MESSAGES] || person.message}</span></span>
       </button>)}
     </div>
     <div id="community-profile" ref={profileRef} className={styles.profile} style={{ backdropFilter: 'blur(22px) saturate(1.15)', WebkitBackdropFilter: 'blur(22px) saturate(1.15)' }} data-open={!!profile} aria-hidden={!profile} role="region" aria-label={profile ? `${profile.name}’s profile preview` : 'Profile preview'}>
       {profile && <>
         <button type="button" className={styles.profileClose} aria-label="Close profile preview" onClick={() => { dismissedRef.current = true; setOpen(null); if (open !== null) cardsRef.current[open]?.focus({ preventScroll: true }); }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></button>
-        <div className={styles.profileTop}><span className={styles.initials}>{profile.initials}</span><div><span className={styles.athleteLabel}>Athlete</span><strong>{profile.name}</strong></div></div>
+        <div className={styles.profileTop}><CommunityAvatar person={profile} /><div><span className={styles.athleteLabel}>Athlete</span><strong>{profile.name}</strong></div></div>
         <span className={styles.position}>{profile.position}</span>
         <dl className={styles.profileDetails}>
           <div className={styles.school}><dt><svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6l6 3 6-3v-6M22 8v8" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>School</dt><dd>{profile.school}</dd></div>
@@ -152,17 +174,31 @@ export function HowItWorks() {
     let target = 0;
     let displayed = 0;
     let lastTime = 0;
+    let markerStarts = [0, .28, .56, .84];
+    const activate = (samePaint: boolean) => {
+      const next = activeTopicForLine(displayed, markerStarts);
+      if (activeRef.current === next) return;
+      activeRef.current = next;
+      // Commit only at a circle crossing, before painting this line frame.
+      // The ordinary update path avoids flushing from an effect/observer.
+      if (samePaint) flushSync(() => setActive(next));
+      else setActive(next);
+    };
     const draw = (now: number) => {
       const dt = Math.min(64, now - (lastTime || now - 16));
       lastTime = now;
       displayed += (target - displayed) * (1 - Math.exp(-dt / 75));
       if (Math.abs(target - displayed) < .0001) displayed = target;
       lineRef.current?.style.setProperty('--line-progress', String(displayed));
+      activate(true);
       if (displayed !== target) raf = requestAnimationFrame(draw);
       else { raf = 0; lastTime = 0; }
     };
     const measure = () => {
-      if (getComputedStyle(pin).position !== 'sticky') return;
+      if (getComputedStyle(pin).position !== 'sticky') {
+        cancelAnimationFrame(raf); raf = 0; lastTime = 0;
+        return;
+      }
       const top = parseFloat(getComputedStyle(pin).top) || 0;
       const panel = panelRef.current;
       if (matchMedia('(max-width: 767px)').matches && panel) {
@@ -175,10 +211,10 @@ export function HowItWorks() {
       }
       const distance = section.offsetHeight - pin.offsetHeight;
       const progress = Math.max(0, Math.min(1, (top - section.getBoundingClientRect().top) / Math.max(1, distance)));
-      const next = Math.min(3, Math.floor(progress * 4 + .001));
-      if (activeRef.current !== next) { activeRef.current = next; setActive(next); }
-      target = Math.min(1, progress * 4 / 3);
-      if (reduced.matches) { displayed = target; lineRef.current?.style.setProperty('--line-progress', String(target)); }
+      const geometry = markerFractions(lineRef.current, tabsRef.current);
+      markerStarts = geometry.starts;
+      target = progressionLineProgress(progress, geometry.lastCenter);
+      if (reduced.matches) { displayed = target; lineRef.current?.style.setProperty('--line-progress', String(target)); activate(false); }
       else if (!raf) raf = requestAnimationFrame(draw);
     };
     const observer = new ResizeObserver(measure);
@@ -197,7 +233,7 @@ export function HowItWorks() {
     if (!pin || !section) return;
     if (getComputedStyle(pin).position !== 'sticky') {
       activeRef.current = index; setActive(index);
-      lineRef.current?.style.setProperty('--line-progress', String(index / 3));
+      lineRef.current?.style.setProperty('--line-progress', String(progressionLineProgress(index / 4, markerFractions(lineRef.current, tabsRef.current).lastCenter)));
       // Keep the beginning of the scene reachable when choosing the next
       // topic from beneath a tall mobile panel. Scrolling stays native.
       if (matchMedia('(max-width: 767px)').matches) {

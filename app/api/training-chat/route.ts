@@ -1,4 +1,4 @@
-import { validateChatInput } from '@/lib/trainingAssistant';
+import { CHAT_REQUEST_BYTE_LIMIT, validateChatInput } from '@/lib/trainingAssistant';
 import { allowChatRequest, generateTrainingReply } from '@/lib/trainingChatServer';
 
 export const runtime = 'nodejs';
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     return json({ error: 'Send a JSON message.' }, 415);
   }
   // Count streamed bytes too: Content-Length alone can be absent or forged.
-  if (Number(request.headers.get('content-length')) > 4096) return json({ error: 'Message is too large.' }, 413);
+  if (Number(request.headers.get('content-length')) > CHAT_REQUEST_BYTE_LIMIT) return json({ error: 'Message is too large.' }, 413);
   let data: unknown;
   try {
     const reader = request.body?.getReader();
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       const { done, value } = await reader.read();
       if (done) break;
       length += value.byteLength;
-      if (length > 4096) { await reader.cancel(); return json({ error: 'Message is too large.' }, 413); }
+      if (length > CHAT_REQUEST_BYTE_LIMIT) { await reader.cancel(); return json({ error: 'Message is too large.' }, 413); }
       chunks.push(value);
     }
     data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   // at their trusted reverse proxy. The global limit remains independent of IP.
   const ip = request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()
     || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (!allowChatRequest(input.sessionId, ip)) {
+  if (!allowChatRequest(input.sessionId, ip, Date.now(), input.topic)) {
     return Response.json({ error: 'You have reached the demo limit. Apply to tell us more about your game.', limited: true },
       { status: 429, headers: { ...headers, 'Retry-After': '600' } });
   }

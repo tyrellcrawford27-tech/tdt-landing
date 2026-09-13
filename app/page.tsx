@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
@@ -24,7 +24,7 @@ const HERO_SLIDES: HeroSlide[] = [
 const NAV_LINKS = [
   { id: 'how-it-works', label: 'How it works' },
   { id: 'coach', label: 'The coach' },
-  { id: 'pricing', label: 'Pricing' },
+  { id: 'pricing', label: 'Program Details' },
   { id: 'faq', label: 'FAQ' },
 ] as const;
 
@@ -34,11 +34,25 @@ const MOBILE_NAV_LINKS = [
   ...NAV_LINKS.slice(3),
 ];
 
+const SECTION_LABELS: Record<string, string> = {
+  '': 'Top',
+  'hero': 'Top',
+  'how-it-works': 'How it works',
+  '100-days': '100-day program',
+  'coach': 'The coach',
+  'difference': 'Difference',
+  'pricing': 'Pricing',
+  'faq': 'FAQ',
+  'apply-cta': 'Apply',
+};
+
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
+  const [highlightFaq, setHighlightFaq] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [navHovered, setNavHovered] = useState(false);
   const [tp, setTp] = useState(0); // dark→light scroll progress through transition zone
   const [desktopTransition, setDesktopTransition] = useState(false);
   const [coachVisible, setCoachVisible] = useState(false);
@@ -73,6 +87,7 @@ export default function Home() {
   const tableRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
+  const applyBtnRef = useRef<HTMLDivElement>(null);
 
   // Honour prefers-reduced-motion in the explicit JS scrolls (the CSS
   // scroll-behavior rule only covers native anchor scrolling).
@@ -137,6 +152,41 @@ export default function Home() {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  const openFilmFaq = useCallback(() => {
+    if (window.location.hash === '#faq-film') {
+      setOpenFaq(3);
+      setHighlightFaq(3);
+      const question = document.getElementById('faq-question-3');
+      if (!question) return;
+      const header = document.querySelector('header');
+      const headerOffset = (header?.offsetHeight || 88) + 26;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const top = question.getBoundingClientRect().top + window.scrollY - headerOffset;
+      const safeTop = Math.max(0, Math.round(top));
+      window.scrollTo({ top: safeTop, behavior: reducedMotion ? 'auto' : 'smooth' });
+    }
+  }, []);
+
+  const scrollToSection = (id: string, extraOffset = 0) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const header = document.querySelector('header');
+    const headerOffset = (header?.offsetHeight || 88) + 20 + extraOffset;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+    const safeTop = Math.max(0, Math.round(top));
+    window.scrollTo({ top: safeTop, behavior: reducedMotion ? 'auto' : scrollBehavior() });
+  };
+
+  useEffect(() => {
+    const initialFrame = window.requestAnimationFrame(openFilmFaq);
+    window.addEventListener('hashchange', openFilmFaq);
+    return () => {
+      window.cancelAnimationFrame(initialFrame);
+      window.removeEventListener('hashchange', openFilmFaq);
+    };
+  }, [openFilmFaq]);
 
   useEffect(() => {
     const onResize = () => { if (window.innerWidth >= 1024) setMenuOpen(false); };
@@ -218,6 +268,12 @@ export default function Home() {
     textShadow: scrolled ? 'none' : navRestShadow,
     transition: 'color 0.4s ease, text-shadow 0.4s ease, font-weight 0.4s ease',
   });
+  // The compact pill is the original scrolled-section treatment: once a
+  // section is in view, the full destinations tuck away and its label takes
+  // their place. Hovering the pill expands it smoothly so the destinations
+  // remain one gesture away on desktop.
+  const isCompact = Boolean(activeSection);
+  const showCompact = isCompact && !navHovered;
 
   const fadeUp = (delay: number): React.CSSProperties => ({
     opacity: coachVisible ? 1 : 0,
@@ -340,9 +396,8 @@ export default function Home() {
                     setMenuOpen(false);
                     const jump = (triesLeft: number) => {
                       if (document.body.style.overflow === 'hidden' && triesLeft > 0) { setTimeout(() => jump(triesLeft - 1), 16); return; }
-                      const el = document.getElementById(id);
-                      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 64, behavior: 'instant' });
-                    };
+                    scrollToSection(id, -44);
+                  };
                     setTimeout(() => jump(30), 16);
                   }}
                 >
@@ -388,66 +443,45 @@ export default function Home() {
       {/* The frosted header keeps its destinations visible while scrolling. */}
       <header className="fixed z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
         <div
-          className="grid grid-cols-[auto_1fr_auto] items-center border pointer-events-auto"
+          className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border pointer-events-auto"
+          onPointerEnter={(e) => {
+            if (e.pointerType !== 'mouse') return;
+            if (showCompact && applyBtnRef.current && e.clientX >= applyBtnRef.current.getBoundingClientRect().left - 24) return;
+            setNavHovered(true);
+          }}
+          onPointerLeave={() => setNavHovered(false)}
           style={{
-            width: 'calc(100% - 40px)',
-            maxWidth: scrolled ? '1080px' : '1320px',
-            height: scrolled ? '52px' : '60px',
-            paddingInline: scrolled ? '16px' : '4px',
-            borderRadius: '9999px',
-            backdropFilter: scrolled ? 'blur(20px)' : 'none',
-            WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
-            backgroundColor: scrolled ? isDark ? 'rgba(22,18,15,0.85)' : 'rgba(251,246,242,0.9)' : 'transparent',
-            borderColor: scrolled ? isDark ? 'rgba(255,255,255,0.13)' : 'rgba(26,15,10,0.12)' : 'transparent',
-            boxShadow: scrolled ? '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
-            transition: 'background-color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, max-width 0.4s ease, padding 0.4s ease',
+            width: 'calc(100% - 80px)',
+            maxWidth: showCompact ? '380px' : scrolled ? '960px' : '100%',
+            height: showCompact ? '52px' : scrolled ? '52px' : '60px',
+            paddingLeft: showCompact ? '16px' : scrolled ? '20px' : '0px',
+            paddingRight: showCompact ? '16px' : scrolled ? '20px' : '0px',
+            borderRadius: scrolled || showCompact ? '9999px' : '16px',
+            backdropFilter: scrolled || showCompact ? 'blur(20px)' : 'none',
+            WebkitBackdropFilter: scrolled || showCompact ? 'blur(20px)' : 'none',
+            backgroundColor: scrolled || showCompact ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(251,246,242,0.65)') : 'transparent',
+            borderColor: isDark ? `rgba(255,255,255,${showCompact ? 0.12 : scrolled ? 0.10 : 0})` : `rgba(26,15,10,${scrolled || showCompact ? 0.10 : 0})`,
+            boxShadow: !(scrolled || showCompact) ? 'none' : isDark ? '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.09)' : '0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+            transition: 'all 0.5s cubic-bezier(0.4,0,0.2,1)',
           }}
         >
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center"
-            aria-label="Back to top"
-          >
-            <div className="flex h-[40px] w-[36px] items-center justify-center overflow-hidden">
-              <TDTLogo letterColor={isDark ? '#ffffff' : '#1A0F0A'} />
-            </div>
+          <button onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })} className="flex h-11 w-11 -mx-[5px] cursor-pointer items-center justify-center flex-shrink-0" aria-label="Back to top">
+            <div className={`flex items-center justify-center overflow-hidden transition-all duration-500 ${showCompact ? 'h-[38px] w-[34px]' : scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}><TDTLogo letterColor={isDark ? '#ffffff' : '#1A0F0A'} /></div>
           </button>
-          <nav aria-label="Main navigation" className="hidden lg:flex items-center justify-center gap-[24px] text-[14px]">
-            {NAV_LINKS.map(({ id, label }) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                aria-current={activeSection === id ? 'location' : undefined}
-                className="whitespace-nowrap py-3 transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-4"
-                style={navLinkStyle(id)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior() });
-                }}
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
+          <div className="relative hidden lg:flex items-center justify-center" style={{ minWidth: 0 }}>
+            <nav aria-label="Main navigation" className="flex items-center justify-center gap-[30px] text-[14px] tracking-[-0.02em] transition-all duration-500" style={{ opacity: showCompact ? 0 : 1, transform: showCompact ? 'translateY(-5px)' : 'translateY(0)', pointerEvents: showCompact ? 'none' : 'auto' }}>
+              {NAV_LINKS.map(({ id, label }) => <a key={id} href={`#${id}`} className="transition-colors duration-150" style={navLinkStyle(id)} onClick={(e) => { e.preventDefault(); scrollToSection(id); }}>{label}</a>)}
+            </nav>
+            <span className="absolute left-1/2 whitespace-nowrap transition-all duration-500" style={{ opacity: showCompact ? 1 : 0, transform: showCompact ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(5px)', color: isDark ? 'rgba(255,255,255,0.85)' : '#1a0f0a', pointerEvents: 'none' }} aria-live="polite">
+              {Object.entries(SECTION_LABELS).map(([id, label]) => <span key={id} className="absolute left-1/2 top-1/2 text-[14px] font-medium tracking-[-0.02em] whitespace-nowrap" style={{ transform: `translate(-50%, -50%) translateY(${activeSection === id ? 0 : -6}px)`, opacity: activeSection === id ? 1 : 0, filter: activeSection === id ? 'blur(0px)' : 'blur(3px)', transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s cubic-bezier(0.16,1,0.3,1)' }}>{label}</span>)}
+            </span>
+          </div>
           <div className="col-start-3 flex items-center justify-end">
-            <div className="hidden lg:flex items-center gap-[16px] text-[14px]" style={navTextStyle}>
-              <a href="https://app.thinkdifferenttraining.com/access" className="whitespace-nowrap py-3 transition-opacity hover:opacity-70">Log in</a>
-              <CTAButton href="/apply" className="h-[37px] px-[20px] text-[14px]">Apply</CTAButton>
+            <div className="hidden lg:flex h-[37px] items-center gap-[15px] text-[14px] font-medium tracking-[-0.02em]" style={navTextStyle}>
+              <a href="https://app.thinkdifferenttraining.com/access" className="transition-all duration-500" style={{ opacity: showCompact ? 0 : 1, pointerEvents: showCompact ? 'none' : 'auto', marginRight: showCompact ? '-60px' : '0' }}>Log In</a>
+              <div ref={applyBtnRef}><CTAButton href="/apply" className={`whitespace-nowrap transition-all duration-500 ${showCompact ? 'h-[32px] px-[16px] text-[13px]' : 'h-[37px] px-[20px] text-[14px]'}`}>Apply</CTAButton></div>
             </div>
-            <button
-              ref={menuButtonRef}
-              className="lg:hidden flex h-11 w-11 cursor-pointer items-center justify-center active:opacity-60"
-              style={navTextStyle}
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              aria-expanded={menuOpen}
-              aria-controls="mobile-menu"
-              aria-haspopup="dialog"
-            >
-              <svg width="22" height="15" viewBox="0 0 22 15" fill="none" aria-hidden="true">
-                <path d="M0 1H22M0 7.5H22M0 14H22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </button>
+            <button ref={menuButtonRef} className="lg:hidden flex h-11 w-11 cursor-pointer items-center justify-center active:opacity-60" style={navTextStyle} onClick={() => setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen} aria-controls="mobile-menu" aria-haspopup="dialog"><svg width="22" height="15" viewBox="0 0 22 15" fill="none" aria-hidden="true"><path d="M0 1H22M0 7.5H22M0 14H22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg></button>
           </div>
         </div>
       </header>
@@ -518,7 +552,7 @@ export default function Home() {
         </section>
 
         <HowItWorks />
-        <HundredDays />
+        <HundredDays onOpenFilmFaq={openFilmFaq} />
 
         {/* ── Coach ── */}
         <section id="coach" className="relative flex w-full flex-col items-center gap-[40px] px-6 md:px-12 lg:px-[100px] py-[150px] bg-[#000000]">
@@ -969,8 +1003,8 @@ export default function Home() {
             </h2>
 
             <div className="flex w-full flex-col items-start">
-              {[
-                {
+                {[
+                  {
                   question: "Is the program online or in person?",
                   answer: "The coaching is fully online, through our app. You can review film, receive feedback and work with Jaiden there. If you don't have film yet, we still start with practical steps and help you set up a simple capture routine from week one.",
                 },
@@ -1000,10 +1034,24 @@ export default function Home() {
                 },
               ].map((item, index) => {
                 const isOpen = openFaq === index;
-                return (
-                  <div key={index} className="flex w-full flex-col border-b border-[rgba(0,0,0,0.15)]">
+                  return (
+                  <div
+                    key={index}
+                    id={`faq-question-${index}`}
+                    className="flex w-full flex-col border-b border-[rgba(0,0,0,0.15)] transition-colors duration-300"
+                    style={highlightFaq === index ? {
+                      backgroundColor: 'rgba(26, 15, 10, 0.06)',
+                      borderColor: 'rgba(26, 15, 10, 0.25)',
+                      borderLeft: '3px solid rgba(26, 15, 10, 0.45)',
+                      paddingLeft: '13px',
+                    } : undefined}
+                  >
                     <button
-                      onClick={() => setOpenFaq(isOpen ? -1 : index)}
+                      onClick={() => {
+                        const next = isOpen ? -1 : index;
+                        setOpenFaq(next);
+                        setHighlightFaq((current) => (next === index ? null : (current === 3 ? null : current)));
+                      }}
                       className="flex cursor-pointer items-start gap-[10px] px-0 py-[20px] text-left w-full min-h-[44px]"
                       aria-expanded={isOpen}
                       aria-controls={`faq-panel-${index}`}

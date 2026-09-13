@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
+import { assertLineTracksCircles } from './how-it-works-line-probe.mjs';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
@@ -21,6 +22,11 @@ try {
     assert.equal(await track.evaluate(el => getComputedStyle(el.firstElementChild).position), 'sticky', `Scroll progression must not be disabled at ${viewport.width} × ${viewport.height}`);
     await track.evaluate(el => window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - parseFloat(getComputedStyle(el.firstElementChild).top) + 2, behavior: 'instant' }));
     await page.waitForFunction(() => document.querySelector('#how-tab-0').getAttribute('aria-selected') === 'true');
+    const wheel = async delta => {
+      const probe = assertLineTracksCircles(page);
+      await page.mouse.wheel(0, delta);
+      await probe;
+    };
     const seen = new Set();
     for (let attempt = 0; !seen.has(3) && attempt < 100; attempt++) {
       const stage = await page.locator('#how-step-panel').getAttribute('data-stage');
@@ -45,15 +51,20 @@ try {
         await page.screenshot({ path: `${output}/${viewport.width}-${viewport.height}-stage-${stage}.png` });
       }
       await page.mouse.move(boxes.product.x + boxes.product.width / 2, boxes.product.y + boxes.product.height / 2);
-      await page.mouse.wheel(0, 120);
-      await page.waitForTimeout(150);
+      await wheel(120);
     }
     assert.deepEqual([...seen], [0, 1, 2, 3], 'Native wheel scrolling advances all four stages in order');
     await page.waitForTimeout(750);
-    assert.ok(await page.locator('#how-it-works').evaluate(el => Number([...el.querySelectorAll('span')].find(span => span.style.getPropertyValue('--line-progress'))?.style.getPropertyValue('--line-progress')) > .95), 'The spine follows wheel progression');
+    const lineProgress = () => page.locator('#how-it-works').evaluate(el => Number([...el.querySelectorAll('span')].find(span => span.style.getPropertyValue('--line-progress'))?.style.getPropertyValue('--line-progress')));
+    const fourthStageProgress = await lineProgress();
+    assert.ok(fourthStageProgress > .7 && fourthStageProgress < 1, 'The line leaves room to keep moving after step four');
+    for (let attempt = 0; await lineProgress() < .985 && attempt < 30; attempt++) {
+      await wheel(120);
+    }
+    await page.waitForTimeout(750);
+    assert.ok(await lineProgress() > .985 && await lineProgress() > fourthStageProgress, 'The spine continues past step four toward the natural page handoff');
     for (let attempt = 0; await page.locator('#how-step-panel').getAttribute('data-stage') === '4' && attempt < 30; attempt++) {
-      await page.mouse.wheel(0, -120);
-      await page.waitForTimeout(150);
+      await wheel(-120);
     }
     assert.equal(await page.locator('#how-step-panel').getAttribute('data-stage'), '3', 'Native reverse scrolling works');
     await page.getByRole('tab', { name: '2. See what Jaiden sees', exact: true }).click();
@@ -64,6 +75,6 @@ try {
     await page.locator('#how-step-panel a[href="/apply"]').waitFor();
     assert.deepEqual(errors, []);
     await context.close();
-    console.log(`${viewport.width} × ${viewport.height}: native forward/backward progression, visible topics and full scene, proportional images and desktop chat passed.`);
+    console.log(`${viewport.width} × ${viewport.height}: frame-exact circle activation, native forward/backward progression, visible topics and full scene, proportional images and desktop chat passed.`);
   }
 } finally { await browser.close(); }
