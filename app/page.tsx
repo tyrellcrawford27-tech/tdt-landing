@@ -106,10 +106,18 @@ export default function Home() {
     const SECTIONS = ['how-it-works', '100-days', 'coach', 'difference', 'pricing', 'faq', 'apply-cta'];
     const onScroll = () => {
       setScrolled(prev => window.scrollY > (prev ? 40 : 80));
-      if (desktopTransition && transitionZoneRef.current) {
+      if (transitionZoneRef.current) {
         const r = transitionZoneRef.current.getBoundingClientRect();
-        const pinnable = Math.max(1, r.height - window.innerHeight);
-        setTp(Math.max(0, Math.min(1, -r.top / pinnable)));
+        if (desktopTransition) {
+          const pinnable = Math.max(1, r.height - window.innerHeight);
+          setTp(Math.max(0, Math.min(1, -r.top / pinnable)));
+        } else {
+          // Mobile uses a compact, non-sticky transition band. Progress is
+          // driven by the band entering the viewport so the surface fades
+          // instead of switching directly from black to cream.
+          const range = Math.max(1, window.innerHeight * 0.72);
+          setTp(Math.max(0, Math.min(1, (window.innerHeight - r.top) / range)));
+        }
       } else {
         setTp(0);
       }
@@ -242,8 +250,9 @@ export default function Home() {
   const ttStepped = Math.round(tt * CHROME_STEPS) / CHROME_STEPS;
   const chromeSurface = desktopTransition
     ? `rgb(${lerp(0,251,ttStepped)},${lerp(0,246,ttStepped)},${lerp(0,242,ttStepped)})`
-    : isDark ? '#000000' : '#FBF6F2';
+    : tp > 0 ? `rgb(${lerp(0,251,tt)},${lerp(0,246,tt)},${lerp(0,242,tt)})` : isDark ? '#000000' : '#FBF6F2';
   const panelBg = `rgb(${lerp(0, 251, tt)},${lerp(0, 246, tt)},${lerp(0, 242, tt)})`;
+  const transitionActive = desktopTransition || tp > 0;
 
   useEffect(() => {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', chromeSurface);
@@ -959,7 +968,7 @@ export default function Home() {
         >
           <div
             className={desktopTransition ? 'sticky top-0 h-screen w-full overflow-hidden' : 'relative w-full'}
-            style={{ backgroundColor: desktopTransition ? panelBg : '#FBF6F2' }}
+            style={{ backgroundColor: panelBg }}
           >
             <div
               className="absolute left-1/2 top-1/2 pointer-events-none z-0"
@@ -984,12 +993,12 @@ export default function Home() {
             <div
               className="relative z-10 mx-auto w-full"
               style={{
-                opacity: desktopTransition ? revealEased : 1,
-                transform: desktopTransition ? `translateY(${(1 - revealEased) * 16}px)` : 'none',
-                transition: desktopTransition
+                opacity: transitionActive ? revealEased : 1,
+                transform: transitionActive ? `translateY(${(1 - revealEased) * 16}px)` : 'none',
+                transition: transitionActive
                   ? 'opacity 140ms cubic-bezier(0.16, 1, 0.3, 1), transform 140ms cubic-bezier(0.16, 1, 0.3, 1)'
                   : 'none',
-                pointerEvents: !desktopTransition || revealEased > 0 ? 'auto' : 'none',
+                pointerEvents: !transitionActive || revealEased > 0 ? 'auto' : 'none',
               }}
             >
               <ProgramPricing transition />
