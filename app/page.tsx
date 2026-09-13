@@ -95,7 +95,10 @@ export default function Home() {
     (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') as ScrollBehavior;
 
   useEffect(() => {
-    const query = window.matchMedia('(min-width: 768px)');
+    // Use the same cinematic transition path at every viewport size so the
+    // mobile experience matches desktop instead of falling back to a binary
+    // surface switch.
+    const query = window.matchMedia('(min-width: 0px)');
     const sync = () => setDesktopTransition(query.matches);
     sync();
     query.addEventListener('change', sync);
