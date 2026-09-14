@@ -38,7 +38,7 @@ const SECTION_LABELS: Record<string, string> = {
   '': 'Top',
   'hero': 'Top',
   'how-it-works': 'How it works',
-  '100-days': 'Why online',
+  '100-days': 'Why remote',
   'coach': 'The coach',
   'difference': 'Difference',
   'pricing': 'Program Details',
@@ -531,8 +531,8 @@ export default function Home() {
 
           {/* Bottom-left content */}
           <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[50px] md:pb-[80px]">
-            <p className="mb-4 inline-flex max-w-fit items-center rounded-full border border-white/35 bg-gradient-to-r from-white/28 via-white/14 to-white/10 px-5 py-2 text-[12px] md:text-[13px] leading-none font-medium tracking-[-0.01em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_20px_40px_rgba(255,255,255,0.08)] ring-1 ring-white/18 backdrop-blur-[18px]" style={{ textShadow: navRestShadow }}>
-              100 days of private coaching.
+            <p className="mb-4 inline-flex max-w-fit items-center rounded-full border border-white/35 bg-gradient-to-r from-white/28 via-white/14 to-white/10 px-4 py-2 text-[12px] md:text-[13px] leading-none font-medium tracking-[-0.01em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_20px_40px_rgba(255,255,255,0.08)] ring-1 ring-white/18 backdrop-blur-[18px]">
+              Private player development
             </p>
             <h1 className="text-white text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]">
               You&apos;re better in practice
@@ -1019,8 +1019,8 @@ export default function Home() {
             <div className="flex w-full flex-col items-start">
                 {[
                   {
-                  question: "Is the program online or in person?",
-                  answer: "The coaching is fully online, through our app. You can review film, receive feedback and work with Jaiden there. If you don't have film yet, we still start with practical steps and help you set up a simple capture routine from week one.",
+                  question: "Is the program remote or in person?",
+                  answer: "The coaching is fully remote, through our app. You can review film, receive feedback and work with Jaiden there. If you don't have film yet, we still start with practical steps and help you set up a simple capture routine from week one.",
                 },
                 {
                   question: "What do the 100 days actually involve?",

@@ -121,26 +121,26 @@
 @media (min-width: 1024px) and (max-width: 1440px) {
   .person { gap: 10px; height: 92px; padding: 13px 15px; }
   .initials { width: 46px; height: 46px; font-size: 18px; }
-  .personText strong { font-size: 18px; line-height: 21px; }
-  .personText > span { font-size: 14px; line-height: 18px; }
+  .personText strong { font-size: 20px; line-height: 24px; }
+  .personText > span { font-size: 16px; line-height: 20px; }
   .community { width: min(100%, 440px); }
   .profile { width: min(312px, calc(100% - 20px)); min-height: 315px; }
   .profileTop .initials { width: 54px; height: 54px; }
-  .profileTop strong { font-size: 14px; line-height: 17px; }
-  .position { font-size: 13px; line-height: 16px; padding: 7px 12px; }
-  .profileDetails dt { font-size: 12px; line-height: 14px; }
-  .profileDetails dd { font-size: 15.5px; line-height: 19px; }
+  .profileTop strong { font-size: 16px; line-height: 20px; }
+  .position { font-size: 15px; line-height: 19px; padding: 7px 12px; }
+  .profileDetails dt { font-size: 14px; line-height: 16px; }
+  .profileDetails dd { font-size: 17.5px; line-height: 21px; }
 }
 
 @media (min-width: 1024px) and (max-width: 1366px) and (min-height: 760px) and (max-height: 920px) {
   .community { width: min(100%, 452px); }
   .people { gap: 14px; }
   .person { height: 94px; }
-  .personText strong { font-size: 18px; line-height: 21px; }
-  .personText > span { font-size: 14px; line-height: 18px; }
+  .personText strong { font-size: 20px; line-height: 24px; }
+  .personText > span { font-size: 16px; line-height: 20px; }
   .profile { width: min(318px, calc(100% - 12px)); }
-  .profileTop strong { font-size: 15px; }
-  .profileDetails dd { font-size: 16px; line-height: 19px; }
+  .profileTop strong { font-size: 17px; }
+  .profileDetails dd { font-size: 18px; line-height: 21px; }
 }
 @media (max-width: 1023px) {
   .section { --pin-top: 64px; --step-width: 23%; }.frame { width: calc(100% - 48px); }
@@ -238,11 +238,11 @@
   .people { height: 100%; display: grid; grid-template-rows: repeat(4, minmax(44px, 1fr)); gap: 10px; }
   .person { height: 100%; min-height: 0; padding: 8px 10px; border-radius: 13px; }
   .person .initials { width: 34px; height: 34px; font-size: 16px; }
-  .personText strong { font-size: 16px; line-height: 19px; }
-  .personText > span { font-size: 13px; line-height: 16px; }
+  .personText strong { font-size: 18px; line-height: 22px; }
+  .personText > span { font-size: 16px; line-height: 18px; }
   .profileTop .initials { width: 48px; height: 48px; }
-  .profileTop strong { font-size: 14px; }
-  .profileDetails dd { font-size: 15px; line-height: 18px; }
+  .profileTop strong { font-size: 16px; }
+  .profileDetails dd { font-size: 17px; line-height: 20px; }
 }
 @media (min-width: 768px) and (prefers-reduced-motion: reduce) {
   .track { min-height: 0; }.pin { position: relative; top: auto; padding-bottom: 60px; }

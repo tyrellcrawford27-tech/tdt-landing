@@ -289,7 +289,7 @@ export function HowItWorks() {
 
   return <TrainingChatProvider><section ref={sectionRef} id="how-it-works" className={styles.section} aria-labelledby="how-heading">
     <span id="program" className={styles.anchor} aria-hidden="true" />
-    <div className={`${styles.frame} ${styles.headingFrame}`}><div className={styles.intro}><p>How it works</p><h2 id="how-heading">Online coaching.<br />Real work translated onto the court</h2></div></div>
+    <div className={`${styles.frame} ${styles.headingFrame}`}><div className={styles.intro}><p>How it works</p><h2 id="how-heading">Remote coaching.<br />Real work translated onto the court</h2></div></div>
     <div className={styles.track} ref={trackRef} data-how-track>
     <div className={styles.pin} ref={pinRef}>
       <div className={styles.frame}>
