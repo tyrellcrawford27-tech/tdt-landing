@@ -15,8 +15,8 @@ export function HundredDays({ onOpenFilmFaq }: HundredDaysProps) {
         <div className={styles.daysPanel}>
           <div className={styles.daysIntro}>
             <p className={styles.eyebrow}>Why remote</p>
-            <h2 id="days-heading" className={styles.heading}>Remote coaching for<br />real film-led progress.</h2>
-            <p>In-person training is great for reps and coaching touch, but most growth happens when you’re alone. Remote coaching keeps your work honest with film review, structure, and direct feedback.</p>
+            <h2 id="days-heading" className={styles.heading}>Film-based coaching for<br />real film-led progress.</h2>
+            <p>In-person training is great for reps and coaching touch, but most growth happens when you’re alone. Film-based coaching keeps your work honest with film review, structure, and direct feedback.</p>
             <a href="#faq-film" onClick={onOpenFilmFaq} className={styles.textLink}>Don&apos;t have film? <span aria-hidden="true">↗</span></a>
           </div>
           <dl className={styles.daysDetails}>

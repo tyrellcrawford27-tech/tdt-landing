@@ -5,6 +5,7 @@ import { TDTLogo } from "@/components/TDTLogo";
 import { FooterText } from "@/components/FooterText";
 import { FilmGrain } from "@/components/FilmGrain";
 import { CTAButton } from "@/components/CTAButton";
+import { LiquidGlassPill, LiquidGlassSurface } from "@/components/LiquidGlass";
 import { HowItWorks, HundredDays, ProgramPricing, LandingFinalCTA } from "@/components/LandingProgram";
 import HeroCarousel, { type HeroSlide } from "@/components/HeroCarousel";
 
@@ -457,7 +458,7 @@ export default function Home() {
       {/* The frosted header keeps its destinations visible while scrolling. */}
       <header className="fixed z-50 flex h-[64px] lg:h-[98px] w-full items-center justify-center pointer-events-none" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
         <div
-          className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border pointer-events-auto"
+          className="relative isolate grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center pointer-events-auto"
           onPointerEnter={(e) => {
             if (e.pointerType !== 'mouse') return;
             if (showCompact && applyBtnRef.current && e.clientX >= applyBtnRef.current.getBoundingClientRect().left - 24) return;
@@ -471,14 +472,13 @@ export default function Home() {
             paddingLeft: showCompact ? '16px' : scrolled ? '20px' : '0px',
             paddingRight: showCompact ? '16px' : scrolled ? '20px' : '0px',
             borderRadius: scrolled || showCompact ? '9999px' : '16px',
-            backdropFilter: scrolled || showCompact ? 'blur(20px)' : 'none',
-            WebkitBackdropFilter: scrolled || showCompact ? 'blur(20px)' : 'none',
-            backgroundColor: scrolled || showCompact ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(251,246,242,0.65)') : 'transparent',
-            borderColor: isDark ? `rgba(255,255,255,${showCompact ? 0.12 : scrolled ? 0.10 : 0})` : `rgba(26,15,10,${scrolled || showCompact ? 0.10 : 0})`,
-            boxShadow: !(scrolled || showCompact) ? 'none' : isDark ? '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.09)' : '0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+            // No backdrop-filter here: it would make this box the backdrop root
+            // and the liquid glass layer inside would refract nothing.
+            boxShadow: !(scrolled || showCompact) ? '0 8px 32px rgba(0,0,0,0)' : isDark ? '0 8px 32px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.12)' : '0 8px 32px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05)',
             transition: 'all 0.5s cubic-bezier(0.4,0,0.2,1)',
           }}
         >
+          <LiquidGlassSurface visible={scrolled || showCompact} tone={isDark ? 'dark' : 'light'} frost={6} />
           <button onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })} className="flex h-11 w-11 -mx-[5px] cursor-pointer items-center justify-center flex-shrink-0" aria-label="Back to top">
             <div className={`flex items-center justify-center overflow-hidden transition-all duration-500 ${showCompact ? 'h-[38px] w-[34px]' : scrolled ? 'h-[34px] w-[30px]' : 'h-[40px] w-[36px]'}`}><TDTLogo letterColor={isDark ? '#ffffff' : '#1A0F0A'} /></div>
           </button>
@@ -531,16 +531,18 @@ export default function Home() {
 
           {/* Bottom-left content */}
           <div className="absolute bottom-0 left-0 right-0 px-6 md:px-[60px] pb-[50px] md:pb-[80px]">
-            <p className="mb-4 inline-flex max-w-fit items-center rounded-full border border-white/35 bg-gradient-to-r from-white/28 via-white/14 to-white/10 px-4 py-2 text-[12px] md:text-[13px] leading-none font-medium tracking-[-0.01em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_20px_40px_rgba(255,255,255,0.08)] ring-1 ring-white/18 backdrop-blur-[18px]">
-              Private player development
-            </p>
-            <h1 className="text-white text-[32px] md:text-[40px] lg:text-[48px] font-bold leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]">
-              You&apos;re better in practice
+            <LiquidGlassPill className="mb-5 px-4 py-2">
+              <span className="text-[12px] md:text-[13px] font-medium leading-none tracking-[-0.005em] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.25)]">
+                For the most ambitious players
+              </span>
+            </LiquidGlassPill>
+            <h1 className="text-white text-[clamp(23px,calc((100vw-48px)/11.4),32px)] md:text-[40px] lg:text-[48px] font-medium leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]">
+              Your next level starts
               <br />
-              than in games
+              when you know what to do.
             </h1>
-            <p className="text-[16px] font-normal leading-[1.6] text-white/80 max-w-[565px] mb-[24px]">
-              Over 100 days, Coach Jaiden Francis breaks down your film, gives focused coaching, and sends custom drills for you to practice on your court.
+            <p className="text-[16px] font-normal leading-[1.6] text-white/80 text-pretty max-w-[600px] mb-[24px]">
+              Coach Jaiden Francis breaks down your game film to find what’s holding you back, then guides you through 100 days of targeted drills and personal feedback to work on it.
             </p>
             <div className="flex flex-wrap items-center gap-x-[22px] gap-y-[16px]">
               <CTAButton href="/apply" className="h-[46px] px-[24px] text-[15px]">
