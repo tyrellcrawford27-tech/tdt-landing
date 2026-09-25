@@ -542,7 +542,8 @@ export default function Home() {
               when you know what to do.
             </h1>
             <p className="text-[16px] font-normal leading-[1.6] text-white/80 text-pretty max-w-[600px] mb-[24px]">
-              Coach Jaiden Francis breaks down your game film to find what’s holding you back, then guides you through 100 days of targeted drills and personal feedback to work on it.
+              <span className="md:hidden">Coach Jaiden Francis turns your game film into 100 days of targeted drills and personal coaching focused on what’s holding you back.</span>
+              <span className="hidden md:inline">Coach Jaiden Francis breaks down your game film to find what’s holding you back, then guides you through 100 days of targeted drills and personal feedback to work on it.</span>
             </p>
             <div className="flex flex-wrap items-center gap-x-[22px] gap-y-[16px]">
               <CTAButton href="/apply" className="h-[46px] px-[24px] text-[15px]">
