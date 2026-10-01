@@ -40,8 +40,9 @@ for (const age of ['19','20']) {
       assert.equal(data.application_state,'draft');
       assert.equal(data.submitted_at,null);
       assert.equal(data.form_version,6);
-      assert.equal(data.current_question_key,question.key);
-      assert.equal(data.current_question_number,index+1);
+      const next = questions[index+1] ?? question;
+      assert.equal(data.current_question_key,next.key);
+      assert.equal(data.current_question_number,Math.min(index+2,questions.length));
       assert.equal(data.last_answered_question_key,question.key);
       assert.equal(data.total_questions,index === 0 || age === '19' ? 12 : 10);
       if (index >= 2) assert.equal(data.athlete_email,desired.email);
