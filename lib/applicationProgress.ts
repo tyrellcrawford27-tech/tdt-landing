@@ -1,6 +1,8 @@
 import { APPLICATION_SCREENS, applicationFormFromAnswers, screenIsVisible } from '@/lib/applicationForm';
 
-export const APPLICATION_FORM_VERSION = 5;
+import * as v5 from '@/lib/applicationFormV5';
+
+export const APPLICATION_FORM_VERSION = 6;
 
 export const LEGACY_APPLICATION_QUESTIONS = [
   { key: 'full_name', number: 1, label: "What's your full name?", fields: ['athlete_name', 'first_name', 'last_name'] },
@@ -27,30 +29,32 @@ export type ApplicationQuestionKey = string;
 export const APPLICATION_QUESTION_COUNT = APPLICATION_QUESTIONS.length;
 
 /** Cached v4 clients omit this field. Never stamp their old ordering as v5. */
-export function applicationFormVersion(value: unknown): 4 | 5 | null {
+export function applicationFormVersion(value: unknown): 4 | 5 | 6 | null {
   if (value === undefined || value === 4) return 4;
-  return value === 5 ? 5 : null;
+  return value === 5 || value === 6 ? value : null;
 }
 
 /** Once a draft exists, its question set cannot be changed by another client. */
-export function applicationVersionMatches(stored: unknown, requested: 4 | 5): boolean {
+export function applicationVersionMatches(stored: unknown, requested: 4 | 5 | 6): boolean {
   const version = Number(stored);
   return version >= 5 ? version === requested : requested === 4;
 }
 
 /** Existing browser drafts and submitted resumes keep their original experience. */
-export function applicationExperienceVersion(draft: { version?: unknown } | null, submitted: { version?: unknown } | null): 4 | 5 {
+export function applicationExperienceVersion(draft: { version?: unknown } | null, submitted: { version?: unknown } | null): 4 | 5 | 6 {
   const saved = submitted ?? draft;
-  return saved ? (Number(saved.version) >= 5 ? 5 : 4) : 5;
+  return saved ? (Number(saved.version) >= 6 ? 6 : Number(saved.version) === 5 ? 5 : 4) : 6;
 }
 
-export function applicationQuestions(version: 4 | 5, answers: Record<string, unknown> = {}): ApplicationQuestion[] {
+export function applicationQuestions(version: 4 | 5 | 6, answers: Record<string, unknown> = {}): ApplicationQuestion[] {
   if (version === 4) return [...LEGACY_APPLICATION_QUESTIONS];
-  const form = applicationFormFromAnswers(answers);
-  return APPLICATION_QUESTIONS.filter(q => screenIsVisible(q.key, form))
+  const definition = version === 5 ? v5 : { APPLICATION_SCREENS, applicationFormFromAnswers, screenIsVisible };
+  const form = definition.applicationFormFromAnswers(answers);
+  const questions = definition.APPLICATION_SCREENS.map(q => ({ key: q.key, label: q.question, fields: q.fields }));
+  return questions.filter(q => definition.screenIsVisible(q.key, form))
     .map((q, index) => ({ ...q, number: index + 1 }));
 }
 
-export function applicationQuestion(key: unknown, version: 4 | 5 = 5, answers: Record<string, unknown> = {}) {
+export function applicationQuestion(key: unknown, version: 4 | 5 | 6 = 6, answers: Record<string, unknown> = {}) {
   return applicationQuestions(version, answers).find(question => question.key === key) ?? null;
 }

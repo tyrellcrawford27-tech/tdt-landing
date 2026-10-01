@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import {
-  APPLICATION_QUESTIONS,
-  LEGACY_APPLICATION_QUESTIONS,
   applicationFormVersion,
   applicationQuestions,
   applicationVersionMatches,
@@ -81,7 +79,7 @@ export async function POST(req: NextRequest) {
     // Re-save all allowlisted answers, including later questions when someone
     // goes Back. The latest snapshot repairs any earlier failed write.
     const fieldsCollectedSoFar = new Set<string>(
-      (version === 4 ? LEGACY_APPLICATION_QUESTIONS : APPLICATION_QUESTIONS)
+      applicationQuestions(version)
         .flatMap(item => [...item.fields]),
     );
     for (const field of fieldsCollectedSoFar) {
@@ -132,7 +130,7 @@ export async function POST(req: NextRequest) {
         ? await admin.from('applications').update(update).eq('id', existing.id)
           .or('application_state.is.null,application_state.eq.draft')
           .is('deleted_at', null)
-          .or(version === 5 ? 'form_version.eq.5' : 'form_version.is.null,form_version.lt.5')
+          .or(version >= 5 ? `form_version.eq.${version}` : 'form_version.is.null,form_version.lt.5')
           .or(`progress_revision.is.null,progress_revision.lt.${revision}`)
         : await admin.from('applications').insert([{ ...update, status: 'pending' }]);
       if (!result.error) return NextResponse.json({ ok: true });

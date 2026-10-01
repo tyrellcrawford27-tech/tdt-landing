@@ -16,14 +16,12 @@ import {
   APPLICATION_FORM_VERSION,
   applicationExperienceVersion,
 } from '@/lib/applicationProgress';
-import {
-  EMPTY_APPLICATION as EMPTY, APPLICATION_SCREENS, applicationAnswers as progressAnswers,
-  normalizeApplicationDraft, firstIncompleteApplicationScreen, screenIsVisible, visibleSubFields,
-  applicationScreenError, applicationSubmissionError, isMinor, needsSupporter,
-  type ApplicationFormData as FormData, type ApplicationScreen as Q, type ApplicationField,
-} from '@/lib/applicationForm';
+import * as currentForm from '@/lib/applicationForm';
+import * as v5Form from '@/lib/applicationFormV5';
+import type { ApplicationFormData as FormData, ApplicationScreen as Q, ApplicationField } from '@/lib/applicationForm';
 import styles from './application.module.css';
-import { applicationTimeEstimate, formatApplicationTime } from '@/lib/applicationTime';
+import { applicationTimeEstimate as currentTimeEstimate, formatApplicationTime } from '@/lib/applicationTime';
+import { applicationTimeEstimate as v5TimeEstimate } from '@/lib/applicationTimeV5';
 import { createProgressQueue } from '@/lib/progressQueue';
 import Cal, { getCalApi } from '@calcom/embed-react';
 
@@ -164,7 +162,6 @@ function GoBackButton({ onClick }: { onClick: () => void }) {
 const STORAGE_KEY = 'tdt-apply-draft';
 const DRAFT_KEY_STORAGE = 'tdt-apply-draft-key';
 // Versioned drafts retain their answers when the question order changes.
-const DRAFT_VERSION = APPLICATION_FORM_VERSION;
 // Set once the application form itself is finished, cleared once the call is
 // confirmed booked (by the server, never by the client). Its presence on
 // mount is what lets someone who closes the tab after finishing the form —
@@ -241,7 +238,8 @@ const INVALID_NUDGES: Partial<Record<ApplicationField, string[]>> = {
   heard_about_detail: ['Tell us where you heard about us', 'A few real words please', 'WHERE DID YOU FIND US?!'],
 };
 
-function personalityNudge(problem: { field: ApplicationField; message: string }, form: FormData, attempt: number): string {
+function personalityNudge(problem: { field: ApplicationField; message: string }, form: FormData, attempt: number, version: 5 | 6): string {
+  if (version === 6 && ['goal', 'goal_detail', 'biggest_weakness', 'biggest_weakness_detail', 'social_link', 'application_reason', 'application_reason_detail'].includes(problem.field)) return problem.message;
   if (problem.message.includes('respectful')) {
     const respectNudges = ['Keep it respectful', 'Seriously. Clean it up.', 'WRITE A REAL BASKETBALL ANSWER.'];
     return respectNudges[attempt % respectNudges.length];
@@ -259,7 +257,16 @@ function personalityNudge(problem: { field: ApplicationField; message: string },
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-function ApplyPageInner() {
+function ApplyPageInner({ version, onStartNew }: { version: 5 | 6; onStartNew: () => void }) {
+  const DRAFT_VERSION = version;
+  const questionOrder = version === 5 ? 'contact-second' : 'shortened-v6-four-options';
+  const {
+    EMPTY_APPLICATION: EMPTY, APPLICATION_SCREENS, applicationAnswers: progressAnswers,
+    normalizeApplicationDraft, firstIncompleteApplicationScreen, screenIsVisible, visibleSubFields,
+    applicationScreenError, applicationSubmissionError, isMinor, needsSupporter,
+  } = version === 5 ? v5Form : currentForm;
+  const applicationTimeEstimate = version === 5 ? v5TimeEstimate : currentTimeEstimate;
+  const estimatedMinutes = Math.ceil(applicationTimeEstimate(EMPTY).totalSeconds / 60);
   const searchParams = useSearchParams();
   const claimsEarlyPricing = searchParams.get('early_pricing') === 'true';
   // Confirm promotional eligibility before showing its badge. No price is
@@ -402,7 +409,7 @@ function ApplyPageInner() {
         // Hydrate browser-only storage after the server-rendered intro matches.
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm(restored);
-        if (v === DRAFT_VERSION && saved.questionOrder === 'contact-second' && s >= 1) {
+        if (v === DRAFT_VERSION && saved.questionOrder === questionOrder && s >= 1) {
           resumeScreenRef.current = s <= REVIEW && (s === REVIEW || screenIsVisible(questions[s - 1].key, restored)) ? s : firstIncompleteApplicationScreen(restored);
         } else {
           // Stale draft from before a question-order change (or from before
@@ -416,7 +423,7 @@ function ApplyPageInner() {
         dropKey(DRAFT_KEY_STORAGE);
       }
     } catch {}
-  }, [questions, REVIEW]);
+  }, [questions, REVIEW, DRAFT_VERSION, questionOrder, normalizeApplicationDraft, firstIncompleteApplicationScreen, screenIsVisible]);
 
   // The application form itself is done, but booking the call is a required
   // part of finishing — not a follow-up. On mount, if this browser finished
@@ -468,8 +475,8 @@ function ApplyPageInner() {
   // Auto-save draft whenever form or screen changes (skip intro + success)
   useEffect(() => {
     if (screen < 1 || screen > REVIEW) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION, questionOrder: 'contact-second', savedAt: Date.now() })); } catch {}
-  }, [form, screen, REVIEW]);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, screen, version: DRAFT_VERSION, questionOrder, savedAt: Date.now() })); } catch {}
+  }, [form, screen, REVIEW, DRAFT_VERSION, questionOrder]);
 
   // Save while they type/select, not just when they eventually submit. A short
   // debounce avoids one database write per keystroke while still preserving a
@@ -703,7 +710,7 @@ function ApplyPageInner() {
     const q = questions[screen - 1];
     const problem = applicationScreenError(q, form);
     if (problem) {
-      fireNudge(personalityNudge(problem, form, nudgeAttempts));
+      fireNudge(personalityNudge(problem, form, nudgeAttempts, version));
       setNudgeAttempts(attempt => attempt + 1);
       setInvalidField(problem.field);
       requestAnimationFrame(() => document.getElementById(`field-${problem.field}`)?.focus());
@@ -748,6 +755,7 @@ function ApplyPageInner() {
     setSubmitting(false);
     setCheckingEmail(false);
     setEditingReview(false);
+    if (version === 5) { onStartNew(); return; }
     setForm(EMPTY);
     goTo(0);
   };
@@ -811,12 +819,12 @@ function ApplyPageInner() {
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let&apos;s Begin
         </CTAButton>
-        <p aria-label="Estimated application time: 5 minutes" style={{ ...text(12, 400, 'rgba(0,0,0,0.4)'), margin: 0, display: 'flex', alignItems: 'center', gap: 5, lineHeight: '18px' }}>
+        <p aria-label={`Estimated application time: ${estimatedMinutes} minutes`} style={{ ...text(12, 400, 'rgba(0,0,0,0.4)'), margin: 0, display: 'flex', alignItems: 'center', gap: 5, lineHeight: '18px' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v5l3 2" />
           </svg>
-          5min
+          {estimatedMinutes}min
         </p>
       </div>
     </div>
@@ -941,6 +949,7 @@ const choose = (field: ApplicationField, value: string) => {
     (groups[question.section] ??= []).push(question);
     return groups;
   }, {});
+  const allAnswered = firstIncompleteApplicationScreen(form) > TOTAL;
 
   if (screen === REVIEW) return (
     <main className={styles.root} style={{ background: BG }}>
@@ -949,8 +958,8 @@ const choose = (field: ApplicationField, value: string) => {
         <p className={styles.eyebrow}>Your application</p>
         <h1>Make sure this sounds like you.</h1>
         <p className={`${styles.timeLabel} ${styles.completionMessage}`} role="status">
-          <svg className={styles.completionCheck} viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>
-          Complete. Thank you
+          {allAnswered && <svg className={styles.completionCheck} viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
+          {allAnswered ? 'Complete. Thank you' : 'A few answers still needed'}
         </p>
         <p className={styles.description}>
           Review your answers, then choose a time for the next step.
@@ -978,7 +987,7 @@ const choose = (field: ApplicationField, value: string) => {
               {groupQuestions.map(question => {
             const answers = question.type === 'group'
               ? visibleSubFields(question, form).map(sub => ({ label: sub.label, value: form[sub.field] }))
-              : [{ label: '', value: form[question.field] + (
+              : [{ label: '', value: version === 6 ? currentForm.applicationAnswerValue(question, form) : form[question.field] + (
                 'detailField' in question && question.detailField && form[question.field] === question.detailOption && form[question.detailField]
                   ? ': ' + form[question.detailField] : ''
               ) }];
@@ -1052,7 +1061,6 @@ const choose = (field: ApplicationField, value: string) => {
   );
 
   const timeEstimate = applicationTimeEstimate(form);
-  const allAnswered = firstIncompleteApplicationScreen(form) > TOTAL;
   const almostThere = timeEstimate.remainingSeconds <= 60;
   const timeLabel = allAnswered ? 'Complete. Thank you' : almostThere ? 'Almost there!!' : formatApplicationTime(timeEstimate.remainingSeconds);
   const q = questions[screen - 1];
@@ -1079,7 +1087,7 @@ const choose = (field: ApplicationField, value: string) => {
           <input {...fieldProps(field)} id={index === 0 ? `field-${field}` : `field-${field}-${index}`}
             type="radio" value={option} checked={form[field] === option}
             onChange={() => choose(field, option)} />
-          <span>{option}</span>
+          <span>{version === 6 ? currentForm.APPLICATION_OPTION_LABELS[option] ?? option : option}</span>
         </label>
       ))}
     </div>
@@ -1101,7 +1109,18 @@ const choose = (field: ApplicationField, value: string) => {
             <legend>{sub.label}</legend>
             {sub.kind === 'radio-grid'
               ? radioOptions(sub.field, sub.options, true)
-              : standardInput(sub.field, sub.kind, sub.placeholder)}
+              : sub.kind === 'school' ? (
+                <div className={styles.group}>
+                  <SchoolInput value={form[sub.field]} onChange={value => choose(sub.field, value)} baseStyle={inputStyle} />
+                  {sub.alternative && (
+                    <button type="button" className={`${styles.alternative} ${form[sub.field] === sub.alternative ? styles.alternativeSelected : ''}`}
+                      aria-pressed={form[sub.field] === sub.alternative}
+                      onClick={() => choose(sub.field, form[sub.field] === sub.alternative ? '' : sub.alternative!)}>
+                      {sub.alternative}
+                    </button>
+                  )}
+                </div>
+              ) : standardInput(sub.field, sub.kind, sub.placeholder)}
           </fieldset>
         ))}
       </div>
@@ -1113,8 +1132,11 @@ const choose = (field: ApplicationField, value: string) => {
         </fieldset>
         {q.type === 'radio-grid' && q.detailField && form[q.field] === q.detailOption && (
           <label className={styles.detail}>
-            {q.key === 'goal' ? 'Tell us the goal you have in mind' : 'Where did you hear about us?'}
-            {standardInput(q.detailField, 'text', q.key === 'goal' ? 'A few words are enough' : 'Tell us where')}
+            {q.detailLabel ?? (q.key === 'goal' ? 'Tell us the goal you have in mind' : 'Where did you hear about us?')}
+            {q.detailMultiline ? (
+              <textarea {...fieldProps(q.detailField)} className={styles.input} rows={4} maxLength={3900}
+                value={form[q.detailField]} onChange={set(q.detailField)} placeholder={q.detailPlaceholder} />
+            ) : standardInput(q.detailField, 'text', q.key === 'goal' ? 'A few words are enough' : 'Tell us where')}
           </label>
         )}
         {q.key === 'guardian_aware' && form.guardian_aware === 'Not yet' && (
@@ -1222,7 +1244,7 @@ const choose = (field: ApplicationField, value: string) => {
 }
 
 export default function ApplyPage() {
-  const [experience, setExperience] = useState<4 | 5 | null>(null);
+  const [experience, setExperience] = useState<4 | 5 | 6 | null>(null);
   useEffect(() => {
     const version = applicationExperienceVersion(
       readFresh(STORAGE_KEY, DRAFT_TTL_MS),
@@ -1232,10 +1254,10 @@ export default function ApplyPage() {
     setExperience(version);
   }, []);
   if (experience === null) return <div role="status" style={{ minHeight: '100dvh', background: BG, display: 'grid', placeItems: 'center', color: '#70675f' }}>Loading your application…</div>;
-  if (experience === 4) return <LegacyApplication onStartNew={() => setExperience(5)} />;
+  if (experience === 4) return <LegacyApplication onStartNew={() => setExperience(APPLICATION_FORM_VERSION)} />;
   return (
     <Suspense>
-      <ApplyPageInner />
+      <ApplyPageInner key={experience} version={experience} onStartNew={() => setExperience(APPLICATION_FORM_VERSION)} />
     </Suspense>
   );
 }

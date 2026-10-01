@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { EMPTY_APPLICATION, applicationAnswers, FILM_DECLINED } from '../lib/applicationForm.ts';
+import { EMPTY_APPLICATION, applicationAnswers, FILM_DECLINED } from '../lib/applicationFormV5.ts';
 
 const target = new URL(process.env.TDT_APPLY_VERIFY_ORIGIN || 'http://localhost:3000');
 if (target.hostname !== 'localhost' || target.port !== '3000') throw new Error('This check only targets the local application server.');

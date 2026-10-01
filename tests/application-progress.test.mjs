@@ -30,9 +30,10 @@ const {
   EMPTY_APPLICATION, APPLICATION_SCREENS, applicationAnswers, normalizeApplicationDraft,
   applicationScreenError, applicationSubmissionError, firstIncompleteApplicationScreen,
   applicationFormFromAnswers, applicationWrittenAnswerError, FILM_DECLINED, SELF_SUPPORTED, NO_SOCIAL,
-} = await import('../lib/applicationForm.ts');
+} = await import('../lib/applicationFormV5.ts');
 const { GET: bookingStatus } = await import('../app/api/apply/booking-status/route.ts');
 const { createProgressQueue } = await import('../lib/progressQueue.ts');
+const v6 = await import('../lib/applicationForm.ts');
 let rows, beforeWrite;
 const clone = value => structuredClone(value);
 class Query {
@@ -104,7 +105,7 @@ test('v4 and v5 clients retain their own question ordering and reject unsupporte
   assert.equal(rows[1].current_question_key, 'contact');
   assert.equal(rows[1].current_question_number, 2);
   assert.equal(rows[1].total_questions, 16);
-  for (const invalid of [{form_version: 6}, {form_version: '5'}, {form_version: null}, {form_version: 4, question_key: 'film_readiness'}, {form_version: 5, question_key: 'made-up'}]) {
+  for (const invalid of [{form_version: 7}, {form_version: '5'}, {form_version: null}, {form_version: 4, question_key: 'film_readiness'}, {form_version: 5, question_key: 'made-up'}]) {
     assert.equal((await post(save, {...body(), ...invalid})).status, 400);
   }
   assert.equal(rows.length, 2);
@@ -122,13 +123,166 @@ test('an old browser tab cannot downgrade a newer draft even with a later revisi
 });
 
 test('existing applications keep their original questions; only fresh starts use the new flow', () => {
-  assert.equal(applicationExperienceVersion(null, null), 5);
+  assert.equal(applicationExperienceVersion(null, null), 6);
   for (const version of [undefined, null, 3, 4]) {
     assert.equal(applicationExperienceVersion({version}, null), 4);
     assert.equal(applicationExperienceVersion(null, {version}), 4);
   }
   assert.equal(applicationExperienceVersion({version:5}, null), 5);
   assert.equal(applicationExperienceVersion(null, {version:5}), 5);
+  assert.equal(applicationExperienceVersion({version:6}, null), 6);
+  assert.equal(applicationExperienceVersion(null, {version:6}), 6);
+});
+
+const validV6 = (overrides = {}) => ({
+  ...v6.EMPTY_APPLICATION,
+  full_name: 'Example Player', age: '19', email: 'applicant@example.com', phone: '416-555-0123',
+  social_link: '@applicant', city_state: 'Toronto, Ontario', goal: 'Play in college or university',
+  position: 'Point Guard', years_playing: '3 to 4 years', current_team_school: 'Example Academy',
+  biggest_weakness: 'Decision-making and basketball IQ',
+  film_access: 'Yes, full-game footage',
+  application_reason: 'Get ready for a season or tryouts',
+  decision_support: 'A parent or guardian', guardian_name: 'Parent Example',
+  guardian_phone: '416-555-0124', guardian_email: 'parent@example.com', guardian_aware: 'Yes', guardian_consent: 'Yes',
+  ...overrides,
+});
+
+test('v6 saves the shortened flow, grouped team and new answers on both sides of the age boundary', async () => {
+  for (const age of ['17', '18', '19', '20', '21']) {
+    rows = [];
+    const form = validV6({age});
+    const answers = v6.applicationAnswers(form);
+    const ordered = applicationQuestions(6, answers);
+    assert.deepEqual(ordered.slice(0, 10).map(q => q.key), [
+      'full_name', 'age', 'contact', 'social_link', 'city_state', 'goal', 'game',
+      'biggest_weakness', 'film_access', 'application_reason',
+    ]);
+    assert.equal(ordered.length, Number(age) < 20 ? 12 : 10);
+    assert.equal(v6.applicationSubmissionError(form), null);
+    const key = randomUUID();
+    for (const q of ordered) {
+      assert.equal((await post(save, {...body(key, q.number, q.key), form_version: 6, answers, completed: true})).status, 200);
+      assert.equal(rows[0].form_version, 6);
+      assert.equal(rows[0].total_questions, ordered.length);
+    }
+    assert.equal(rows[0].current_team_school, form.current_team_school);
+    assert.equal(rows[0].commitment_level, undefined);
+    assert.equal(rows[0].application_reason, form.application_reason);
+    assert.equal((await post(submit, {...answers, draft_key: key, form_version: 6})).status, 200);
+    assert.equal(rows[0].current_question_key, Number(age) < 20 ? 'guardian_aware' : 'application_reason');
+    assert.equal(rows[0].guardian_email, Number(age) < 20 ? form.guardian_email : null);
+    assert.equal(rows[0].decision_support, Number(age) < 20 ? form.decision_support : null);
+    assert.equal(rows[0].goal, form.goal);
+    assert.equal(rows[0].film_access, form.film_access);
+    assert.equal(rows[0].time_commitment, undefined);
+  }
+});
+
+test('v6 requires a separate social handle, goals/reason and valid footage choices', async () => {
+  for (const field of ['social_link', 'goal', 'application_reason', 'current_team_school', 'film_access']) {
+    assert.equal((await post(submit, {...v6.applicationAnswers(validV6({[field]: ''})), form_version: 6})).status, 400);
+  }
+  assert.equal((await post(submit, {...v6.applicationAnswers(validV6({social_link: NO_SOCIAL})), form_version: 6})).status, 400);
+  for (const film_access of v6.FILM_ACCESS_OPTIONS) {
+    assert.equal(v6.applicationSubmissionError(validV6({film_access})), null);
+  }
+  assert.ok(v6.applicationSubmissionError(validV6({application_reason: 'Something else', application_reason_detail: 'asdfgh'})));
+  assert.equal(v6.applicationSubmissionError(validV6({age: '20', guardian_name: '', guardian_email: '', guardian_phone: '', guardian_aware: '', guardian_consent: ''})), null);
+  assert.ok(v6.applicationSubmissionError(validV6({age: '19', guardian_email: ''})));
+  assert.ok(v6.applicationSubmissionError(validV6({age: '17', guardian_consent: ''})));
+  assert.ok(v6.applicationSubmissionError(validV6({age: '19', decision_support: SELF_SUPPORTED})));
+});
+
+test('preset and custom answers save, validate and restore without leaking inactive detail text', async () => {
+  for (const key of ['goal', 'biggest_weakness', 'application_reason']) {
+    const question = v6.APPLICATION_SCREENS.find(q => q.key === key);
+    for (const option of question.options.filter(option => option !== question.detailOption)) {
+      rows = [];
+      const form = validV6({[key]: option, [question.detailField]: 'An old custom answer'});
+      const answers = v6.applicationAnswers(form);
+      assert.equal(v6.applicationSubmissionError(form), null);
+      assert.equal(answers[key], option);
+      assert.equal((await post(submit, {...answers, form_version: 6})).status, 200);
+      assert.equal(rows[0][key], option);
+    }
+    const detail = 'I want to get better at creating space against strong defenders.';
+    const form = validV6({[key]: question.detailOption, [question.detailField]: detail});
+    const answers = v6.applicationAnswers(form);
+    assert.equal(answers[key], `${question.detailOption}\n${detail}`);
+    const restored = v6.applicationFormFromAnswers(answers);
+    assert.equal(restored[key], question.detailOption);
+    assert.equal(restored[question.detailField], detail);
+    assert.equal(v6.applicationSubmissionError(restored), null);
+    rows = [];
+    const draftKey = randomUUID();
+    await post(save, {...body(draftKey, 1, key), answers, form_version: 6});
+    assert.equal(rows[0][key], answers[key]);
+    assert.equal((await post(submit, {...answers, draft_key: draftKey, form_version: 6})).status, 200);
+    assert.equal(rows[0][key], answers[key]);
+    for (const invalid of ['', 'asdfgh', 'fuck this', 'x'.repeat(3901)]) {
+      const bad = validV6({[key]: question.detailOption, [question.detailField]: invalid});
+      assert.ok(v6.applicationScreenError(question, bad));
+      assert.equal((await post(submit, {...v6.applicationAnswers(bad), form_version: 6})).status, 400);
+    }
+    const oldDraft = v6.normalizeApplicationDraft(validV6({[key]: detail}));
+    assert.equal(oldDraft[key], question.detailOption);
+    assert.equal(oldDraft[question.detailField], detail);
+    assert.equal(v6.applicationAnswers(oldDraft)[key], answers[key]);
+  }
+});
+
+test('subjective questions use four cards and earlier presets/custom goals retain their answers', () => {
+  for (const key of ['goal', 'biggest_weakness', 'application_reason']) {
+    const question = v6.APPLICATION_SCREENS.find(q => q.key === key);
+    assert.equal(question.options.length, 4);
+    assert.equal(question.options.at(-1), 'Something else');
+    assert.equal(question.detailOption, 'Something else');
+  }
+  const draft = v6.normalizeApplicationDraft(validV6({
+    goal: 'Another goal', goal_detail: 'Play for my school',
+    biggest_weakness: 'Defense and footwork', application_reason: 'Prepare for tryouts',
+  }));
+  assert.equal(draft.goal, 'Something else');
+  assert.equal(draft.goal_detail, 'Play for my school');
+  assert.equal(draft.biggest_weakness, 'Something else');
+  assert.equal(draft.biggest_weakness_detail, 'Defense and footwork');
+  assert.equal(draft.application_reason_detail, 'Prepare for tryouts');
+  const decoded = v6.applicationFormFromAnswers({...v6.applicationAnswers(validV6()), goal: 'Another goal\nPlay for my school'});
+  assert.equal(decoded.goal, 'Something else');
+  assert.equal(decoded.goal_detail, 'Play for my school');
+  assert.equal(v6.applicationSubmissionError(draft), null);
+  assert.equal(v6.applicationSubmissionError(decoded), null);
+});
+
+test('v6 resumes written goals unchanged and updates the estimate as grouped answers are completed', async () => {
+  const form = validV6();
+  assert.deepEqual(v6.normalizeApplicationDraft(form), form);
+  assert.equal(v6.applicationFormFromAnswers(v6.applicationAnswers(form)).goal, form.goal);
+  assert.equal(v6.applicationFormFromAnswers(v6.applicationAnswers(form)).application_reason, form.application_reason);
+  assert.equal(v6.firstIncompleteApplicationScreen({...form, current_team_school: ''}), 7);
+  const { applicationTimeEstimate: estimate } = await import('../lib/applicationTime.ts');
+  assert.equal(estimate(v6.EMPTY_APPLICATION).remainingSeconds, 180);
+  assert.equal(estimate(v6.EMPTY_APPLICATION).totalSeconds, 180);
+  assert.equal(estimate(form).remainingSeconds, 45);
+  assert.ok(estimate({...v6.EMPTY_APPLICATION, goal: form.goal}).remainingSeconds < estimate(v6.EMPTY_APPLICATION).remainingSeconds);
+  assert.ok(estimate({...v6.EMPTY_APPLICATION, age:'20'}).remainingSeconds < estimate({...v6.EMPTY_APPLICATION, age:'19'}).remainingSeconds);
+});
+
+test('v6 age edits clear hidden supporter answers, preserve later answers and reject older clients', async () => {
+  const key = randomUUID();
+  await post(save, {...body(key, 1, 'guardian'), form_version: 6, answers: v6.applicationAnswers(validV6())});
+  await post(save, {...body(key, 2, 'age'), form_version: 6, answers: v6.applicationAnswers(validV6({age: '20'}))});
+  assert.equal(rows[0].guardian_email, null);
+  assert.equal(rows[0].guardian_name, null);
+  assert.equal(rows[0].decision_support, null);
+  assert.equal(rows[0].total_questions, 10);
+  assert.equal(rows[0].application_reason, validV6().application_reason);
+  const before = clone(rows[0]);
+  await post(save, {...body(key, 3, 'goal'), form_version: 5, answers: applicationAnswers(validV5())});
+  assert.deepEqual(rows[0], before);
+  assert.equal((await post(submit, {...applicationAnswers(validV5()), draft_key: key, form_version: 5})).status, 409);
+  rows = [{...before, form_version: 5}];
+  assert.equal((await post(submit, {...v6.applicationAnswers(validV6()), draft_key: key, form_version: 6})).status, 409);
 });
 
 test('v5 clients cannot rewrite existing legacy drafts or absorb an old contact record', async () => {
@@ -388,7 +542,7 @@ test('resuming a legacy contact save tracks separately and finishes the original
 });
 
 test('time estimate updates per valid answer and respects conditional branches', async () => {
-  const { applicationTimeEstimate: estimate, formatApplicationTime } = await import('../lib/applicationTime.ts');
+  const { applicationTimeEstimate: estimate, formatApplicationTime } = await import('../lib/applicationTimeV5.ts');
   const empty = {...EMPTY_APPLICATION};
   assert.equal(estimate(empty).remainingSeconds, 300);
   assert.equal(formatApplicationTime(estimate({...empty, full_name: 't'}).remainingSeconds), '5 min');

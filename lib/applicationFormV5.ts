@@ -1,4 +1,4 @@
-/** Shared form content and validation; contains no browser or database code. */
+/** Frozen v5 content and validation for existing drafts and cached clients. */
 export const EMPTY_APPLICATION = {
   full_name: '', goal: '', goal_detail: '', age: '', position: '', years_playing: '',
   current_team_school: '', biggest_weakness: '', city_state: '', email: '', phone: '',
@@ -7,85 +7,67 @@ export const EMPTY_APPLICATION = {
   guardian_aware: '', guardian_consent: '', investment_readiness: '', heard_about: '',
   heard_about_detail: '', application_reason: '', biggest_weakness_detail: '', application_reason_detail: '',
 };
-export type ApplicationFormData = typeof EMPTY_APPLICATION;
-export type ApplicationField = keyof ApplicationFormData;
-export type SubField =
-  | { field: ApplicationField; kind: 'text' | 'email' | 'tel'; label: string; placeholder: string }
-  | { field: ApplicationField; kind: 'radio-grid'; label: string; options: string[] }
-  | { field: ApplicationField; kind: 'school'; label: string; alternative?: string };
-type BaseQuestion = { key: string; section: string; question: string; subtext?: string; fields: string[] };
-export type ApplicationScreen = BaseQuestion & (
-  | { field: ApplicationField; type: 'text' | 'email' | 'tel' | 'number' | 'textarea'; placeholder: string; alternative?: string }
-  | { field: ApplicationField; type: 'location' | 'school'; alternative?: string }
-  | { field: ApplicationField; type: 'radio-grid' | 'choice'; options: string[]; detailField?: ApplicationField; detailOption?: string; detailLabel?: string; detailPlaceholder?: string; detailMultiline?: boolean }
-  | { type: 'group'; kind: 'contact' | 'game' | 'parent' | 'film'; subs: SubField[] }
-);
+import type { ApplicationFormData, ApplicationField, SubField, ApplicationScreen } from '@/lib/applicationForm';
+export type { ApplicationFormData, ApplicationField, SubField, ApplicationScreen };
 
 export const SELF_SUPPORTED = "I'm deciding for myself";
 export const FILM_DECLINED = "I don't want film coaching right now";
 export const NO_SOCIAL = "I don't have an Instagram or X account";
-export const FILM_ACCESS_OPTIONS = [
-  'Yes, full-game footage', 'Yes, some games/clips', 'Not currently, but I can get it', 'No',
+// Kept valid for drafts and submissions that started before the friendlier
+// investment wording shipped. These values are not shown to new applicants.
+const LEGACY_INVESTMENT_OPTIONS = [
+  'Yes, if the coaching is right for me',
+  'I need to discuss it with my parent or supporter',
+  "I'd like to understand what's included before deciding",
+  "I'm not looking for paid coaching right now",
 ];
 export const GOAL_OPTIONS = [
-  'Make a team or earn a bigger role', 'Play in college or university',
-  'Play professionally', 'Something else',
+  'Earn a bigger role on my team', 'Make a school, club or prep team',
+  'Play in college or university', 'Play professionally', "I'm still figuring that out", 'Another goal',
 ];
-export const IMPROVEMENT_OPTIONS = [
-  'Shooting and finishing', 'Ball handling', 'Decision-making and basketball IQ', 'Something else',
-];
-export const APPLICATION_REASON_OPTIONS = [
-  'Get ready for a season or tryouts', 'Earn a bigger role on my team', 'Get past a plateau', 'Something else',
-];
-/** Short display copy keeps cards tidy without changing saved answers. */
-export const APPLICATION_OPTION_LABELS: Record<string, string> = {
-  'Make a team or earn a bigger role': 'Team spot or bigger role',
-  'Play in college or university': 'College or university',
-  'Decision-making and basketball IQ': 'Basketball IQ',
-  'Get ready for a season or tryouts': 'Season or tryout prep',
-  'Earn a bigger role on my team': 'Earn a bigger role',
-  "I haven't played competitively yet": 'Not competitively yet',
-  'Multiple positions': 'Multiple',
-  'Yes, full-game footage': 'Full-game footage',
-  'Yes, some games/clips': 'Some games or clips',
-  'Not currently, but I can get it': 'I can get footage',
-  'A parent or guardian': 'Parent or guardian',
-};
+
 export const APPLICATION_SCREENS: ApplicationScreen[] = [
-  { key: 'full_name', section: 'Your details', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'Your name', fields: ['athlete_name', 'first_name', 'last_name'] },
-  { key: 'age', section: 'Your details', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17', fields: ['age'] },
+  { key: 'full_name', section: 'Your goals', question: "What's your full name?", field: 'full_name', type: 'text', placeholder: 'Your name', fields: ['athlete_name', 'first_name', 'last_name'] },
   { key: 'contact', section: 'Your details', question: 'Where can we reach you about your application?', subtext: "We'll use these details to contact you about your application and call.", type: 'group', kind: 'contact', fields: ['email', 'phone', 'athlete_email', 'athlete_phone'], subs: [
     { field: 'email', kind: 'email', label: 'Email', placeholder: 'you@email.com' },
     { field: 'phone', kind: 'tel', label: 'Phone number', placeholder: '416-555-0123' },
   ] },
-  { key: 'social_link', section: 'Your details', question: "What's your Instagram or X handle?", field: 'social_link', type: 'text', placeholder: '@yourusername or a profile link', fields: ['social_link'] },
-  { key: 'city_state', section: 'Your details', question: 'Where are you based?', subtext: 'Your city and province or state help us understand where you play.', field: 'city_state', type: 'location', fields: ['city'] },
-  { key: 'goal', section: 'Your goals', question: 'Where would you like basketball to take you?', subtext: 'Choose the goal that matters most to you right now.', field: 'goal', type: 'radio-grid', options: GOAL_OPTIONS, detailField: 'goal_detail', detailOption: 'Something else', detailLabel: 'Tell us the goal you have in mind', detailPlaceholder: 'Tell us what you’re working toward', detailMultiline: true, fields: ['goal'] },
-  { key: 'game', section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game', fields: ['position', 'years_playing', 'years_playing_answer', 'current_team', 'current_team_school'], subs: [
+  { key: 'goal', section: 'Your goals', question: 'Where would you like basketball to take you?', subtext: 'Choose the goal that matters most to you right now.', field: 'goal', type: 'radio-grid', options: GOAL_OPTIONS, detailField: 'goal_detail', detailOption: 'Another goal', fields: ['goal'] },
+  { key: 'age', section: 'Your game', question: 'How old are you?', field: 'age', type: 'number', placeholder: '17', fields: ['age'] },
+  { key: 'game', section: 'Your game', question: 'Tell us about your game', type: 'group', kind: 'game', fields: ['position', 'years_playing', 'years_playing_answer'], subs: [
     { field: 'position', kind: 'radio-grid', label: 'What position do you usually play?', options: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Multiple positions'] },
     { field: 'years_playing', kind: 'radio-grid', label: 'How long have you played competitively?', options: ["I haven't played competitively yet", 'Less than 1 year', '1 to 2 years', '3 to 4 years', '5+ years'] },
-    { field: 'current_team_school', kind: 'school', label: 'What team or school do you currently play for?', alternative: "I'm not on a team right now" },
   ] },
-  { key: 'biggest_weakness', section: 'Your game', question: "What's holding your game back right now?", subtext: 'Choose what you’d most like help improving.', field: 'biggest_weakness', type: 'radio-grid', options: IMPROVEMENT_OPTIONS, detailField: 'biggest_weakness_detail', detailOption: 'Something else', detailLabel: 'What would you like help improving?', detailPlaceholder: 'A few words or a recent game example are enough', detailMultiline: true, fields: ['biggest_weakness'] },
-  { key: 'film_access', section: 'Your fit', question: 'Do you have access to footage from your games?', field: 'film_access', type: 'radio-grid', options: FILM_ACCESS_OPTIONS, fields: ['film_access'] },
-  { key: 'application_reason', section: 'Your goals', question: 'Why are you applying right now?', subtext: 'Choose what brought you here today.', field: 'application_reason', type: 'radio-grid', options: APPLICATION_REASON_OPTIONS, detailField: 'application_reason_detail', detailOption: 'Something else', detailLabel: 'What made now feel like the right time?', detailPlaceholder: 'Tell us what brought you here', detailMultiline: true, fields: ['application_reason'] },
-  { key: 'guardian', section: 'Your support', question: 'Who will be involved in deciding whether to join?', subtext: 'Share their contact details so they can be included in the call.', type: 'group', kind: 'parent', fields: ['decision_support', 'parent_name', 'guardian_name', 'parent_phone', 'guardian_phone', 'parent_email', 'guardian_email'], subs: [
+  { key: 'current_team_school', section: 'Your game', question: 'What team or school do you play for?', subtext: 'Your current team or school is enough.', field: 'current_team_school', type: 'school', alternative: "I'm not on a team right now", fields: ['current_team', 'current_team_school'] },
+  { key: 'biggest_weakness', section: 'Your game', question: "What's one part of your game you'd most like help improving?", subtext: 'A short answer is enough. A recent game example helps if one comes to mind.', field: 'biggest_weakness', type: 'textarea', placeholder: 'For example, I rush my decisions when defenders pressure me.', alternative: "I'm not sure what to focus on yet", fields: ['biggest_weakness'] },
+  { key: 'city_state', section: 'Your details', question: 'Where are you based?', subtext: 'Your city and province or state help us understand where you play.', field: 'city_state', type: 'location', fields: ['city'] },
+  { key: 'social_link', section: 'Your details', question: "What's your Instagram or X handle?", subtext: 'Share the account you use most, or let us know if you don\'t have one.', field: 'social_link', type: 'text', placeholder: '@yourusername or a profile link', alternative: NO_SOCIAL, fields: ['social_link'] },
+  { key: 'time_commitment', section: 'Your fit', question: 'On a typical training day, how much time could you set aside for this program?', subtext: 'Think about what fits alongside your team, school or work.', field: 'time_commitment', type: 'radio-grid', options: ['Less than 30 minutes', '30 to 45 minutes', 'More than 45 minutes, up to an hour', 'More than an hour', 'I need help working out a schedule'], fields: ['time_commitment'] },
+  { key: 'film_readiness', section: 'Your fit', question: 'How do you feel about learning through game film and personalised drills?', subtext: 'Jaiden uses your game film to identify what to work on and build your drills.', type: 'group', kind: 'film', fields: ['film_readiness', 'film_access'], subs: [
+    { field: 'film_readiness', kind: 'radio-grid', label: 'How does that sound to you?', options: ["I'd like that kind of coaching", "I'd like to understand how it works first", FILM_DECLINED] },
+    { field: 'film_access', kind: 'radio-grid', label: 'Do you have access to footage from your games?', options: ['Yes', 'I can ask my team or someone who records games', "Not yet, I'd need help figuring that out"] },
+  ] },
+  { key: 'device_access', section: 'Your fit', question: 'What device do you have access to for reviewing film?', subtext: "Any of these can work. We'll help you get set up.", field: 'device_access', type: 'radio-grid', options: ['Laptop or desktop', 'iPad or tablet', 'Phone', 'I need help finding an option'], fields: ['device_access'] },
+  { key: 'guardian', section: 'Your support', question: 'Who will be involved in deciding whether to join?', subtext: 'If someone is helping you make this decision, share their contact details so they can be included in the call.', type: 'group', kind: 'parent', fields: ['decision_support', 'parent_name', 'guardian_name', 'parent_phone', 'guardian_phone', 'parent_email', 'guardian_email'], subs: [
     { field: 'decision_support', kind: 'radio-grid', label: 'Who is supporting your application?', options: ['A parent or guardian', 'Another supporter'] },
     { field: 'guardian_name', kind: 'text', label: 'Their full name', placeholder: 'Full name' },
     { field: 'guardian_phone', kind: 'tel', label: 'Their phone number', placeholder: '416-555-0123' },
     { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'their@email.com' },
   ] },
   { key: 'guardian_aware', section: 'Your support', question: "Have you told your parent or supporter you're applying?", subtext: 'This helps us understand where you are in the conversation.', field: 'guardian_aware', type: 'choice', options: ['Yes', 'Not yet'], fields: ['parent_aware', 'guardian_aware', 'guardian_consent'] },
+  { key: 'investment_readiness', section: 'Your fit', question: 'What would help you feel ready to take the next step?', subtext: 'This helps us understand what matters most to you. You are not committing to anything in this application.', field: 'investment_readiness', type: 'radio-grid', options: ['See whether coaching fits my goals', 'Understand how the program works', 'Talk it over with a parent or supporter', 'I’m still deciding if coaching is right for me'], fields: ['investment_readiness'] },
+  { key: 'heard_about', section: 'One last detail', question: 'How did you hear about us?', subtext: 'This helps us understand how players find the program.', field: 'heard_about', type: 'radio-grid', options: ['Instagram post', 'Instagram DM', 'Instagram story', 'A friend or teammate', 'From Jaiden directly', 'Other', "I don't remember"], detailField: 'heard_about_detail', detailOption: 'Other', fields: ['heard_about'] },
 ];
 
 export function isMinor(form: Pick<ApplicationFormData, 'age'>): boolean {
   return !form.age || Number(form.age) < 18;
 }
 export function needsSupporter(form: Pick<ApplicationFormData, 'age' | 'decision_support'>): boolean {
-  return !form.age || Number(form.age) < 20;
+  return isMinor(form) || form.decision_support !== SELF_SUPPORTED;
 }
 export function screenIsVisible(key: string, form: ApplicationFormData): boolean {
-  if (key === 'guardian' || key === 'guardian_aware') return needsSupporter(form);
+  if (key === 'guardian_aware') return needsSupporter(form);
+  if (key === 'device_access') return form.film_readiness !== FILM_DECLINED;
   return true;
 }
 export function visibleSubFields(question: ApplicationScreen, form: ApplicationFormData): SubField[] {
@@ -95,40 +77,8 @@ export function visibleSubFields(question: ApplicationScreen, form: ApplicationF
       sub.field === 'decision_support' && sub.kind === 'radio-grid' && isMinor(form)
         ? { ...sub, options: ['A parent or guardian'] } : sub);
   }
+  if (question.kind === 'film') return question.subs.filter(sub => sub.field === 'film_readiness' || (!!form.film_readiness && form.film_readiness !== FILM_DECLINED));
   return question.subs;
-}
-
-/** Preserve written drafts and decode custom answers stored in canonical columns. */
-function restorePresetAnswers(form: ApplicationFormData): ApplicationFormData {
-  for (const question of APPLICATION_SCREENS) {
-    if (question.type !== 'radio-grid' || !question.detailField || !question.detailOption) continue;
-    const answer = form[question.field];
-    const customOptions = [question.detailOption, ...(question.key === 'goal' ? ['Another goal'] : [])];
-    const prefix = customOptions.map(option => `${option}\n`).find(prefix => answer.startsWith(prefix));
-    if (prefix) {
-      form[question.detailField] = answer.slice(prefix.length);
-      form[question.field] = question.detailOption;
-    } else if (customOptions.includes(answer)) {
-      form[question.field] = question.detailOption;
-    } else if (answer && !question.options.includes(answer)) {
-      form[question.detailField] = answer;
-      form[question.field] = question.detailOption;
-    }
-  }
-  return form;
-}
-
-export function applicationAnswerValue(question: ApplicationScreen, form: ApplicationFormData): string {
-  if (question.type === 'group') return '';
-  if (question.type === 'radio-grid' && question.detailField && form[question.field] === question.detailOption) {
-    return `${question.detailOption}\n${form[question.detailField].trim()}`;
-  }
-  return form[question.field];
-}
-
-function presetAnswer(form: ApplicationFormData, field: ApplicationField): string {
-  const question = APPLICATION_SCREENS.find(question => question.key === field)!;
-  return applicationAnswerValue(question, form);
 }
 
 export function normalizeApplicationDraft(raw: unknown): ApplicationFormData {
@@ -139,13 +89,22 @@ export function normalizeApplicationDraft(raw: unknown): ApplicationFormData {
     if (typeof value === 'string' || typeof value === 'number') form[key] = String(value);
   }
   if (form.guardian_aware === 'No') form.guardian_aware = 'Not yet';
+  if (form.goal && !GOAL_OPTIONS.includes(form.goal)) {
+    form.goal_detail = form.goal_detail || form.goal;
+    form.goal = 'Another goal';
+  }
+  const legacyTimes: Record<string, string> = {
+    '30–45 minutes': '30 to 45 minutes', '1 hour': 'More than 45 minutes, up to an hour',
+    '1.5–2 hours': 'More than an hour', '2+ hours': 'More than an hour',
+  };
+  form.time_commitment = legacyTimes[form.time_commitment] || form.time_commitment;
   form.years_playing = form.years_playing.replace('1–2 years', '1 to 2 years').replace('3–4 years', '3 to 4 years');
   if (form.device_access === "I don't want film yet") {
     form.film_readiness = FILM_DECLINED;
     form.device_access = '';
   }
   if (!form.decision_support && form.guardian_name) form.decision_support = 'A parent or guardian';
-  return restorePresetAnswers(form);
+  return form;
 }
 
 const ALLOWED_DIRECT_ANSWERS = new Set([
@@ -207,9 +166,7 @@ export function applicationFieldError(field: ApplicationField, value: string): s
     full_name: 'your name', age: 'your age', city_state: 'your city and province or state',
     email: 'your email', phone: 'your phone number', guardian_name: 'their name',
     guardian_phone: 'their phone number', guardian_email: 'their email',
-    biggest_weakness: 'what you would like help improving', social_link: 'your Instagram or X handle',
-    goal: 'what you’re working toward', application_reason: 'why you’re applying right now',
-    goal_detail: 'the goal you have in mind', biggest_weakness_detail: 'what you want help improving', application_reason_detail: 'why you’re applying right now',
+    biggest_weakness: 'what you would like help improving', social_link: 'your handle, or choose the option below',
     current_team_school: 'your team or school, or choose the option below',
   };
   if (!v) return labels[field] ? `Add ${labels[field]} to continue.` : 'Choose the option that best describes you.';
@@ -225,8 +182,8 @@ export function applicationFieldError(field: ApplicationField, value: string): s
   if ((field === 'email' || field === 'guardian_email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter an email in this format: name@example.com.';
   if ((field === 'phone' || field === 'guardian_phone') && (!/^[+\d\s().-]+$/.test(v) || v.replace(/\D/g, '').length < 10 || v.replace(/\D/g, '').length > 15)) return 'Enter a full phone number, including the area or country code.';
   if (field === 'city_state' && (!v.includes(',') || v.split(',').slice(0, 2).some(part => !part.trim()))) return 'Enter your city and province or state, such as Toronto, Ontario.';
-  if (field === 'social_link' && !/^@?[a-z\d._]{1,30}$/i.test(v) && !/^(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|twitter\.com|x\.com)\/[a-z\d._]+\/?(?:\?.*)?$/i.test(v)) return 'Enter your @handle or a link to your Instagram or X profile.';
-  if (['current_team_school', 'biggest_weakness', 'goal', 'application_reason', 'goal_detail', 'biggest_weakness_detail', 'application_reason_detail', 'heard_about_detail', 'city_state'].includes(field)) {
+  if (field === 'social_link' && v !== NO_SOCIAL && !/^@?[a-z\d._]{1,30}$/i.test(v) && !/^(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|twitter\.com|x\.com)\/[a-z\d._]+\/?(?:\?.*)?$/i.test(v)) return 'Enter your @handle or a link to your Instagram or X profile.';
+  if (['current_team_school', 'biggest_weakness', 'goal_detail', 'heard_about_detail', 'city_state'].includes(field)) {
     const qualityError = applicationWrittenAnswerError(v);
     if (qualityError) return qualityError;
   }
@@ -243,17 +200,17 @@ export function applicationScreenError(question: ApplicationScreen, form: Applic
     : question.type === 'radio-grid' || question.type === 'choice' ? [question] : [];
   for (const choice of choices) {
     if ('options' in choice) {
-      const options = choice.options;
+      const options = choice.field === 'investment_readiness'
+        ? [...choice.options, ...LEGACY_INVESTMENT_OPTIONS]
+        : choice.field === 'decision_support'
+          ? [...choice.options, SELF_SUPPORTED]
+          : choice.options;
       if (!options.includes(form[choice.field])) return { field: choice.field, message: 'Choose one of the available options.' };
     }
   }
   if (question.key === 'guardian' && isMinor(form) && form.decision_support !== 'A parent or guardian') return { field: 'decision_support', message: 'A parent or legal guardian needs to be involved for players under 18.' };
-  if (question.type === 'radio-grid' && question.detailField && form[question.field] === question.detailOption) {
-    const value = form[question.detailField];
-    const message = applicationFieldError(question.detailField, value);
-    if (message) return { field: question.detailField, message };
-    if (value.length > 3900) return { field: question.detailField, message: 'Keep this answer under 3,900 characters.' };
-  }
+  if (question.type === 'radio-grid' && question.detailField && form[question.field] === question.detailOption && !form[question.detailField].trim()) return { field: question.detailField, message: question.key === 'goal' ? 'Tell us the goal you have in mind. A few words are enough.' : 'Tell us where you heard about the program.' };
+  if (question.type === 'radio-grid' && question.detailField && form[question.field] === question.detailOption && form[question.detailField].length > 3900) return { field: question.detailField, message: 'Keep this answer under 3,900 characters.' };
   return null;
 }
 
@@ -266,21 +223,24 @@ export function firstIncompleteApplicationScreen(form: ApplicationFormData): num
 export function applicationAnswers(form: ApplicationFormData): Record<string, string | number | null> {
   const [firstName, ...lastName] = form.full_name.trim().split(/\s+/);
   const supporter = needsSupporter(form);
-  const goal = presetAnswer(form, 'goal');
+  const goal = form.goal === 'Another goal' && form.goal_detail.trim() ? `${form.goal}\n${form.goal_detail.trim()}` : form.goal;
+  const source = form.heard_about_detail.trim() && form.heard_about === 'Other' ? `Other: ${form.heard_about_detail.trim()}` : form.heard_about;
   return {
     athlete_name: form.full_name.trim(), first_name: firstName || '', last_name: lastName.join(' '),
     age: form.age ? Number(form.age) : null, city: form.city_state,
     email: form.email.trim(), athlete_email: form.email.trim(), phone: form.phone, athlete_phone: form.phone,
     position: form.position, years_playing: form.years_playing ? (form.years_playing.startsWith('Less') ? 0 : Number(form.years_playing.match(/\d+/)?.[0] ?? 0)) : null,
     years_playing_answer: form.years_playing, current_team: form.current_team_school, current_team_school: form.current_team_school,
-    biggest_weakness: presetAnswer(form, 'biggest_weakness'), goal, social_link: form.social_link,
-    film_access: form.film_access, application_reason: presetAnswer(form, 'application_reason'),
-    decision_support: supporter ? form.decision_support : null,
+    biggest_weakness: form.biggest_weakness, goal, social_link: form.social_link, time_commitment: form.time_commitment,
+    film_readiness: form.film_readiness, film_access: form.film_readiness === FILM_DECLINED ? null : form.film_access,
+    device_access: form.film_readiness === FILM_DECLINED ? null : form.device_access,
+    decision_support: form.decision_support,
     parent_name: supporter ? form.guardian_name : null, guardian_name: supporter ? form.guardian_name : null,
     parent_phone: supporter ? form.guardian_phone : null, guardian_phone: supporter ? form.guardian_phone : null,
     parent_email: supporter ? form.guardian_email.trim() : null, guardian_email: supporter ? form.guardian_email.trim() : null,
     parent_aware: supporter ? form.guardian_aware : null, guardian_aware: supporter ? form.guardian_aware : null,
     guardian_consent: isMinor(form) && form.guardian_aware === 'Yes' && form.guardian_consent === 'Yes' ? 'Yes' : null,
+    investment_readiness: form.investment_readiness, heard_about: source,
   };
 }
 
@@ -294,7 +254,15 @@ export function applicationFormFromAnswers(answers: Record<string, unknown>): Ap
   form.full_name = typeof answers.athlete_name === 'string' ? answers.athlete_name : '';
   form.city_state = typeof answers.city === 'string' ? answers.city : '';
   form.years_playing = typeof answers.years_playing_answer === 'string' ? answers.years_playing_answer : '';
-  return restorePresetAnswers(form);
+  if (form.goal.startsWith('Another goal\n')) {
+    form.goal_detail = form.goal.slice('Another goal\n'.length);
+    form.goal = 'Another goal';
+  }
+  if (form.heard_about.startsWith('Other: ')) {
+    form.heard_about_detail = form.heard_about.slice('Other: '.length);
+    form.heard_about = 'Other';
+  }
+  return form;
 }
 
 export function applicationSubmissionError(form: ApplicationFormData): { key: string; message: string } | null {

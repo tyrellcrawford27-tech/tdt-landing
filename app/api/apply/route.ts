@@ -8,7 +8,8 @@ import {
   applicationQuestions,
   applicationVersionMatches,
 } from '@/lib/applicationProgress';
-import { applicationAnswers, applicationFormFromAnswers, applicationSubmissionError } from '@/lib/applicationForm';
+import * as currentForm from '@/lib/applicationForm';
+import * as v5Form from '@/lib/applicationFormV5';
 
 // This route is public and unauthenticated, and it used to spread the raw
 // request body straight into the insert — so a caller could set ANY column,
@@ -32,6 +33,7 @@ const WRITABLE_FIELDS = [
   'parent_aware', 'guardian_aware',
   'heard_about',
   'film_readiness', 'film_access', 'decision_support', 'guardian_consent', 'investment_readiness',
+  'application_reason',
 ] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -49,14 +51,15 @@ export async function POST(req: NextRequest) {
     const version = applicationFormVersion(body.form_version);
     if (!version) return NextResponse.json({ error: 'Unsupported application version. Please refresh.' }, { status: 400 });
     let writable = pickWritable(body);
-    if (version === 5) {
+    if (version >= 5) {
+      const { applicationAnswers, applicationFormFromAnswers, applicationSubmissionError } = version === 5 ? v5Form : currentForm;
       const form = applicationFormFromAnswers(body);
       const problem = applicationSubmissionError(form);
       if (problem) return NextResponse.json({ error: problem.message, question_key: problem.key }, { status: 400 });
       // Use validated canonical aliases and clear answers on hidden branches.
       writable = applicationAnswers(form);
     } else {
-      for (const field of ['film_readiness', 'film_access', 'decision_support', 'guardian_consent', 'investment_readiness']) delete writable[field];
+      for (const field of ['film_readiness', 'film_access', 'decision_support', 'guardian_consent', 'investment_readiness', 'commitment_level', 'application_reason']) delete writable[field];
     }
     const admin = createAdminClient();
 
@@ -161,7 +164,7 @@ export async function POST(req: NextRequest) {
       const { error, data: savedRows } = existingRow
         ? await admin.from('applications').update(record).eq('id', existingRow.id)
           .or('application_state.is.null,application_state.eq.draft')
-          .or(version === 5 ? 'form_version.eq.5' : 'form_version.is.null,form_version.lt.5')
+          .or(version >= 5 ? `form_version.eq.${version}` : 'form_version.is.null,form_version.lt.5')
           .is('deleted_at', null).select('id')
         : await admin.from('applications').insert([{ ...record, draft_key: draftKey }]).select('id');
 
