@@ -10,6 +10,7 @@ import {
 } from '@/lib/applicationProgress';
 import * as currentForm from '@/lib/applicationForm';
 import * as v5Form from '@/lib/applicationFormV5';
+import * as v6Form from '@/lib/applicationFormV6';
 
 // This route is public and unauthenticated, and it used to spread the raw
 // request body straight into the insert — so a caller could set ANY column,
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     if (!version) return NextResponse.json({ error: 'Unsupported application version. Please refresh.' }, { status: 400 });
     let writable = pickWritable(body);
     if (version >= 5) {
-      const { applicationAnswers, applicationFormFromAnswers, applicationSubmissionError } = version === 5 ? v5Form : currentForm;
+      const { applicationAnswers, applicationFormFromAnswers, applicationSubmissionError } = version === 5 ? v5Form : version === 6 ? v6Form : currentForm;
       const form = applicationFormFromAnswers(body);
       const problem = applicationSubmissionError(form);
       if (problem) return NextResponse.json({ error: problem.message, question_key: problem.key }, { status: 400 });

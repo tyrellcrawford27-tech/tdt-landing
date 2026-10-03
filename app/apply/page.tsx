@@ -18,10 +18,12 @@ import {
 } from '@/lib/applicationProgress';
 import * as currentForm from '@/lib/applicationForm';
 import * as v5Form from '@/lib/applicationFormV5';
+import * as v6Form from '@/lib/applicationFormV6';
 import type { ApplicationFormData as FormData, ApplicationScreen as Q, ApplicationField } from '@/lib/applicationForm';
 import styles from './application.module.css';
 import { applicationTimeEstimate as currentTimeEstimate, formatApplicationTime } from '@/lib/applicationTime';
 import { applicationTimeEstimate as v5TimeEstimate } from '@/lib/applicationTimeV5';
+import { applicationTimeEstimate as v6TimeEstimate } from '@/lib/applicationTimeV6';
 import { createProgressQueue } from '@/lib/progressQueue';
 import Cal, { getCalApi } from '@calcom/embed-react';
 
@@ -238,8 +240,8 @@ const INVALID_NUDGES: Partial<Record<ApplicationField, string[]>> = {
   heard_about_detail: ['Tell us where you heard about us', 'A few real words please', 'WHERE DID YOU FIND US?!'],
 };
 
-function personalityNudge(problem: { field: ApplicationField; message: string }, form: FormData, attempt: number, version: 5 | 6): string {
-  if (version === 6 && ['goal', 'goal_detail', 'biggest_weakness', 'biggest_weakness_detail', 'social_link', 'application_reason', 'application_reason_detail'].includes(problem.field)) return problem.message;
+function personalityNudge(problem: { field: ApplicationField; message: string }, form: FormData, attempt: number, version: 5 | 6 | 7): string {
+  if (version >= 6 && ['heard_about', 'heard_about_detail', 'goal', 'goal_detail', 'biggest_weakness', 'biggest_weakness_detail', 'social_link', 'application_reason', 'application_reason_detail'].includes(problem.field)) return problem.message;
   if (problem.message.includes('respectful')) {
     const respectNudges = ['Keep it respectful', 'Seriously. Clean it up.', 'WRITE A REAL BASKETBALL ANSWER.'];
     return respectNudges[attempt % respectNudges.length];
@@ -257,15 +259,15 @@ function personalityNudge(problem: { field: ApplicationField; message: string },
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-function ApplyPageInner({ version, onStartNew }: { version: 5 | 6; onStartNew: () => void }) {
+function ApplyPageInner({ version, onStartNew }: { version: 5 | 6 | 7; onStartNew: () => void }) {
   const DRAFT_VERSION = version;
-  const questionOrder = version === 5 ? 'contact-second' : 'shortened-v6-four-options';
+  const questionOrder = version === 5 ? 'contact-second' : version === 6 ? 'shortened-v6-four-options' : 'shortened-v7-referral';
   const {
     EMPTY_APPLICATION: EMPTY, APPLICATION_SCREENS, applicationAnswers: progressAnswers,
     normalizeApplicationDraft, firstIncompleteApplicationScreen, screenIsVisible, visibleSubFields,
     applicationScreenError, applicationSubmissionError, isMinor, needsSupporter,
-  } = version === 5 ? v5Form : currentForm;
-  const applicationTimeEstimate = version === 5 ? v5TimeEstimate : currentTimeEstimate;
+  } = version === 5 ? v5Form : version === 6 ? v6Form : currentForm;
+  const applicationTimeEstimate = version === 5 ? v5TimeEstimate : version === 6 ? v6TimeEstimate : currentTimeEstimate;
   const estimatedMinutes = Math.ceil(applicationTimeEstimate(EMPTY).totalSeconds / 60);
   const searchParams = useSearchParams();
   const claimsEarlyPricing = searchParams.get('early_pricing') === 'true';
@@ -755,7 +757,7 @@ function ApplyPageInner({ version, onStartNew }: { version: 5 | 6; onStartNew: (
     setSubmitting(false);
     setCheckingEmail(false);
     setEditingReview(false);
-    if (version === 5) { onStartNew(); return; }
+    if (version !== APPLICATION_FORM_VERSION) { onStartNew(); return; }
     setForm(EMPTY);
     goTo(0);
   };
@@ -987,7 +989,7 @@ const choose = (field: ApplicationField, value: string) => {
               {groupQuestions.map(question => {
             const answers = question.type === 'group'
               ? visibleSubFields(question, form).map(sub => ({ label: sub.label, value: form[sub.field] }))
-              : [{ label: '', value: version === 6 ? currentForm.applicationAnswerValue(question, form) : form[question.field] + (
+              : [{ label: '', value: version >= 6 ? currentForm.applicationAnswerValue(question, form) : form[question.field] + (
                 'detailField' in question && question.detailField && form[question.field] === question.detailOption && form[question.detailField]
                   ? ': ' + form[question.detailField] : ''
               ) }];
@@ -1087,7 +1089,7 @@ const choose = (field: ApplicationField, value: string) => {
           <input {...fieldProps(field)} id={index === 0 ? `field-${field}` : `field-${field}-${index}`}
             type="radio" value={option} checked={form[field] === option}
             onChange={() => choose(field, option)} />
-          <span>{version === 6 ? currentForm.APPLICATION_OPTION_LABELS[option] ?? option : option}</span>
+          <span>{version >= 6 ? currentForm.APPLICATION_OPTION_LABELS[option] ?? option : option}</span>
         </label>
       ))}
     </div>
@@ -1244,7 +1246,7 @@ const choose = (field: ApplicationField, value: string) => {
 }
 
 export default function ApplyPage() {
-  const [experience, setExperience] = useState<4 | 5 | 6 | null>(null);
+  const [experience, setExperience] = useState<4 | 5 | 6 | 7 | null>(null);
   useEffect(() => {
     const version = applicationExperienceVersion(
       readFresh(STORAGE_KEY, DRAFT_TTL_MS),

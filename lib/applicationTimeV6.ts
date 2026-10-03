@@ -1,7 +1,7 @@
 import {
   APPLICATION_SCREENS, applicationFieldError, applicationScreenError,
   screenIsVisible, visibleSubFields, type ApplicationField, type ApplicationFormData,
-} from '@/lib/applicationForm';
+} from '@/lib/applicationFormV6';
 
 // Planning estimates, not measured completion times. Reading and the final
 // answer review are included; choosing a call slot is a separate step.
@@ -13,8 +13,8 @@ const FIELD_SECONDS: Partial<Record<ApplicationField, number>> = {
 const REVIEW_SECONDS = 45;
 const START_SECONDS = 180;
 // Keep the opening estimate consistent across branches. The longest initial
-// path has 360 seconds of answer weights; scale those into a 135-second budget.
-const ANSWER_WEIGHT_BUDGET = 360;
+// path has 345 seconds of answer weights; scale those into a 135-second budget.
+const ANSWER_WEIGHT_BUDGET = 345;
 
 export function applicationTimeEstimate(form: ApplicationFormData) {
   let remaining = REVIEW_SECONDS;

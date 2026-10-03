@@ -37,9 +37,6 @@ export const IMPROVEMENT_OPTIONS = [
 export const APPLICATION_REASON_OPTIONS = [
   'Get ready for a season or tryouts', 'Earn a bigger role on my team', 'Get past a plateau', 'Something else',
 ];
-export const REFERRAL_OPTIONS = [
-  'Instagram post', 'Direct message', 'Friend or teammate', 'Something else',
-];
 /** Short display copy keeps cards tidy without changing saved answers. */
 export const APPLICATION_OPTION_LABELS: Record<string, string> = {
   'Make a team or earn a bigger role': 'Team spot or bigger role',
@@ -79,7 +76,6 @@ export const APPLICATION_SCREENS: ApplicationScreen[] = [
     { field: 'guardian_email', kind: 'email', label: 'Their email', placeholder: 'their@email.com' },
   ] },
   { key: 'guardian_aware', section: 'Your support', question: "Have you told your parent or supporter you're applying?", subtext: 'This helps us understand where you are in the conversation.', field: 'guardian_aware', type: 'choice', options: ['Yes', 'Not yet'], fields: ['parent_aware', 'guardian_aware', 'guardian_consent'] },
-  { key: 'heard_about', section: 'How you found us', question: 'How did you hear about us?', field: 'heard_about', type: 'radio-grid', options: REFERRAL_OPTIONS, detailField: 'heard_about_detail', detailOption: 'Something else', detailLabel: 'Where did you hear about us?', detailPlaceholder: 'Tell us where', fields: ['heard_about'] },
 ];
 
 export function isMinor(form: Pick<ApplicationFormData, 'age'>): boolean {
@@ -107,7 +103,7 @@ function restorePresetAnswers(form: ApplicationFormData): ApplicationFormData {
   for (const question of APPLICATION_SCREENS) {
     if (question.type !== 'radio-grid' || !question.detailField || !question.detailOption) continue;
     const answer = form[question.field];
-    const customOptions = [question.detailOption, ...(question.key === 'goal' ? ['Another goal'] : question.key === 'heard_about' ? ['Other'] : [])];
+    const customOptions = [question.detailOption, ...(question.key === 'goal' ? ['Another goal'] : [])];
     const prefix = customOptions.map(option => `${option}\n`).find(prefix => answer.startsWith(prefix));
     if (prefix) {
       form[question.detailField] = answer.slice(prefix.length);
@@ -279,7 +275,6 @@ export function applicationAnswers(form: ApplicationFormData): Record<string, st
     years_playing_answer: form.years_playing, current_team: form.current_team_school, current_team_school: form.current_team_school,
     biggest_weakness: presetAnswer(form, 'biggest_weakness'), goal, social_link: form.social_link,
     film_access: form.film_access, application_reason: presetAnswer(form, 'application_reason'),
-    heard_about: presetAnswer(form, 'heard_about'),
     decision_support: supporter ? form.decision_support : null,
     parent_name: supporter ? form.guardian_name : null, guardian_name: supporter ? form.guardian_name : null,
     parent_phone: supporter ? form.guardian_phone : null, guardian_phone: supporter ? form.guardian_phone : null,

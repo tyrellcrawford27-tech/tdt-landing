@@ -33,7 +33,8 @@ const {
 } = await import('../lib/applicationFormV5.ts');
 const { GET: bookingStatus } = await import('../app/api/apply/booking-status/route.ts');
 const { createProgressQueue } = await import('../lib/progressQueue.ts');
-const v6 = await import('../lib/applicationForm.ts');
+const v6 = await import('../lib/applicationFormV6.ts');
+const v7 = await import('../lib/applicationForm.ts');
 let rows, beforeWrite;
 const clone = value => structuredClone(value);
 class Query {
@@ -105,7 +106,7 @@ test('v4 and v5 clients retain their own question ordering and reject unsupporte
   assert.equal(rows[1].current_question_key, 'contact');
   assert.equal(rows[1].current_question_number, 2);
   assert.equal(rows[1].total_questions, 16);
-  for (const invalid of [{form_version: 7}, {form_version: '5'}, {form_version: null}, {form_version: 4, question_key: 'film_readiness'}, {form_version: 5, question_key: 'made-up'}]) {
+  for (const invalid of [{form_version: 8}, {form_version: '5'}, {form_version: null}, {form_version: 4, question_key: 'film_readiness'}, {form_version: 5, question_key: 'made-up'}]) {
     assert.equal((await post(save, {...body(), ...invalid})).status, 400);
   }
   assert.equal(rows.length, 2);
@@ -123,7 +124,7 @@ test('an old browser tab cannot downgrade a newer draft even with a later revisi
 });
 
 test('existing applications keep their original questions; only fresh starts use the new flow', () => {
-  assert.equal(applicationExperienceVersion(null, null), 6);
+  assert.equal(applicationExperienceVersion(null, null), 7);
   for (const version of [undefined, null, 3, 4]) {
     assert.equal(applicationExperienceVersion({version}, null), 4);
     assert.equal(applicationExperienceVersion(null, {version}), 4);
@@ -260,7 +261,7 @@ test('v6 resumes written goals unchanged and updates the estimate as grouped ans
   assert.equal(v6.applicationFormFromAnswers(v6.applicationAnswers(form)).goal, form.goal);
   assert.equal(v6.applicationFormFromAnswers(v6.applicationAnswers(form)).application_reason, form.application_reason);
   assert.equal(v6.firstIncompleteApplicationScreen({...form, current_team_school: ''}), 7);
-  const { applicationTimeEstimate: estimate } = await import('../lib/applicationTime.ts');
+  const { applicationTimeEstimate: estimate } = await import('../lib/applicationTimeV6.ts');
   assert.equal(estimate(v6.EMPTY_APPLICATION).remainingSeconds, 180);
   assert.equal(estimate(v6.EMPTY_APPLICATION).totalSeconds, 180);
   assert.equal(estimate(form).remainingSeconds, 45);
@@ -557,4 +558,76 @@ test('time estimate updates per valid answer and respects conditional branches',
   assert.equal(estimate(validV5()).remainingSeconds, 45);
   assert.equal(formatApplicationTime(45), '45 sec');
   assert.equal(formatApplicationTime(65), '1 min 5 sec');
+});
+
+
+const validV7 = (overrides = {}) => validV6({heard_about:'Instagram post', ...overrides});
+
+test('v7 adds exactly one referral step for new applicants and preserves v6 drafts', async () => {
+  assert.equal(applicationExperienceVersion({version:7},null),7);
+  assert.equal(applicationExperienceVersion(null,{version:7}),7);
+  for (const age of ['17','19','20']) {
+    rows = [];
+    const form = validV7({age});
+    const answers = v7.applicationAnswers(form);
+    const ordered = applicationQuestions(7,answers);
+    assert.equal(ordered.length,Number(age)<20 ? 13 : 11);
+    assert.equal(ordered.at(-1).key,'heard_about');
+    assert.equal(ordered.at(-1).label,'How did you hear about us?');
+    assert.equal(applicationQuestions(6,answers).some(q=>q.key==='heard_about'),false);
+    const key = randomUUID();
+    for (const q of ordered) {
+      assert.equal((await post(save,{...body(key,q.number,q.key),form_version:7,answers,completed:true})).status,200);
+      assert.equal(rows[0].form_version,7);
+      assert.equal(rows[0].total_questions,ordered.length);
+      assert.equal(rows[0].heard_about,'Instagram post');
+    }
+    assert.equal(rows[0].last_answered_question_key,'heard_about');
+    assert.equal(rows[0].current_question_key,'heard_about');
+    assert.equal((await post(submit,{...answers,draft_key:key,form_version:7})).status,200);
+    assert.equal(rows[0].heard_about,'Instagram post');
+    assert.equal(rows[0].guardian_email,Number(age)<20 ? form.guardian_email : null);
+  }
+  rows = [];
+  const key = randomUUID();
+  await post(save,{...body(key,1,'goal'),form_version:6,answers:v6.applicationAnswers(validV6())});
+  const before = clone(rows[0]);
+  assert.equal((await (await post(save,{...body(key,2,'heard_about'),form_version:7,answers:v7.applicationAnswers(validV7())})).json()).refresh_required,true);
+  assert.equal((await post(submit,{...v7.applicationAnswers(validV7()),draft_key:key,form_version:7})).status,409);
+  assert.deepEqual(rows[0],before);
+});
+
+test('all four referral cards save and submit their exact answer, including custom text', async () => {
+  const question = v7.APPLICATION_SCREENS.find(q=>q.key==='heard_about');
+  assert.deepEqual(question.options,['Instagram post','Direct message','Friend or teammate','Something else']);
+  for (const option of question.options) {
+    rows = [];
+    const detail = 'A local basketball camp';
+    const form = validV7({heard_about:option,heard_about_detail:detail});
+    const answers = v7.applicationAnswers(form);
+    assert.equal(answers.heard_about,option==='Something else' ? `Something else\n${detail}` : option);
+    assert.equal(v7.applicationSubmissionError(form),null);
+    const restored = v7.applicationFormFromAnswers(answers);
+    assert.equal(restored.heard_about,option);
+    if(option==='Something else') assert.equal(restored.heard_about_detail,detail);
+    const key = randomUUID();
+    await post(save,{...body(key,1,'heard_about'),form_version:7,answers,completed:true});
+    assert.equal(rows[0].heard_about,answers.heard_about);
+    assert.equal((await post(submit,{...answers,draft_key:key,form_version:7})).status,200);
+    assert.equal(rows[0].heard_about,answers.heard_about);
+  }
+  for (const invalid of ['', 'asdfgh', 'x'.repeat(3901)]) {
+    const form = validV7({heard_about:'Something else',heard_about_detail:invalid});
+    assert.ok(v7.applicationScreenError(question,form));
+    assert.equal((await post(submit,{...v7.applicationAnswers(form),form_version:7})).status,400);
+  }
+  assert.equal((await post(submit,{...v7.applicationAnswers(validV7({heard_about:''})),form_version:7})).status,400);
+  for (const heard_about of ['Other\nA local basketball camp','A local basketball camp']) {
+    const restored = v7.applicationFormFromAnswers({...v7.applicationAnswers(validV7()),heard_about});
+    assert.equal(restored.heard_about,'Something else');
+    assert.equal(restored.heard_about_detail,'A local basketball camp');
+  }
+  const {applicationTimeEstimate:estimate} = await import('../lib/applicationTime.ts');
+  assert.equal(estimate(v7.EMPTY_APPLICATION).remainingSeconds,180);
+  assert.equal(estimate(validV7()).remainingSeconds,45);
 });
