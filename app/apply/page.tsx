@@ -140,15 +140,13 @@ function CyclingHeadline({ style }: { style?: React.CSSProperties }) {
 function GoBackButton({ onClick }: { onClick: () => void }) {
   return (
     <button
+      className={styles.backButton}
       onClick={onClick}
       style={{
-        flex: 1,
-        height: 42,
         borderRadius: 32,
         border: '1px solid rgba(0,0,0,0.12)',
         background: CARD,
         color: 'rgba(0,0,0,0.4)',
-        fontSize: 18,
         fontWeight: 400,
         letterSpacing: '-0.02em',
         fontFamily: 'inherit',
@@ -1050,8 +1048,8 @@ const choose = (field: ApplicationField, value: string) => {
             {error && <p role="alert" className={styles.error}>{error}</p>}
             <div className={styles.navigation}>
               <GoBackButton onClick={retreat} />
-              <CTAButton onClick={handleSubmit} disabled={submitting} className="min-h-[42px] flex-[2] whitespace-nowrap px-4 py-2 text-[18px] font-normal tracking-[-0.02em]">
-                {submitting ? 'Submitting…' : 'Submit and choose a time'}
+              <CTAButton onClick={handleSubmit} disabled={submitting} className={`${styles.navigationButton} flex-[2] font-normal tracking-[-0.02em]`}>
+                {submitting ? 'Submitting…' : 'Submit & book a call'}
               </CTAButton>
             </div>
             {legalLinks}
@@ -1235,8 +1233,8 @@ const choose = (field: ApplicationField, value: string) => {
           <div className={styles.navigation}>
             {!isFirst && <GoBackButton onClick={retreat} />}
             <CTAButton onClick={advance} disabled={checkingEmail || !visible}
-              className="min-h-[42px] flex-1 px-4 py-2 text-[18px] font-normal tracking-[-0.02em]">
-              {checkingEmail ? 'Checking…' : editingReview ? 'Save and return to review' : isLast ? 'Review my answers' : 'Continue'}
+              className={`${styles.navigationButton} flex-1 font-normal tracking-[-0.02em]`}>
+              {checkingEmail ? 'Checking…' : editingReview ? 'Save changes' : isLast ? 'Review answers' : 'Continue'}
             </CTAButton>
           </div>
         </div>
