@@ -812,9 +812,10 @@ function ApplyPageInner({ version, onStartNew }: { version: 5 | 6 | 7; onStartNe
           opacity: 0.4,
           maxWidth: 800,
           textAlign: 'center',
+          textWrap: 'balance',
           lineHeight: 1.45,
         }}>
-          Every journey toward excellence begins with a single step.
+          Building the film that takes you to the next level
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let&apos;s Begin
