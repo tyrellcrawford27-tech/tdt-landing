@@ -1138,7 +1138,7 @@ function ApplyPageInner({ onStartNew }: { onStartNew: () => void }) {
           textWrap: 'balance',
           lineHeight: 1.45,
         }}>
-          100 days of Coach Jaiden Francis breaking down your game film with you and providing drills that you <em>actually</em> need
+          Building the film that takes you to the next level
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin
