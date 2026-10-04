@@ -542,7 +542,7 @@ export default function Home() {
               takes you to the next level
             </h1>
             <p className="text-[16px] font-normal leading-[1.6] text-white/80 text-pretty max-w-[600px] mb-[24px]">
-              100 days of Coach Jaiden Francis breaking down your game film with you and providing drills that you <em>actually</em> need
+              100 days of Coach Jaiden Francis breaking down your game film with you and providing drills that you <em>actually</em> need.
             </p>
             <div className="flex flex-wrap items-center gap-x-[22px] gap-y-[16px]">
               <CTAButton href="/apply" className="h-[46px] lg:h-[40px] px-[24px] text-[15px]">
