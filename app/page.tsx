@@ -537,17 +537,16 @@ export default function Home() {
               </span>
             </LiquidGlassPill>
             <h1 className="text-white text-[clamp(23px,calc((100vw-48px)/11.4),32px)] md:text-[40px] lg:text-[48px] font-medium leading-[1.2] lg:leading-[57px] tracking-[-0.02em] max-w-[1150px] mb-[11px]">
-              Your next level starts
+              Making the game film that
               <br />
-              when you know what to do.
+              takes you to the next level
             </h1>
             <p className="text-[16px] font-normal leading-[1.6] text-white/80 text-pretty max-w-[600px] mb-[24px]">
-              <span className="md:hidden">Coach Jaiden Francis turns your game film into 100 days of targeted drills and personal coaching focused on what’s holding you back.</span>
-              <span className="hidden md:inline">Coach Jaiden Francis breaks down your game film to find what’s holding you back, then guides you through 100 days of targeted drills and personal feedback to work on it.</span>
+              Do the right things in games and watch how far you can really take this.
             </p>
             <div className="flex flex-wrap items-center gap-x-[22px] gap-y-[16px]">
-              <CTAButton href="/apply" className="h-[46px] px-[24px] text-[15px]">
-                Apply for coaching
+              <CTAButton href="/apply" className="h-[46px] lg:h-[40px] px-[24px] text-[15px]">
+                Apply now
               </CTAButton>
               <a
                 onClick={(e) => {
