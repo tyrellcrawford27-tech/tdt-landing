@@ -1138,7 +1138,7 @@ function ApplyPageInner({ onStartNew }: { onStartNew: () => void }) {
           textWrap: 'balance',
           lineHeight: 1.45,
         }}>
-          Building the film that takes you to the next level
+          Building the film that will take you to the next level
         </p>
         <CTAButton onClick={advance} className="h-[42px] px-[22px] text-[15px] font-normal mt-[10px]">
           Let's Begin
