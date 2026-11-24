@@ -48,7 +48,7 @@ async function open(viewport, mobile = false) {
   const page = await context.newPage();
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(base, { waitUntil: 'networkidle' });
-  await page.getByRole('tablist', { name: 'How the 100 day program works' }).waitFor();
+  await page.getByRole('tablist', { name: 'How the 90 day program works' }).waitFor();
   return { page, context };
 }
 
@@ -137,7 +137,7 @@ try {
   assert.match(await reply.locator('[data-message-text]').textContent(), /balance and shot preparation/, 'The reply first gives one relevant observation about the visitor’s challenge');
   assert.match(await reply.innerText(), /Want to work on this together\?/);
   assert.match(await reply.innerText(), /Automated chat preview/, 'The response is identified as a preview, not a live message');
-  assert.equal(await reply.locator('a').textContent(), 'Apply for the 100-Day Program ');
+  assert.equal(await reply.locator('a').textContent(), 'Apply for the 90-Day Program ');
   assert.equal(await reply.locator('a').getAttribute('href'), '/apply');
   assert.match(await reply.evaluate(el => getComputedStyle(el).animationName), /messageArrive/);
   assert.equal(await reply.evaluate(el => getComputedStyle(el).animationDuration), '0.72s');
@@ -219,7 +219,7 @@ try {
 
   const reduced = await open({ width: 1280, height: 720 });
   await reduced.page.emulateMedia({ reducedMotion: 'reduce' });
-  const tabs = reduced.page.getByRole('tablist', { name: 'How the 100 day program works' });
+  const tabs = reduced.page.getByRole('tablist', { name: 'How the 90 day program works' });
   await tabs.getByRole('tab').first().focus();
   await reduced.page.keyboard.press('End');
   assert.equal(await tabs.getByRole('tab').nth(3).getAttribute('aria-selected'), 'true');
@@ -275,7 +275,7 @@ try {
     const check = await open(viewport, true);
     const page = check.page;
     await position(page, 0);
-    const nav = page.getByRole('tablist', { name: 'How the 100 day program works' });
+    const nav = page.getByRole('tablist', { name: 'How the 90 day program works' });
     const touchTargets = await nav.getByRole('tab').evaluateAll(tabs => tabs.map(tab => ({ width: tab.clientWidth, height: tab.clientHeight })));
     assert.ok(touchTargets.every(target => target.width >= 44 && target.height >= 44), 'All four topics have phone-sized touch targets');
     assert.equal(await page.locator('[data-how-track]').evaluate(el => getComputedStyle(el.firstElementChild).position), 'sticky', 'The complete mobile scene pins, not only its topic bar');

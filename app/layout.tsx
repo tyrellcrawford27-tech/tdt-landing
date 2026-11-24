@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Think Different Training",
   description:
-    "100 days of Coach Jaiden Francis breaking down your game and building personalised drills around what you need to improve.",
+    "90 days of Coach Jaiden Francis breaking down your game and building personalised drills around what you need to improve.",
 };
 
 // Black browser chrome + edge-to-edge rendering so notched phones show the

@@ -22,7 +22,7 @@ export function HundredDays({ onOpenFilmFaq }: HundredDaysProps) {
           <dl className={styles.daysDetails}>
             <div><dt>Execution, not vibes.</dt><dd>Film points out missed reads and habits so your training is based on what actually happens in your game, not guessing.</dd></div>
             <div><dt>Complete guidance.</dt><dd>You get direct, on-demand feedback while training solo, so you are never working without a clear plan.</dd></div>
-            <div><dt>Consistent progress.</dt><dd>Short feedback loops create better routines and make your 100-day journey feel simple, repeatable, and trackable.</dd></div>
+            <div><dt>Consistent progress.</dt><dd>Short feedback loops create better routines and make your 90-day journey feel simple, repeatable, and trackable.</dd></div>
           </dl>
         </div>
       </div>

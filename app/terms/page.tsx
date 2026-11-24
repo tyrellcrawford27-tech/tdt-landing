@@ -23,7 +23,7 @@ export default function TermsPage() {
       <h2>1. What Think Different Training Is</h2>
       <p>
         TDT is a paid athlete development program combining film review, personalized drill assignments, coaching
-        calls, and progress tracking, delivered over a defined program period (currently 100 days per cohort). The
+        calls, and progress tracking, delivered over a defined program period (currently 90 days per cohort). The
         Service is provided by the coaching team (&quot;Coach&quot;) and the underlying software platform.
       </p>
 

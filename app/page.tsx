@@ -542,7 +542,7 @@ export default function Home() {
               takes you to the next level
             </h1>
             <p className="text-[16px] font-normal leading-[1.6] text-white/80 text-pretty max-w-[600px] mb-[24px]">
-              100 days of Coach Jaiden Francis breaking down your game film with you and providing drills that you <em>actually</em> need.
+              90 days of Coach Jaiden Francis breaking down your game film with you and providing drills that you <em>actually</em> need.
             </p>
             <div className="flex flex-wrap items-center gap-x-[22px] gap-y-[16px]">
               <CTAButton href="/apply" className="h-[46px] lg:h-[40px] px-[24px] text-[15px]">
@@ -1025,8 +1025,8 @@ export default function Home() {
                   answer: "The coaching is fully remote, through our app. You can review film, receive feedback and work with Jaiden there. If you don't have film yet, we still start with practical steps and help you set up a simple capture routine from week one.",
                 },
                 {
-                  question: "What do the 100 days actually involve?",
-                  answer: "100 days is the length of the program. The process is to work through film, review Jaiden’s feedback, practice your personalized drills and bring new footage as you go. If you're just getting started, we begin with a simple first-step plan and build from there.",
+                  question: "What do the 90 days actually involve?",
+                  answer: "90 days is the length of the program. The process is to work through film, review Jaiden’s feedback, practice your personalized drills and bring new footage as you go. If you're just getting started, we begin with a simple first-step plan and build from there.",
                 },
                 {
                   question: "What do I need to do to get started?",

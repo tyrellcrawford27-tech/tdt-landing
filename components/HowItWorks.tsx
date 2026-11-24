@@ -293,7 +293,7 @@ export function HowItWorks() {
     <div className={styles.track} ref={trackRef} data-how-track>
     <div className={styles.pin} ref={pinRef}>
       <div className={styles.frame}>
-        <div className={styles.steps} role="tablist" aria-label="How the 100 day program works">
+        <div className={styles.steps} role="tablist" aria-label="How the 90 day program works">
           <span className={styles.line} aria-hidden="true"><span ref={lineRef} className={styles.lineFill} style={{ '--line-progress': 0 } as CSSProperties} /></span>
           {STEPS.map((step, index) => <button key={step.title} type="button" ref={element => { tabsRef.current[index] = element; }} role="tab" aria-label={`${index + 1}. ${step.title}`} aria-selected={active === index} aria-controls="how-step-panel" id={`how-tab-${index}`} tabIndex={active === index ? 0 : -1} className={styles.step} data-active={active === index} onClick={() => choose(index)} onKeyDown={event => tabKey(event, index)}>
             <span className={styles.stepDot}>{index + 1}</span><span className={styles.stepMobileTitle} aria-hidden="true">{MOBILE_STEP_TITLES[index]}</span><span className={styles.stepTitle}>{step.title}</span><span className={styles.stepBody}>{step.body}</span>

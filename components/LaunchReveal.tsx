@@ -359,7 +359,7 @@ export function LaunchReveal({ onClose }: { onClose: () => void }) {
           {/* Subtext */}
           <div style={{ ...fadeUp(phase >= 2, '0.04s'), marginTop: 30 }}>
             <p style={{ margin: 0, fontSize: 17, fontWeight: 400, lineHeight: 1.65, color: '#8A7268', maxWidth: 340 }}>
-              8 athletes. 100 days.<br />Your spot is waiting.
+              8 athletes. 90 days.<br />Your spot is waiting.
             </p>
           </div>
 

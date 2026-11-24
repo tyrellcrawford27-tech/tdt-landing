@@ -113,7 +113,7 @@ test('program design fallbacks explain support and app structure without inventi
     ['What is the exam at the end of a module?', /uploaded assessment.*need confirmation/i],
     ['What are the daily habits?', /don’t have a confirmed.*workload/i],
     ['Does this work alongside my team training?', /complement your existing training.*still purposeful practice/i],
-    ['What happens after 100 days?', /graduation.*access afterward need confirmation/i],
+    ['What happens after 90 days?', /graduation.*access afterward need confirmation/i],
     ['What happens after I get accepted?', /onboarding.*strengths and weaknesses/i],
     ['How does the drill library work?', /chosen around what your film reveals/i],
     ['What does a typical week look like?', /group call.*individual calls when needed/i],

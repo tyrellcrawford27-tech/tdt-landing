@@ -26,7 +26,7 @@ export function ChatAvatar({ visitor = false }: { visitor?: boolean }) {
 
 function TrainingApplicationCTA() {
   return <CTAButton href={APPLICATION_HREF} className={styles.applicationReply}>
-    <span className={styles.applicationReplyContent} data-chat-application-cta>Apply for the 100-Day Program <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+    <span className={styles.applicationReplyContent} data-chat-application-cta>Apply for the 90-Day Program <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
   </CTAButton>;
 }
 
